@@ -1,0 +1,19 @@
+archive/*
+
+# these are generated files, so we don't commit them. But they still show up
+# so that's useful for development.
+cloud-init.yml
+
+# this gets generated locally then push to remote vps for execution.
+temp_btcpay.sh
+
+nginx.conf
+
+# this file can be used by the USER to reset the LXD stack. It deletes a lxc machine VM (which you should update)
+# then clears the lxd stack including profile, images, and storage pools
+# then runs go.sh
+reset.sh
+
+# you can create an env in this directory. The code will source it if the file exists. 
+# This is a good place to put your LXD info
+#env

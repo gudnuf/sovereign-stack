@@ -1,0 +1,32 @@
+version: "3.8"
+services:
+
+  # a hidden service that routes to the nginx container at http://onionurl.onion server block
+  tor-onion:
+    image: tor:latest
+    networks:
+      - tor-net
+    volumes:
+      - ${REMOTE_HOME}/tor:/var/lib/tor
+      - tor-logs:/var/log/tor
+    configs:
+      - source: tor-config
+        target: /etc/tor/torrc
+        mode: 0644
+    deploy:
+      mode: replicated
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+
+volumes:
+  tor-data:
+  tor-logs:
+
+networks:
+  tor-net:
+    attachable: true
+
+configs:
+  tor-config:
+    file: ${TOR_CONFIG_PATH}
