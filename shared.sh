@@ -132,38 +132,51 @@ export WWW_INSTANCE_TYPE="$WWW_INSTANCE_TYPE"
 export REMOTE_BACKUP_PATH="$REMOTE_BACKUP_PATH"
 export BTCPAY_ADDITIONAL_HOSTNAMES="$BTCPAY_ADDITIONAL_HOSTNAMES"
 
-if [ -z "$GHOST_MYSQL_PASSWORD" ]; then
-    echo "ERROR: Ensure GHOST_MYSQL_PASSWORD is configured in your site_definition."
-    exit 1
+if [ "$DEPLOY_GHOST" = true ]; then
+    if [ -z "$GHOST_MYSQL_PASSWORD" ]; then
+        echo "ERROR: Ensure GHOST_MYSQL_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+
+    if [ -z "$GHOST_MYSQL_ROOT_PASSWORD" ]; then
+        echo "ERROR: Ensure GHOST_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
 fi
 
-if [ -z "$GHOST_MYSQL_ROOT_PASSWORD" ]; then
-    echo "ERROR: Ensure GHOST_MYSQL_ROOT_PASSWORD is configured in your site_definition."
-    exit 1
+if [ "$DEPLOY_GITEA" = true ]; then
+    if [ -z "$GITEA_MYSQL_PASSWORD" ]; then
+        echo "ERROR: Ensure GITEA_MYSQL_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+    if [ -z "$GITEA_MYSQL_ROOT_PASSWORD" ]; then
+        echo "ERROR: Ensure GITEA_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
 fi
 
-if [ -z "$NEXTCLOUD_MYSQL_PASSWORD" ]; then
-    echo "ERROR: Ensure NEXTCLOUD_MYSQL_PASSWORD is configured in your site_definition."
-    exit 1
+if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+    if [ -z "$NEXTCLOUD_MYSQL_ROOT_PASSWORD" ]; then
+        echo "ERROR: Ensure NEXTCLOUD_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+
+    if [ -z "$NEXTCLOUD_MYSQL_PASSWORD" ]; then
+        echo "ERROR: Ensure NEXTCLOUD_MYSQL_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
 fi
 
-if [ -z "$GITEA_MYSQL_PASSWORD" ]; then
-    echo "ERROR: Ensure GITEA_MYSQL_PASSWORD is configured in your site_definition."
-    exit 1
-fi
+if [ "$DEPLOY_MATRIX" = true ]; then
+    if [ -z "$MATRIX_ADMIN_PASSWORD" ]; then
+        echo "ERROR: Ensure MATRIX_ADMIN_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
 
-if [ -z "$NEXTCLOUD_MYSQL_ROOT_PASSWORD" ]; then
-    echo "ERROR: Ensure NEXTCLOUD_MYSQL_ROOT_PASSWORD is configured in your site_definition."
-    exit 1
-fi
-
-if [ -z "$GITEA_MYSQL_ROOT_PASSWORD" ]; then
-    echo "ERROR: Ensure GITEA_MYSQL_ROOT_PASSWORD is configured in your site_definition."
-    exit 1
-fi
-if [ -z "$MATRIX_ADMIN_PASSWORD" ]; then
-    echo "ERROR: Ensure MATRIX_ADMIN_PASSWORD is configured in your site_definition."
-    exit 1
+    if [ -z "$MATRIX_DB_PASSWORD" ]; then
+        echo "ERROR: Ensure MATRIX_DB_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
 fi
 
 if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
@@ -188,11 +201,6 @@ fi
 
 if [ -z "$SITE_TITLE" ]; then
     echo "ERROR: Ensure SITE_TITLE is configured in your site_definition."
-    exit 1
-fi
-
-if [ -z "$MATRIX_DB_PASSWORD" ]; then
-    echo "ERROR: Ensure MATRIX_DB_PASSWORD is configured in your site_definition."
     exit 1
 fi
 

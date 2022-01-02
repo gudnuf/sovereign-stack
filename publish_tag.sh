@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # this script will tag the repo then push it to origin
-TAG_NAME=v0.0.14
+TAG_NAME=v0.0.18
 COMIT_MESSAGE="Creating commit on $(date)."
 TAG_MESSAGE="Creating tag $TAG_NAME on $(date)."
 

@@ -131,6 +131,6 @@ if [ "$RUN_SERVICES" = true ]; then
     fi
 
     if [ "$DEPLOY_GITEA" = true ]; then
-        xdg-open "http://$GITTEA_FQDN"
+        xdg-open "http://$GITEA_FQDN"
     fi
 fi

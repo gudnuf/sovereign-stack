@@ -80,7 +80,7 @@ if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
     fi
 
     lxc init \
-        --profile="sovereign-stack" \
+        --profile="$LXD_VM_NAME" \
         "ubuntu-21-04" \
         "$VM_NAME" --vm
 
@@ -110,7 +110,7 @@ if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
 fi
 
 # now let's create a new VM to work with.
-lxc init --profile="sovereign-stack" "$VM_NAME" "$LXD_VM_NAME" --vm
+lxc init --profile="$LXD_VM_NAME" "$VM_NAME" "$LXD_VM_NAME" --vm
 
 # let's PIN the HW address for now so we don't exhaust IP
 # and so we can set DNS internally.

@@ -3,11 +3,6 @@
 set -exuo nounset
 cd "$(dirname "$0")"
 
-# the user can specify an env which sets some environment variables. See the default content of env.
-if [ -f "$(pwd)/env" ]; then
-    source "$(pwd)/env"
-fi
-
 USER_DELETE_MACHINE=false
 DOMAIN_NAME=
 VPS_HOSTING_TARGET=lxd
@@ -19,6 +14,8 @@ UPDATE_BTCPAY=false
 MIGRATE_BTCPAY_SERVER=false
 RECONFIGURE_BTCPAY_SERVER=false
 BTCPAY_ADDITIONAL_HOSTNAMES=
+LXD_DISK_TO_USE=
+DEV_BTCPAY_MAC_ADDRESS=
 
 for i in "$@"; do
     case $i in
@@ -75,6 +72,7 @@ done
 export DOMAIN_NAME="$DOMAIN_NAME"
 export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
 export LXD_DISK_TO_USE="$LXD_DISK_TO_USE"
+export DEV_BTCPAY_MAC_ADDRESS="$DEV_BTCPAY_MAC_ADDRESS"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
 
 export BTC_CHAIN="$BTC_CHAIN"
