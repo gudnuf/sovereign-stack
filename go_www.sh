@@ -25,7 +25,7 @@ fi
 # stop services.
 if docker stack list --format "{{.Name}}" | grep -q webstack; then
     docker stack rm webstack
-    sleep 10
+    sleep 20
 fi
 
 # this will generate letsencrypt certs and pull them down locally.
@@ -69,7 +69,7 @@ if [ "$DEPLOY_MATRIX" = true ]; then
             -e POSTGRES_PASSWORD="${MATRIX_DB_PASSWORD}" \
             -e SYNAPSE_NO_TLS=1 \
             -e SYNAPSE_ENABLE_REGISTRATION=yes \
-            -e SYNAPSE_LOG_LEVEL=DEBUG \
+            -e SYNAPSE_LOG_LEVEL=INFO \
             -e POSTGRES_DB=synapse \
             -e POSTGRES_HOST=matrix-db \
             -e POSTGRES_USER=synapse \

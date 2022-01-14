@@ -32,7 +32,7 @@ if [ "$RUN_RESTORE" = true ]; then
     ./restore_btcpay.sh
 fi
 
-
+# the administrator may have indicated a reconfig; if so, re-run the setup (useful for adding alternative names to TLS)
 if [ "$RECONFIGURE_BTCPAY_SERVER"  = true ]; then
     # re-run the setup script.
     ./run_btcpay_setup.sh

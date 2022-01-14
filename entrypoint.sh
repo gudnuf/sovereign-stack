@@ -5,4 +5,4 @@ if [ -z "$DOMAIN_NAME" ]; then
     exit 1
 fi
 
-/sovereign-stack/refresh.sh --domain="$DOMAIN_NAME"
+/sovereign-stack/deploy.sh --domain="$DOMAIN_NAME"

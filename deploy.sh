@@ -31,7 +31,7 @@ for i in "$@"; do
             USER_RUN_RESTORE=true
             shift
         ;;
-        --update)
+        --update-btcpay)
             UPDATE_BTCPAY=true
             shift
         ;;
