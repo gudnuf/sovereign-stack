@@ -35,7 +35,6 @@ if [ "$VPS_HOSTING_TARGET" != lxd ]; then
         ./generate_certs.sh
     fi
 else
-    
     # restore the certs. If they don't exist in a backup we restore from SITE_PATH
     if [ -f "$SITE_PATH/certs.tar.gz" ]; then
         scp "$SITE_PATH/certs.tar.gz" "ubuntu@$FQDN:$REMOTE_HOME/certs.tar.gz"

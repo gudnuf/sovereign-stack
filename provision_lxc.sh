@@ -1,10 +1,10 @@
 #!/bin/bash
 
-set -eu
+set -eux
 
 # check to ensure the admin has specified a MACVLAN interface
-if [ -z "$DEV_MACVLAN_INTERFACE" ]; then
-    echo "ERROR: DEV_MACVLAN_INTERFACE not defined in project."
+if [ -z "$MACVLAN_INTERFACE" ]; then
+    echo "ERROR: MACVLAN_INTERFACE not defined in project."
     exit 1
 fi
 
@@ -26,12 +26,13 @@ envsubst < ./lxc_profile.yml > "$SITE_PATH/cloud-init.yml"
 # configure the profile with our generated cloud-init.yml file.
 cat "$SITE_PATH/cloud-init.yml" | lxc profile edit "$LXD_VM_NAME"
 
-wait_for_lxc_ip () {
+function wait_for_lxc_ip {
 
 LXC_INSTANCE_NAME="$1"
 IP_V4_ADDRESS=
 while true; do
     IP_V4_ADDRESS="$(lxc list "$LXC_INSTANCE_NAME" --format csv --columns=4 | grep enp5s0 | grep -Eo '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')" || true
+    export IP_V4_ADDRESS="$IP_V4_ADDRESS"
     if [ -n "$IP_V4_ADDRESS" ]; then
         # give the machine extra time to spin up.
         wait-for-it -t 300 "$IP_V4_ADDRESS:22"
@@ -44,6 +45,34 @@ done
 
 }
 
+function run_ddns {
+    # now that the VM has an IP, we can update the DNS record. TODO add additional DNS providers here; namecheap only atm.
+    DDNS_STRING="$VPS_HOSTNAME"
+    if [ "$VPS_HOSTNAME" = www ]; then
+        # next update our DDNS record. TODO enable local/remote name provider. 
+        DDNS_STRING="@"
+    fi
+
+    # if the DNS record is incorrect, we run DDNS to get it corrected yo.
+    if "$(getent hosts "$FQDN" | awk '{ print $1 }')" != "$IP_V4_ADDRESS"; then
+        curl "https://dynamicdns.park-your-domain.com/update?host=$DDNS_STRING&domain=$DOMAIN_NAME&password=$DDNS_PASSWORD&ip=$IP_V4_ADDRESS"
+
+        DDNS_SLEEP_SECONDS=60
+        while true; do
+            # we test the www CNAME here so we can be assured the underlying has corrected.
+            if [[ "$(getent hosts "$FQDN" | awk '{ print $1 }')" == "$IP_V4_ADDRESS" ]]; then
+                echo ""
+                echo "SUCCESS: The DNS appears to be configured correctly."
+
+                echo "INFO: Waiting $DDNS_SLEEP_SECONDS seconds to allow stale DNS records to expire."
+                sleep "$DDNS_SLEEP_SECONDS";
+                break;
+            fi
+
+            printf "." && sleep 2;
+        done
+    fi
+}
 
 # create the default storage pool if necessary
 if ! lxc storage list --format csv | grep -q default; then

@@ -102,6 +102,15 @@ export MACVLAN_INTERFACE="$MACVLAN_INTERFACE"
 # shellcheck disable=SC1091
 source ./defaults.sh
 
+# if there's a ./env file here, let's execute it. Admins can put various deployment-specific things there.
+if [ -f $(pwd)/env ]; then
+    source $(pwd)/env;
+else
+    touch "$(pwd)/env"
+    echo "We stubbed out a '$(pwd)/env' file for you. Put any LXD-remote specific information in there."
+    exit 1
+fi
+
 # iterate over all our server endpoints and provision them if needed.
 # www
 VPS_HOSTNAME=
