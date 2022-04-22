@@ -35,11 +35,13 @@ export MATRIX_DB_PASSWORD="$(new_pass)"
 export MATRIX_SHARED_SECRET="$(new_pass)"
 export MATRIX_ADMIN_PASSWORD="$(new_pass)"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
+#export DEPLOY_UMBREL_VPS=false
 export DEPLOY_GHOST=true
 export DEPLOY_MATRIX=true
 export DEPLOY_NEXTCLOUD=true
 export DEPLOY_ONION_SITE=false
-#export DEPLOY_BTCPAY_SERVER=true
+# valid options: 'testnet' and 'mainnet'
+#export BTC_CHAIN=testnet
 #export WWW_INSTANCE_TYPE="t2.medium"
 #export BTCPAY_ADDITIONAL_HOSTNAMES="pay.domain.tld"
 #export DEV_WWW_MAC_ADDRESS="00:16:3E:AD:25:2C"

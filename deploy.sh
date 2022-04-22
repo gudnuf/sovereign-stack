@@ -91,7 +91,8 @@ source ./defaults.sh
 
 # iterate over all our server endpoints and provision them if needed.
 # www
-for APP_TO_DEPLOY in btcpay www; do
+VPS_HOSTNAME=
+for APP_TO_DEPLOY in btcpay www umbrel; do
     FQDN=
     export APP_TO_DEPLOY="$APP_TO_DEPLOY"
     # shellcheck disable=SC1091
@@ -113,7 +114,15 @@ for APP_TO_DEPLOY in btcpay www; do
         fi
     fi
 
-    export FQDN="$FQDN"
+    # skip umbrel if 
+    if [ "$APP_TO_DEPLOY" = umbrel ]; then
+        VPS_HOSTNAME="$UMBREL_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$UMBREL_MAC_ADDRESS"
+        if [ "$DEPLOY_UMBREL_VPS" = false ]; then
+            continue
+        fi
+    fi
+
 
     # generate the docker yaml and nginx configs.
     ./stub_docker_yml.sh

@@ -4,6 +4,7 @@ set -eu
 
 export DEPLOY_WWW_SERVER=true
 export DEPLOY_BTCPPAY_SERVER=false
+export DEPLOY_UMBREL_VPS=false
 
 # if true, then we deploy a VPS with Jitsi/Matrix
 export DEPLOY_GHOST=true
@@ -14,6 +15,7 @@ export DEPLOY_GITEA=false
 
 export WWW_HOSTNAME="www"
 export BTCPAY_HOSTNAME="btcpay"
+export UMBREL_HOSTNAME="umbrel"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export MATRIX_HOSTNAME="chat"
 export GITEA_HOSTNAME="git"

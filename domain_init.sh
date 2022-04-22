@@ -77,6 +77,8 @@ if [ "$APP_TO_DEPLOY" = www ]; then
     ./go_www.sh
 elif [ "$APP_TO_DEPLOY" = btcpay ]; then
     ./go_btcpay.sh
+elif [ "$APP_TO_DEPLOY" = umbrel ]; then
+    ./go_umbrel.sh
 elif [ "$APP_TO_DEPLOY" = certonly ]; then
     # renew the certs; certbot takes care of seeing if we need to actually renew.
     if [ "$RUN_CERT_RENEWAL" = true ]; then
