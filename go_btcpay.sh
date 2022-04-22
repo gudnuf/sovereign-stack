@@ -1,9 +1,10 @@
 #!/bin/bash
 
-set -exuo nounset
+set -exu
 cd "$(dirname "$0")"
 
 if [ "$RUN_BACKUP"  = true ]; then
+    # shellcheck disable=SC2029
     ssh "$FQDN" "cd $REMOTE_HOME/btcpayserver-docker/; sudo bash -c ./btcpay-down.sh" 
 fi
 
@@ -17,6 +18,7 @@ if [ "$UPDATE_BTCPAY" = true ]; then
     fi
 
     # run the update.
+    # shellcheck disable=SC2029
     ssh "$FQDN" "cd $REMOTE_HOME/btcpayserver-docker/; sudo bash -c ./btcpay-update.sh" 
 
 else
@@ -28,6 +30,7 @@ fi
 
 # run a restoration if specified.
 if [ "$RUN_RESTORE" = true ]; then
+    # shellcheck disable=SC2029
     ssh "$FQDN" "cd $REMOTE_HOME/btcpayserver-docker/; sudo bash -c ./btcpay-down.sh" 
     ./restore_btcpay.sh
 fi
@@ -38,9 +41,10 @@ if [ "$RECONFIGURE_BTCPAY_SERVER"  = true ]; then
     ./run_btcpay_setup.sh
 fi
 
-if [ "$MIGRATE_BTCPAY_SERVER" = false ]; then
+if [ "$MIGRATE_VPS" = false ]; then
     # The default is to resume services, though admin may want to keep services off (eg., for a migration)
     # we bring the services back up by default.
+    # shellcheck disable=SC2029
     ssh "$FQDN" "cd $REMOTE_HOME/btcpayserver-docker/; sudo bash -c ./btcpay-up.sh"
 
     # we wait for lightning to comone line too.

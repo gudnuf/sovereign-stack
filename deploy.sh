@@ -3,7 +3,7 @@
 set -exuo nounset
 cd "$(dirname "$0")"
 
-USER_DELETE_MACHINE=false
+MIGRATE_VPS=false
 DOMAIN_NAME=
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=true
@@ -15,7 +15,10 @@ MIGRATE_BTCPAY_SERVER=false
 RECONFIGURE_BTCPAY_SERVER=false
 BTCPAY_ADDITIONAL_HOSTNAMES=
 LXD_DISK_TO_USE=
-DEV_BTCPAY_MAC_ADDRESS=
+DEPLOY_BTCPAY_SERVER=false
+REDEPLOY_STACK=false
+MACVLAN_INTERFACE=
+
 
 for i in "$@"; do
     case $i in
@@ -39,8 +42,8 @@ for i in "$@"; do
             USER_NO_BACKUP=true
             shift
         ;;
-        --delete)
-            USER_DELETE_MACHINE=true
+        --migrate)
+            MIGRATE_VPS=true
             shift
         ;;
         --storage-backend=*)
@@ -79,6 +82,7 @@ export BTC_CHAIN="$BTC_CHAIN"
 export UPDATE_BTCPAY="$UPDATE_BTCPAY"
 export MIGRATE_BTCPAY_SERVER="$MIGRATE_BTCPAY_SERVER"
 export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
+export MACVLAN_INTERFACE="$MACVLAN_INTERFACE"
 
 # # first of all, if there are uncommited changes, we quit. You better stash your work yo!
 # if git update-index --refresh| grep -q "needs update"; then
@@ -108,7 +112,8 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
 
     # skip if the server config is set to not deploy.
     if [ "$APP_TO_DEPLOY" = www ]; then
-        FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
+        VPS_HOSTNAME="$WWW_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$WWW_MAC_ADDRESS"
         if [ "$DEPLOY_WWW_SERVER" = false ]; then
             continue
         fi
@@ -123,6 +128,9 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
         fi
     fi
 
+    export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
+    export VPS_HOSTNAME="$VPS_HOSTNAME"
+    export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
 
     # generate the docker yaml and nginx configs.
     ./stub_docker_yml.sh
@@ -143,7 +151,9 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
 
     if [ "$MACHINE_EXISTS"  = true ]; then
         # we delete the machine if the user has directed us to
-        if [ "$USER_DELETE_MACHINE" = true ]; then
+        if [ "$MIGRATE_VPS" = true ]; then
+
+
             # run the domain_init based on user input.
             if [ "$USER_NO_BACKUP"  = true ]; then
                 echo "Machine exists. We don't need to back it up because the user has directed --no-backup."
@@ -160,6 +170,7 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
                 fi
             elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
                 lxc delete --force "$LXD_VM_NAME"
+                USER_RUN_RESTORE=true
             fi
 
             # Then we run the script again to re-instantiate a new VPS, restoring all user data 
@@ -178,7 +189,7 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
             RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true ./domain_init.sh
         fi
     else
-        if [ "$USER_DELETE_MACHINE" = true ]; then
+        if [ "$MIGRATE_VPS" = true ]; then
             echo "INFO: User has indicated to delete the machine, but it doesn't exist. Going to create it anyway."
         fi
 

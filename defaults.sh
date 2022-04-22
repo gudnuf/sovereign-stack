@@ -2,7 +2,7 @@
 
 set -eu
 
-export DEPLOY_WWW_SERVER=true
+export DEPLOY_WWW_SERVER=false
 export DEPLOY_BTCPPAY_SERVER=false
 export DEPLOY_UMBREL_VPS=false
 
@@ -44,8 +44,8 @@ export SMTP_PORT="587"
 export AWS_REGION="us-east-1"
 
 # AMI NAME:
-# ubuntu-minimal/images/hvm-ssd/ubuntu-hirsute-21.04-amd64-minimal-20211130-907a40d2-dca2-4750-b073-b3254c031ab6
-export AWS_AMI_ID="ami-080435381cbbb5b9b"
+# ubuntu-minimal/images/hvm-ssd/ubuntu-impish-21.10-amd64-minimal-20220308-f7c42f71-5c9c-40c0-b808-ada8557fe9a2
+export AWS_AMI_ID="ami-0ab880898e027d4c1"
 WWW_INSTANCE_TYPE="t2.micro"
 BTCPAY_INSTANCE_TYPE="t2.medium"
 
@@ -120,7 +120,6 @@ fi
 
 export SITE_PATH="$SITE_PATH"
 export BTC_CHAIN="$BTC_CHAIN"
-export DEPLOY_BTCPAY_SERVER=false
 
 # if we're running aws/public, we enable nginx caching since it's a public site.
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
@@ -132,12 +131,12 @@ DEFAULT_DB_IMAGE="mariadb:10.6.5"
 export ENABLE_NGINX_CACHING="$ENABLE_NGINX_CACHING"
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:4.32.0"
+export GHOST_IMAGE="ghost:4.44.0"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
-export NGINX_IMAGE="nginx:1.21.4"
-export NEXTCLOUD_IMAGE="nextcloud:23.0.0"
+export NGINX_IMAGE="nginx:1.21.6"
+export NEXTCLOUD_IMAGE="nextcloud:23.0.2"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
-export MATRIX_IMAGE="matrixdotorg/synapse:v1.49.0"
-export MATRIX_DB_IMAGE="postgres:13.4"
+export MATRIX_IMAGE="matrixdotorg/synapse:v1.52.0"
+export MATRIX_DB_IMAGE="postgres:13.6"
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"

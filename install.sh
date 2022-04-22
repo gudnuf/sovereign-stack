@@ -2,7 +2,7 @@
 
 sudo apt-get update
 
-sudo apt-get install -y wait-for-it dnsutils tor rsync sshfs
+sudo apt-get install -y wait-for-it dnsutils rsync sshfs
 
 if [ ! -f $(which lxd) ]; then
     sudo snap install lxd

@@ -17,4 +17,3 @@ scp -r "$LOCAL_BACKUP_PATH/" "$FQDN:$REMOTE_HOME/backups/$APP_TO_DEPLOY"
 
 # now we run duplicity to restore the archive.
 ssh "$FQDN" sudo PASSPHRASE="$DUPLICITY_BACKUP_PASSPHRASE" duplicity --force restore "file://$REMOTE_BACKUP_PATH/" "$REMOTE_HOME/"
-#ssh "$FQDN" sudo tar -xvf  "$REMOTE_HOME/certs.tar.gz" -C /etc

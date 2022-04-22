@@ -40,9 +40,9 @@ else
     # restore the certs. If they don't exist in a backup we restore from SITE_PATH
     if [ -f "$SITE_PATH/certs.tar.gz" ]; then
         scp "$SITE_PATH/certs.tar.gz" "ubuntu@$FQDN:$REMOTE_HOME/certs.tar.gz"
-        ssh "$FQDN" sudo tar -xvf "$REMOTE_HOME/certs.tar.gz" -C /etc
+        ssh "$FQDN" "sudo tar -xvf $REMOTE_HOME/certs.tar.gz -C /etc"
     else
-        echo "ERROR: Certificates do not exist locally. You need to obtain some, perhaps by running with '--app=certonly'."
+        echo "ERROR: Certificates do not exist locally."
         exit 1
     fi
 fi

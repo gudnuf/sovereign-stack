@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exuo nounset
+set -eux
 cd "$(dirname "$0")"
 
 # let's make sure we have an ssh keypair. We just use ~/.ssh/id_rsa
@@ -44,20 +44,20 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
     ssh-keygen -f "$SSH_HOME/known_hosts" -R "$FQDN"
 
     #check to ensure the MACVLAN interface has been set by the user
-    if [ -z "$DEV_MACVLAN_INTERFACE" ]; then
-        echo "ERROR: DEV_MACVLAN_INTERFACE has not been defined. Use '--macvlan-interface=eno1' for example."
+    if [ -z "$MACVLAN_INTERFACE" ]; then
+        echo "ERROR: MACVLAN_INTERFACE has not been defined. Use '--macvlan-interface=eno1' for example."
         exit 1
     fi
 
     # let's first check to ensure there's a cert.tar.gz. We need a valid cert for testing.
     if [ ! -f "$SITE_PATH/certs.tar.gz" ]; then
-        echo "ERROR: We need a valid cert for testing. Please use the '--app=certonly' first."
-        exit
+        echo "ERROR: We need a valid cert for testing."
+        exit 1
     fi
 
     # if the machine doesn't exist, we create it.
     if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
-        RUN_BACKUP=false
+        export RUN_BACKUP=false
 
         # create a base image if needed and instantiate a VM.
         ./provision_lxc.sh

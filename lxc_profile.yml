@@ -143,6 +143,6 @@ devices:
     type: disk
   enp5s0:
     nictype: macvlan
-    parent: ${DEV_MACVLAN_INTERFACE}
+    parent: ${MACVLAN_INTERFACE}
     type: nic
 name: ${LXD_VM_NAME}

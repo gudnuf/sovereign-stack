@@ -59,6 +59,10 @@ DOCKER_YAML_PATH="$SITE_PATH/appstack.yml"
 export DOCKER_YAML_PATH="$DOCKER_YAML_PATH"
 
 # TODO add file existence check
+if [ ! -f "$SITE_PATH/site_definition" ]; then
+    echo "ERROR: site_definition does not exist."
+    exit 1
+fi
 # shellcheck disable=SC1090
 source "$SITE_PATH/site_definition"
 

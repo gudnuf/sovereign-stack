@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo nounset
+set -eux
 cd "$(dirname "$0")"
 
 
