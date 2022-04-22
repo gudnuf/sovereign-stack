@@ -1,7 +1,22 @@
 #!/bin/bash
 
-set -exuo nounset
+set -exu
 cd "$(dirname "$0")"
+
+
+check_dependencies () {
+  for cmd in "$@"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      echo "This script requires \"${cmd}\" to be installed. Please run 'sudo ~/sovereign-stack/install.sh'"
+      exit 1
+    fi
+  done
+}
+
+# Check system's dependencies
+check_dependencies wait-for-it dig rsync sshfs lxc docker-machine
+# TODO remove dependency on Docker-machine. That's what we use to provision VM on 3rd party vendors. Looking for LXD endpoint.
+
 
 MIGRATE_VPS=false
 DOMAIN_NAME=
@@ -11,7 +26,6 @@ USER_NO_BACKUP=false
 USER_RUN_RESTORE=false
 BTC_CHAIN=testnet
 UPDATE_BTCPAY=false
-MIGRATE_BTCPAY_SERVER=false
 RECONFIGURE_BTCPAY_SERVER=false
 BTCPAY_ADDITIONAL_HOSTNAMES=
 LXD_DISK_TO_USE=
@@ -58,10 +72,6 @@ for i in "$@"; do
             BTC_CHAIN=mainnet
             shift
         ;;
-        --migrate)
-            MIGRATE_BTCPAY_SERVER=true
-            shift
-        ;;
         --reconfigure-btcpay)
             RECONFIGURE_BTCPAY_SERVER=true
             shift
@@ -75,12 +85,11 @@ done
 export DOMAIN_NAME="$DOMAIN_NAME"
 export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
 export LXD_DISK_TO_USE="$LXD_DISK_TO_USE"
-export DEV_BTCPAY_MAC_ADDRESS="$DEV_BTCPAY_MAC_ADDRESS"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
 
 export BTC_CHAIN="$BTC_CHAIN"
 export UPDATE_BTCPAY="$UPDATE_BTCPAY"
-export MIGRATE_BTCPAY_SERVER="$MIGRATE_BTCPAY_SERVER"
+export MIGRATE_VPS="$MIGRATE_VPS"
 export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
 export MACVLAN_INTERFACE="$MACVLAN_INTERFACE"
 
@@ -104,7 +113,8 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
 
     # skip this iteration if the site_definition says not to deploy btcpay server.
     if [ "$APP_TO_DEPLOY" = btcpay ]; then
-        FQDN="$BTCPAY_HOSTNAME.$DOMAIN_NAME"
+        VPS_HOSTNAME="$BTCPAY_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$BTCPAY_MAC_ADDRESS"
         if [ "$DEPLOY_BTCPAY_SERVER" = false ]; then
             continue
         fi
