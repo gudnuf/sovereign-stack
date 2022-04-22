@@ -115,6 +115,13 @@ elif [ "$APP_TO_DEPLOY" = btcpay ]; then
     elif [ "$BTC_CHAIN" = testnet ]; then
         ROOT_DISK_SIZE_GB=40
     fi
+elif [ "$APP_TO_DEPLOY" = umbrel ]; then
+    DDNS_HOST="$UMBREL_HOSTNAME"
+    if [ "$BTC_CHAIN" = mainnet ]; then
+        ROOT_DISK_SIZE_GB=1000
+    elif [ "$BTC_CHAIN" = testnet ]; then
+        ROOT_DISK_SIZE_GB=70
+    fi
 elif [ "$APP_TO_DEPLOY" = certonly ]; then
     DDNS_HOST="$WWW_HOSTNAME"
     ROOT_DISK_SIZE_GB=8
@@ -210,3 +217,10 @@ if [ -z "$DEPLOY_BTCPPAY_SERVER" ]; then
     echo "ERROR: Ensure DEPLOY_BTCPPAY_SERVER is configured in your site_definition."
     exit 1
 fi
+
+
+if [ -z "$DEPLOY_UMBREL_VPS" ]; then
+    echo "ERROR: Ensure DEPLOY_UMBREL_VPS is configured in your site_definition."
+    exit 1
+fi
+
