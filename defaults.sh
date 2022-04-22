@@ -20,6 +20,8 @@ export UMBREL_HOSTNAME="umbrel"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export MATRIX_HOSTNAME="chat"
 export GITEA_HOSTNAME="git"
+export NOSTR_HOSTNAME="messages"
+export NOSTR_ACCOUNT_PUBKEY=
 
 export DDNS_PASSWORD=
 

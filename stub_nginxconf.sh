@@ -183,7 +183,6 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         listen [::]:443 ssl http2;
 
         server_name ${FQDN};
-
 EOL
 
 # add the Onion-Location header if specifed.
