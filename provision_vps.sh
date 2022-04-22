@@ -3,8 +3,6 @@
 set -eux
 cd "$(dirname "$0")"
 
-
-
 if [ ! -f "$HOME/.aws/credentials" ]; then
 
     # TODO write a credential file baseline

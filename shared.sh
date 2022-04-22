@@ -23,8 +23,10 @@ if [ ! -f "$SITE_DEFINITION_PATH" ]; then
 
 export SITE_TITLE="Short Title of Project"
 export DOMAIN_NAME="domain.tld"
-export DDNS_PASSWORD="GET_SHARED_SECRET_FROM_DNS_PROVIDER"
-export SMTP_PASSWORD="GET_SHARED_SECRET_FROM_EMAIL_PROVIDER"
+export DDNS_PASSWORD=
+export SMTP_PASSWORD=
+
+# TODO VERIFY SECURE RNG
 export GHOST_MYSQL_PASSWORD="$(new_pass)"
 export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
 export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"
@@ -35,6 +37,8 @@ export MATRIX_DB_PASSWORD="$(new_pass)"
 export MATRIX_SHARED_SECRET="$(new_pass)"
 export MATRIX_ADMIN_PASSWORD="$(new_pass)"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
+#export DEPLOY_WWW_SERVER=false
+#export DEPLOY_BTCPAY_SERVER=false
 #export DEPLOY_UMBREL_VPS=false
 export DEPLOY_GHOST=true
 export DEPLOY_MATRIX=true
@@ -45,8 +49,6 @@ export DEPLOY_ONION_SITE=false
 #export BTC_CHAIN=testnet
 #export WWW_INSTANCE_TYPE="t2.medium"
 #export BTCPAY_ADDITIONAL_HOSTNAMES="pay.domain.tld"
-#export DEV_WWW_MAC_ADDRESS="00:16:3E:AD:25:2C"
-#export DEV_BTCPAY_MAC_ADDRESS="00:16:3E:AD:25:2D"
 
 EOL
 

@@ -56,5 +56,5 @@ EOL
 
 # send the setup script to the remote machine.
 scp "$SITE_PATH/btcpay.sh" "ubuntu@$FQDN:$REMOTE_HOME/btcpay_setup.sh"
-ssh "$FQDN" chmod 0744 "$REMOTE_HOME/btcpay_setup.sh"
-ssh "$FQDN" sudo bash -c ./btcpay_setup.sh
+ssh "$FQDN" "chmod 0744 $REMOTE_HOME/btcpay_setup.sh"
+ssh "$FQDN" "sudo bash -c ./btcpay_setup.sh"

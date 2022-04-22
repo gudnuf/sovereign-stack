@@ -67,7 +67,6 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
     ./prepare_vps_host.sh
 fi
 
-# clear 
 
 # this tells our local docker client to target the remote endpoint via SSH
 export DOCKER_HOST="ssh://ubuntu@$FQDN"    

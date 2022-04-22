@@ -1,20 +1,19 @@
 #!/bin/bash
 
-set -exuo nounset
-cd "$(dirname "$0")"
+set -exu
 
 TOR_CONFIG_PATH=
 
 ssh "$FQDN" mkdir -p "$REMOTE_HOME/ghost_site" "$REMOTE_HOME/ghost_db"
 
 if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-    ssh "$FQDN" mkdir -p "$REMOTE_NEXTCLOUD_PATH/db/data" \
-    ssh "$FQDN" mkdir -p "$REMOTE_NEXTCLOUD_PATH/db/logs" \
-    ssh "$FQDN" mkdir -p "$REMOTE_NEXTCLOUD_PATH/html"
+    ssh "$FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/data"
+    ssh "$FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/logs"
+    ssh "$FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/html"
 fi
 
 if [ "$DEPLOY_GITEA" = true ]; then
-    ssh "$FQDN" mkdir -p "$REMOTE_GITEA_PATH/data" "$REMOTE_GITEA_PATH/db"
+    ssh "$FQDN" "mkdir -p $REMOTE_GITEA_PATH/data $REMOTE_GITEA_PATH/db"
 fi
 
 # enable docker swarm mode so we can support docker stacks.
