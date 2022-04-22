@@ -143,6 +143,15 @@ fi
 
 
 
+if [ "$DEPLOY_NOSTR" = true ]; then
+cat >>"$DOCKER_YAML_PATH" <<EOL
+  # TODO
+
+
+EOL
+fi
+
+
 if [ "$DEPLOY_GITEA" = true ]; then
 cat >>"$DOCKER_YAML_PATH" <<EOL
   gitea:

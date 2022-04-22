@@ -38,6 +38,7 @@ export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 #export DEPLOY_UMBREL_VPS=false
 export DEPLOY_GHOST=true
 export DEPLOY_MATRIX=true
+export DEPLOY_NOSTR=false
 export DEPLOY_NEXTCLOUD=true
 export DEPLOY_ONION_SITE=false
 # valid options: 'testnet' and 'mainnet'
@@ -188,6 +189,18 @@ if [ "$DEPLOY_MATRIX" = true ]; then
     fi
 fi
 
+if [ "$DEPLOY_NOSTR" = true ]; then
+    if [ -z "$NOSTR_ADMIN_ACCOUNT_PUBKEY" ]; then
+        echo "ERROR: Ensure NOSTR_ADMIN_ACCOUNT_PUBKEY is configured in your site_definition."
+        exit 1
+    fi
+
+    if [ -z "$NOSTR_ADMIN_ACCOUNT_PUBKEY" ]; then
+        echo "ERROR: Ensure NOSTR_ADMIN_ACCOUNT_PUBKEY is configured in your site_definition."
+        exit 1
+    fi    
+fi
+
 if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
     echo "ERROR: Ensure DUPLICITY_BACKUP_PASSPHRASE is configured in your site_definition."
     exit 1
@@ -224,3 +237,8 @@ if [ -z "$DEPLOY_UMBREL_VPS" ]; then
     exit 1
 fi
 
+if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then 
+    echo "ERROR: You MUST specify a Nostr public key. This is how you get all your social features."
+    echo "INFO: Go to your site_definition file and set the NOSTR_ACCOUNT_PUBKEY variable."
+    exit 1
+fi

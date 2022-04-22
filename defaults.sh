@@ -9,6 +9,7 @@ export DEPLOY_UMBREL_VPS=false
 # if true, then we deploy a VPS with Jitsi/Matrix
 export DEPLOY_GHOST=true
 export DEPLOY_MATRIX=false
+export DEPLOY_NOSTR=false
 export DEPLOY_ONION_SITE=false
 export DEPLOY_NEXTCLOUD=false
 export DEPLOY_GITEA=false

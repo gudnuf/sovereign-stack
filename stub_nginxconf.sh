@@ -40,10 +40,17 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     server {
         listen 80;
         listen [::]:80;
+        
         server_name ${DOMAIN_NAME};
-        return 301 https://${FQDN}\$request_uri;
-    }
 
+        location / {
+            # request MAY get another redirect at https://domain.tld for www.
+            return 301 https://${DOMAIN_NAME}\$request_uri;
+        }
+    }
+EOL
+
+cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${FQDN} redirect to https://${FQDN}
     server {
         listen 80;
@@ -127,12 +134,38 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
+        
         server_name ${DOMAIN_NAME};
-        return 301 https://${FQDN}\$request_uri;
+
+EOL
+###########################################
+
+if [ "$DEPLOY_NOSTR" = true ]; then
+cat >>"$NGINX_CONF_PATH" <<EOL
+        # We return a JSON object with name/pubkey mapping per NIP05.
+        # https://www.reddit.com/r/nostr/comments/rrzk76/nip05_mapping_usernames_to_dns_domains_by_fiatjaf/sssss
+        # TODO I'm not sure about the security of this Access-Control-Allow-Origin. Read up and restrict it if possible.
+        location = /.well-known/nostr.json {
+            add_header Content-Type application/json;
+            add_header Access-Control-Allow-Origin *;
+            return 200 '{ "names": { "_": "${NOSTR_ACCOUNT_PUBKEY}" } }';
+        }
+        
+EOL
+fi
+
+cat >>"$NGINX_CONF_PATH" <<EOL
+        # catch all; send request to ${FQDN}
+        location / {
+            return 301 https://${FQDN}\$request_uri;
+        }
+EOL
+#####################################################
+cat >>"$NGINX_CONF_PATH" <<EOL
     }
 
-    access_log /var/log/nginx/ghost-access.log;
-    error_log /var/log/nginx/ghost-error.log;
+    #access_log /var/log/nginx/ghost-access.log;
+    #error_log /var/log/nginx/ghost-error.log;
 
 EOL
 
@@ -148,6 +181,7 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
+
         server_name ${FQDN};
 
 EOL
@@ -324,12 +358,12 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         listen [::]:443 ssl http2;
         
         # for the federation port
-        listen 8448 ssl http2;
-        listen [::]:8448 ssl http2;
+        listen 8448 ssl http2 default_server;
+        listen [::]:8448 ssl http2 default_server;
 
         server_name ${MATRIX_FQDN};
         
-        location ~* ^(\/_matrix|\/_synapse\/client) {
+        location ~ ^(/_matrix|/_synapse/client) {
             proxy_pass http://matrix:8008;
             proxy_set_header X-Forwarded-For \$remote_addr;
             proxy_set_header X-Forwarded-Proto \$scheme;
