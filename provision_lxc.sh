@@ -9,7 +9,7 @@ if [ -z "$MACVLAN_INTERFACE" ]; then
 fi
 
 # The base VM image.
-BASE_LXC_IMAGE="ubuntu/21.04/cloud"
+BASE_LXC_IMAGE="ubuntu/21.10/cloud"
 
 # let's create a profile for the BCM TYPE-1 VMs. This is per VM.
 if ! lxc profile list --format csv | grep -q "$LXD_VM_NAME"; then
@@ -21,10 +21,10 @@ SSH_AUTHORIZED_KEY=$(<"$SSH_HOME/id_rsa.pub")
 eval "$(ssh-agent -s)"
 ssh-add "$SSH_HOME/id_rsa"
 export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
-envsubst < ./lxc_profile.yml > "$SITE_PATH/cloud-init.yml"
+envsubst < ./lxc_profile.yml > "$SITE_PATH/cloud-init-$APP_TO_DEPLOY.yml"
 
 # configure the profile with our generated cloud-init.yml file.
-cat "$SITE_PATH/cloud-init.yml" | lxc profile edit "$LXD_VM_NAME"
+cat "$SITE_PATH/cloud-init-$APP_TO_DEPLOY.yml" | lxc profile edit "$LXD_VM_NAME"
 
 function wait_for_lxc_ip {
 
@@ -83,12 +83,6 @@ if ! lxc storage list --format csv | grep -q default; then
     fi
 fi
 
-
-MAC_ADDRESS_TO_PROVISION="$DEV_WWW_MAC_ADDRESS"
-if [ "$APP_TO_DEPLOY" = btcpay ]; then
-    MAC_ADDRESS_TO_PROVISION="$DEV_BTCPAY_MAC_ADDRESS"
-fi
-
 # If our template doesn't exist, we create one.
 if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
     
@@ -101,16 +95,16 @@ if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
     fi
 
     # let's download our base image.
-    if ! lxc image list --format csv --columns l | grep -q "ubuntu-21-04"; then
+    if ! lxc image list --format csv --columns l | grep -q "ubuntu-base"; then
         # if the image doesn't exist, download it from Ubuntu's image server
         # TODO see if we can fetch this file from a more censorship-resistant source, e.g., ipfs
         # we don't really need to cache this locally since it gets continually updated upstream.
-        lxc image copy "images:$BASE_LXC_IMAGE" "$DEV_LXD_REMOTE": --alias "ubuntu-21-04" --public --vm
+        lxc image copy "images:$BASE_LXC_IMAGE" "$DEV_LXD_REMOTE": --alias "ubuntu-base" --public --vm
     fi
 
     lxc init \
         --profile="$LXD_VM_NAME" \
-        "ubuntu-21-04" \
+        "ubuntu-base" \
         "$VM_NAME" --vm
 
     # let's PIN the HW address for now so we don't exhaust IP
@@ -149,6 +143,8 @@ lxc config device override "$LXD_VM_NAME" root size="${ROOT_DISK_SIZE_GB}GB"
 lxc start "$LXD_VM_NAME"
 
 wait_for_lxc_ip "$LXD_VM_NAME"
+
+run_ddns
 
 # remove any existing SSH identities for the host, then add it back.
 ssh-keygen -R "$IP_V4_ADDRESS"
