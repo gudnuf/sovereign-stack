@@ -16,3 +16,5 @@ reset.sh
 env
 
 clear_lxd_stack.sh
+
+publish_tag.sh

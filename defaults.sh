@@ -6,9 +6,7 @@ export DEPLOY_WWW_SERVER=false
 export DEPLOY_BTCPPAY_SERVER=false
 export DEPLOY_UMBREL_VPS=false
 
-# if true, then we deploy a VPS with Jitsi/Matrix
 export DEPLOY_GHOST=true
-export DEPLOY_MATRIX=false
 export DEPLOY_NOSTR=false
 export DEPLOY_ONION_SITE=false
 export DEPLOY_NEXTCLOUD=false
@@ -18,7 +16,6 @@ export WWW_HOSTNAME="www"
 export BTCPAY_HOSTNAME="btcpay"
 export UMBREL_HOSTNAME="umbrel"
 export NEXTCLOUD_HOSTNAME="nextcloud"
-export MATRIX_HOSTNAME="chat"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="messages"
 export NOSTR_ACCOUNT_PUBKEY=
@@ -77,7 +74,6 @@ export SSHFS_PATH="/tmp/sshfs_temp"
 
 export NEXTCLOUD_SPACE_GB=10
 
-# TODO add LXD check to ensure it's installed.
 DEV_LXD_REMOTE="$(lxc remote get-default)"
 export DEV_LXD_REMOTE="$DEV_LXD_REMOTE"
 
@@ -136,7 +132,6 @@ export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export NGINX_IMAGE="nginx:1.21.6"
 export NEXTCLOUD_IMAGE="nextcloud:23.0.2"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
-export MATRIX_IMAGE="matrixdotorg/synapse:v1.52.0"
-export MATRIX_DB_IMAGE="postgres:13.6"
+
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
