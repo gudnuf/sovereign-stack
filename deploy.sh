@@ -20,7 +20,7 @@ check_dependencies wait-for-it dig rsync sshfs lxc docker-machine
 
 MIGRATE_VPS=false
 DOMAIN_NAME=
-VPS_HOSTING_TARGET=lxd
+VPS_HOSTING_TARGET=
 RUN_CERT_RENEWAL=true
 USER_NO_BACKUP=false
 USER_RUN_RESTORE=false
@@ -82,6 +82,11 @@ for i in "$@"; do
     esac
 done
 
+if [ -z "$VPS_HOSTING_TARGET" ]; then
+    echo "ERROR: You MUST specicy --hosting-provider=[lxd|aws]"
+    exit 1
+fi
+
 export DOMAIN_NAME="$DOMAIN_NAME"
 export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
 export LXD_DISK_TO_USE="$LXD_DISK_TO_USE"
@@ -103,11 +108,13 @@ export MACVLAN_INTERFACE="$MACVLAN_INTERFACE"
 source ./defaults.sh
 
 # if there's a ./env file here, let's execute it. Admins can put various deployment-specific things there.
-if [ -f $(pwd)/env ]; then
-    source $(pwd)/env;
+if [ -f "$(pwd)/env" ]; then
+    source "$(pwd)/env";
 else
-    touch "$(pwd)/env"
+    echo "#!/bin/bash" >> "$(pwd)/env"
+    chmod 0744 "$(pwd)/env"
     echo "We stubbed out a '$(pwd)/env' file for you. Put any LXD-remote specific information in there."
+    echo "Check out 'https://www.sovereign-stack.org/env' for an example."
     exit 1
 fi
 
