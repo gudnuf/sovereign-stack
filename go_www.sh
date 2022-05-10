@@ -54,28 +54,6 @@ if [ "$RUN_RESTORE" = true ]; then
     ./restore_www.sh
 fi
 
-NEW_MATRIX_DEPLOYMENT=false
-if [ "$DEPLOY_MATRIX" = true ]; then
-    if ! ssh "$FQDN" "[ -d $REMOTE_HOME/matrix ]"; then
-        NEW_MATRIX_DEPLOYMENT=true
-        ssh "$FQDN" "mkdir $REMOTE_HOME/matrix && mkdir $REMOTE_HOME/matrix/db && mkdir $REMOTE_HOME/matrix/data"
-
-        docker run -it --rm -v "$REMOTE_HOME/matrix/data":/data \
-            -e SYNAPSE_SERVER_NAME="${DOMAIN_NAME}" \
-            -e SYNAPSE_REGISTRATION_SHARED_SECRET="${MATRIX_SHARED_SECRET}" \
-            -e SYNAPSE_REPORT_STATS=yes \
-            -e POSTGRES_PASSWORD="${MATRIX_DB_PASSWORD}" \
-            -e SYNAPSE_NO_TLS=1 \
-            -e SYNAPSE_ENABLE_REGISTRATION=yes \
-            -e SYNAPSE_LOG_LEVEL=WARNING \
-            -e POSTGRES_DB=synapse \
-            -e POSTGRES_HOST=matrix-db \
-            -e POSTGRES_USER=synapse \
-            -e POSTGRES_PASSWORD="${MATRIX_DB_PASSWORD}" \
-            "$MATRIX_IMAGE" generate
-    fi
-fi
-
 if [ "$DEPLOY_ONION_SITE" = true ]; then
     # ensure the tor image is built
     docker build -t tor:latest ./tor
@@ -105,19 +83,8 @@ if [ "$RUN_SERVICES" = true ]; then
     docker stack deploy -c "$DOCKER_YAML_PATH" webstack
 
     # start a browser session; point it to port 80 to ensure HTTPS redirect.
-    wait-for-it -t 320 "$DOMAIN_NAME:80"
-    wait-for-it -t 320 "$DOMAIN_NAME:443"
-
-    if [ "$DEPLOY_MATRIX" = true ]; then
-        # If this is a new Matrix deployment, then we should add the default admin user.
-        if [ $NEW_MATRIX_DEPLOYMENT = true ]; then
-            # get the container ID for matrix/synapse.
-            MATRIX_CONTAINER_ID="$(docker ps | grep matrixdotorg | awk '{print $1;}')"
-
-            # create the user.
-            docker exec -it "$MATRIX_CONTAINER_ID" register_new_matrix_user http://localhost:8008 -u "$ADMIN_ACCOUNT_USERNAME" -p "$MATRIX_ADMIN_PASSWORD" -a --config /data/homeserver.yaml
-        fi
-    fi
+    wait-for-it -t 320 "$FQDN:80"
+    wait-for-it -t 320 "$FQDN:443"
 
     # open bowser tabs.
     if [ "$DEPLOY_GHOST" = true ]; then

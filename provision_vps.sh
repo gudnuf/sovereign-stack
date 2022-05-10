@@ -35,8 +35,6 @@ if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
     exit 1
 fi
 
-# ports: All ports go to nginx; 8448 directs to the matrix federation servoce.
-
 # Note, we assume the script has already made sure the machine doesn't exist.
 if [ "$APP_TO_DEPLOY" = www ] || [ "$APP_TO_DEPLOY" = certonly ]; then
     # creates a public VM in AWS and provisions the bcm website.

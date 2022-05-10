@@ -33,15 +33,11 @@ export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"
 export GITEA_MYSQL_PASSWORD="$(new_pass)"
 export NEXTCLOUD_MYSQL_ROOT_PASSWORD="$(new_pass)"
 #export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
-export MATRIX_DB_PASSWORD="$(new_pass)"
-export MATRIX_SHARED_SECRET="$(new_pass)"
-export MATRIX_ADMIN_PASSWORD="$(new_pass)"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 #export DEPLOY_WWW_SERVER=false
 #export DEPLOY_BTCPAY_SERVER=false
 #export DEPLOY_UMBREL_VPS=false
 export DEPLOY_GHOST=true
-export DEPLOY_MATRIX=true
 export DEPLOY_NOSTR=false
 export DEPLOY_NEXTCLOUD=true
 export DEPLOY_ONION_SITE=false
@@ -93,7 +89,6 @@ fi
 
 # TODO, ensure VPS_HOSTING_TARGET is in range.
 export NEXTCLOUD_FQDN="$NEXTCLOUD_HOSTNAME.$DOMAIN_NAME"
-export MATRIX_FQDN="$MATRIX_HOSTNAME.$DOMAIN_NAME"
 export GITEA_FQDN="$GITEA_HOSTNAME.$DOMAIN_NAME"
 export NOSTR_FQDN="$NOSTR_HOSTNAME.$DOMAIN_NAME"
 
@@ -184,18 +179,6 @@ if [ "$DEPLOY_NEXTCLOUD" = true ]; then
     fi
 fi
 
-if [ "$DEPLOY_MATRIX" = true ]; then
-    if [ -z "$MATRIX_ADMIN_PASSWORD" ]; then
-        echo "ERROR: Ensure MATRIX_ADMIN_PASSWORD is configured in your site_definition."
-        exit 1
-    fi
-
-    if [ -z "$MATRIX_DB_PASSWORD" ]; then
-        echo "ERROR: Ensure MATRIX_DB_PASSWORD is configured in your site_definition."
-        exit 1
-    fi
-fi
-
 if [ "$DEPLOY_NOSTR" = true ]; then
     if [ -z "$NOSTR_ADMIN_ACCOUNT_PUBKEY" ]; then
         echo "ERROR: Ensure NOSTR_ADMIN_ACCOUNT_PUBKEY is configured in your site_definition."
@@ -249,3 +232,4 @@ if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
     echo "INFO: Go to your site_definition file and set the NOSTR_ACCOUNT_PUBKEY variable."
     exit 1
 fi
+

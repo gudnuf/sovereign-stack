@@ -110,39 +110,6 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
 EOL
 fi
 
-
-
-if [ "$DEPLOY_MATRIX" = true ]; then
-cat >>"$DOCKER_YAML_PATH" <<EOL
-  matrix:
-    image: ${MATRIX_IMAGE}
-    volumes:
-      - ${REMOTE_HOME}/matrix/data:/data
-    networks:
-      - matrix-net
-      - matrixdb-net
-    deploy:
-      restart_policy:
-        condition: on-failure
-
-  matrix-db:
-    image: ${MATRIX_DB_IMAGE}
-    volumes:
-      - ${REMOTE_HOME}/matrix/db:/var/lib/postgresql/data
-    networks:
-      - matrixdb-net
-    environment:
-      - POSTGRES_PASSWORD=\${MATRIX_DB_PASSWORD}
-      - POSTGRES_USER=synapse
-    deploy:
-      restart_policy:
-        condition: on-failure
-
-EOL
-fi
-
-
-
 if [ "$DEPLOY_NOSTR" = true ]; then
 cat >>"$DOCKER_YAML_PATH" <<EOL
   # TODO
@@ -150,7 +117,6 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
 
 EOL
 fi
-
 
 if [ "$DEPLOY_GITEA" = true ]; then
 cat >>"$DOCKER_YAML_PATH" <<EOL
@@ -272,12 +238,6 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
 EOL
 fi
 
-if [ "$DEPLOY_MATRIX" = true ]; then
-cat >>"$DOCKER_YAML_PATH" <<EOL
-      - matrix-net
-EOL
-fi
-
 if [ "$DEPLOY_ONION_SITE" = true ]; then
 cat >>"$DOCKER_YAML_PATH" <<EOL
       - tor-net
@@ -323,13 +283,6 @@ if [ "$DEPLOY_NEXTCLOUD" = true ]; then
 cat >>"$DOCKER_YAML_PATH" <<EOL
   nextclouddb-net:
   nextcloud-net:
-EOL
-fi
-
-if [ "$DEPLOY_MATRIX" = true ]; then
-cat >>"$DOCKER_YAML_PATH" <<EOL
-  matrix-net:
-  matrixdb-net:
 EOL
 fi
 

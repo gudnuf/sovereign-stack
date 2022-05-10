@@ -75,20 +75,6 @@ cat >>"$NGINX_CONF_PATH" <<EOL
 EOL
 fi
 
-# matrix http to https redirect.
-if [ "$DEPLOY_MATRIX" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
-    # http://${MATRIX_FQDN} redirect to https://${MATRIX_FQDN}
-    server {
-        listen 80;
-        listen [::]:80;
-        server_name ${MATRIX_FQDN};
-        return 301 https://${MATRIX_FQDN}\$request_uri;
-    }
-
-EOL
-fi
-
 # gitea http to https redirect.
 if [ "$DEPLOY_GITEA" = true ]; then
 cat >>"$NGINX_CONF_PATH" <<EOL
@@ -275,17 +261,6 @@ EOL
         #     proxy_pass http://ghost:2368\$og_prefix\$request_uri;
         # }
 
-# setup delegation for matrix
-if [ "$DEPLOY_MATRIX" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
-        # Set up delegation for matrix: https://github.com/matrix-org/synapse/blob/develop/docs/delegate.md
-        location /.well-known/matrix/server {
-		    default_type application/json;
-		    return 200 '{"m.server": "${MATRIX_FQDN}:8448"}';
-	    }
-EOL
-fi
-
 # this is the closing server block for the ghost HTTPS segment
 cat >>"$NGINX_CONF_PATH" <<EOL
     
@@ -343,31 +318,6 @@ cat >>"$NGINX_CONF_PATH" <<EOL
 
         location /.well-known/caldav {
             return 301 \$scheme://\$host/remote.php/dav;
-        }
-    }
-EOL
-fi
-
-if [ "$DEPLOY_MATRIX" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
-    # TLS listener for ${MATRIX_FQDN} (matrix)
-    server {
-        # matrix RESTful calls.
-        listen 443 ssl http2;
-        listen [::]:443 ssl http2;
-        
-        # for the federation port
-        listen 8448 ssl http2 default_server;
-        listen [::]:8448 ssl http2 default_server;
-
-        server_name ${MATRIX_FQDN};
-        
-        location ~ ^(/_matrix|/_synapse/client) {
-            proxy_pass http://matrix:8008;
-            proxy_set_header X-Forwarded-For \$remote_addr;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_set_header Host \$host;
-            client_max_body_size 50M;
         }
     }
 EOL
