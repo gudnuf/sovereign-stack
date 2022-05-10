@@ -60,6 +60,11 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
         export RUN_BACKUP=false
 
         # create a base image if needed and instantiate a VM.
+        if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
+            echo "ERROR: You MUST define a MAC Address for all your machines."
+            exit 1
+        fi
+
         ./provision_lxc.sh
     fi
 

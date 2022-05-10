@@ -109,6 +109,7 @@ if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
 
     # let's PIN the HW address for now so we don't exhaust IP
     # and so we can set DNS internally.
+
     lxc config set "$VM_NAME" "volatile.enp5s0.hwaddr=$MAC_ADDRESS_TO_PROVISION"
 
     lxc start "$VM_NAME"
