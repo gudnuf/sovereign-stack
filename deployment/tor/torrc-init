@@ -1,0 +1,5 @@
+HiddenServiceDir /var/lib/tor/www
+HiddenServiceVersion 3
+HiddenServicePort 443 127.0.0.1:443
+
+Log info file /var/log/tor/tor.log

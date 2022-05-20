@@ -3,7 +3,6 @@
 set -exu
 cd "$(dirname "$0")"
 
-
 check_dependencies () {
   for cmd in "$@"; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
@@ -24,7 +23,7 @@ VPS_HOSTING_TARGET=
 RUN_CERT_RENEWAL=true
 USER_NO_BACKUP=false
 USER_RUN_RESTORE=false
-BTC_CHAIN=testnet
+BTC_CHAIN=regtest
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
 BTCPAY_ADDITIONAL_HOSTNAMES=
@@ -72,6 +71,10 @@ for i in "$@"; do
             BTC_CHAIN=mainnet
             shift
         ;;
+        --testnet)
+            BTC_CHAIN=testnet
+            shift
+        ;;
         --reconfigure-btcpay)
             RECONFIGURE_BTCPAY_SERVER=true
             shift
@@ -93,6 +96,11 @@ fi
 # ensure the VPS_HOSTING_TARGET
 if [ -z "$VPS_HOSTING_TARGET" ]; then
     echo "ERROR: You MUST specicy --hosting-provider=[lxd|aws]"
+    exit 1
+fi
+
+if [ -z "$DOMAIN_NAME" ]; then
+    echo "ERROR: You MUST specify --domain=domain.tld"
     exit 1
 fi
 
@@ -176,8 +184,6 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
     if [ "$MACHINE_EXISTS"  = true ]; then
         # we delete the machine if the user has directed us to
         if [ "$MIGRATE_VPS" = true ]; then
-
-
             # run the domain_init based on user input.
             if [ "$USER_NO_BACKUP"  = true ]; then
                 echo "Machine exists. We don't need to back it up because the user has directed --no-backup."

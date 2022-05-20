@@ -1,0 +1,8 @@
+# we configure a hidden service that listens on onion:80 and redirects to nginx:80 at the at the torv3 onion address
+SocksPort 0
+
+HiddenServiceDir /var/lib/tor/www
+HiddenServiceVersion 3
+HiddenServicePort 443 nginx:443
+
+Log info file /var/log/tor/tor.log
