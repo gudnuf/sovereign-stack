@@ -82,6 +82,15 @@ for i in "$@"; do
     esac
 done
 
+# check for the env file. Source it if there.
+if [ -f "$(pwd)/env" ]; then
+    source "$(pwd)/env";
+else
+    echo "ERROR: '$(pwd)/env' does not exist. Please go run install.sh again."
+    exit 1
+fi
+
+# ensure the VPS_HOSTING_TARGET
 if [ -z "$VPS_HOSTING_TARGET" ]; then
     echo "ERROR: You MUST specicy --hosting-provider=[lxd|aws]"
     exit 1
@@ -105,18 +114,7 @@ export MACVLAN_INTERFACE="$MACVLAN_INTERFACE"
 # fi
 
 # shellcheck disable=SC1091
-source ./defaults.sh
-
-# if there's a ./env file here, let's execute it. Admins can put various deployment-specific things there.
-if [ -f "$(pwd)/env" ]; then
-    source "$(pwd)/env";
-else
-    echo "#!/bin/bash" >> "$(pwd)/env"
-    chmod 0744 "$(pwd)/env"
-    echo "We stubbed out a '$(pwd)/env' file for you. Put any LXD-remote specific information in there."
-    echo "Check out 'https://www.sovereign-stack.org/env' for an example."
-    exit 1
-fi
+source "$(pwd)/deployment/defaults.sh"
 
 # iterate over all our server endpoints and provision them if needed.
 # www
@@ -125,7 +123,7 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
     FQDN=
     export APP_TO_DEPLOY="$APP_TO_DEPLOY"
     # shellcheck disable=SC1091
-    source ./shared.sh
+    source "$(pwd)/deployment/shared.sh"
 
     # skip this iteration if the site_definition says not to deploy btcpay server.
     if [ "$APP_TO_DEPLOY" = btcpay ]; then
@@ -159,8 +157,8 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
     export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
 
     # generate the docker yaml and nginx configs.
-    ./stub_docker_yml.sh
-    ./stub_nginxconf.sh
+    bash -c "$(pwd)/deployment/stub_docker_yml.sh"
+    bash -c "$(pwd)/deployment/stub_nginxconf.sh"
 
     MACHINE_EXISTS=false
     if [ "$VPS_HOSTING_TARGET" = aws ] && docker-machine ls -q | grep -q "$FQDN"; then
@@ -185,7 +183,7 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
                 echo "Machine exists. We don't need to back it up because the user has directed --no-backup."
             else
                 echo "Machine exists.  Since we're going to delete it, let's grab a backup. We don't need to restore services since we're deleting it."
-                RUN_RESTORE=false RUN_BACKUP=true RUN_SERVICES=false ./domain_init.sh
+                RUN_RESTORE=false RUN_BACKUP=true RUN_SERVICES=false "$(pwd)/deployment/domain_init.sh"
             fi
 
             # delete the remote VPS.
@@ -202,7 +200,7 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
             # Then we run the script again to re-instantiate a new VPS, restoring all user data 
             # if restore directory doesn't exist, then we end up with a new site.
             echo "INFO: Recreating the remote VPS then restoring user data."
-            RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true ./domain_init.sh
+            RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true "$(pwd)/deployment/domain_init.sh"
         else
             if [ "$USER_NO_BACKUP"  = true ]; then
                 RUN_BACKUP=false
@@ -212,7 +210,7 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
                 echo "INFO: Maintaining existing VPS. RUN_BACKUP=$RUN_BACKUP RUN_RESTORE=$USER_RUN_RESTORE"
             fi
 
-            RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true ./domain_init.sh
+            RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true "$(pwd)/deployment/domain_init.sh"
         fi
     else
         if [ "$MIGRATE_VPS" = true ]; then
@@ -221,6 +219,6 @@ for APP_TO_DEPLOY in btcpay www umbrel; do
 
         # The machine does not exist. Let's bring it into existence, restoring from latest backup.
         echo "Machine does not exist. RUN_RESTORE=$USER_RUN_RESTORE RUN_BACKUP=false" 
-        RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true ./domain_init.sh
+        RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true "$(pwd)/deployment/domain_init.sh"
     fi
 done
