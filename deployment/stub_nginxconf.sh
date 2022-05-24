@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 
@@ -104,6 +104,7 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     ssl_stapling on;
     ssl_stapling_verify on;
     resolver 198.54.117.10;
+    # TODO change resolver to local DNS resolver, or inherit from system.
 
 
     # default server if hostname not specified.

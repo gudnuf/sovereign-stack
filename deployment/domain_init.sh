@@ -9,12 +9,6 @@ if [ ! -f "$SSH_HOME/id_rsa" ]; then
     ssh-keygen -f "$SSH_HOME/id_rsa" -t ecdsa -b 521 -N ""
 fi
 
-# if an authorized_keys file does not exist, we'll stub one out with the current user.
-# add additional id_rsa.pub entries manually for more administrative logins.
-if [ ! -f "$SITE_PATH/authorized_keys" ]; then
-    cat "$SSH_HOME/id_rsa.pub" >> "$SITE_PATH/authorized_keys"
-fi
-
 ## This is a weird if clause since we need to LEFT-ALIGN the statement below.
 SSH_STRING="Host ${FQDN}"
 if ! grep -q "$SSH_STRING" "$SSH_HOME/config"; then
@@ -43,25 +37,14 @@ if [ "$VPS_HOSTING_TARGET" = aws ]; then
 elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
     ssh-keygen -f "$SSH_HOME/known_hosts" -R "$FQDN"
 
-    #check to ensure the MACVLAN interface has been set by the user
-    if [ -z "$MACVLAN_INTERFACE" ]; then
-        echo "ERROR: MACVLAN_INTERFACE has not been defined. Use '--macvlan-interface=eno1' for example."
-        exit 1
-    fi
-
-    # let's first check to ensure there's a cert.tar.gz. We need a valid cert for testing.
-    if [ ! -f "$SITE_PATH/certs.tar.gz" ]; then
-        echo "ERROR: We need a valid cert for testing."
-        exit 1
-    fi
-
     # if the machine doesn't exist, we create it.
     if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
         export RUN_BACKUP=false
 
         # create a base image if needed and instantiate a VM.
         if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
-            echo "ERROR: You MUST define a MAC Address for all your machines."
+            echo "ERROR: You MUST define a MAC Address for all your machines by setting WWW_MAC_ADDRESS, BTCPAY_MAC_ADDRESS, UMBREL_MAC_ADDRESS, in your site defintion."
+            echo "INFO: IMPORTANT! You MUST have DHCP Reservations for these MAC addresses. You also need static DNS entries."
             exit 1
         fi
 
@@ -72,9 +55,15 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
     ./prepare_vps_host.sh
 fi
 
+# if the local docker client isn't logged in, do so;
+# this helps prevent docker pull errors since they throttle.
+if [ ! -f "$HOME/.docker/config.json" ]; then
+    echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
+fi
 
 # this tells our local docker client to target the remote endpoint via SSH
 export DOCKER_HOST="ssh://ubuntu@$FQDN"    
+
 
 # the following scripts take responsibility for the rest of the provisioning depending on the app you're deploying.
 if [ "$APP_TO_DEPLOY" = www ]; then

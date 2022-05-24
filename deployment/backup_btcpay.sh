@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 # take the services down, create a backup archive, then pull it down.
 ssh "$FQDN" "cd $REMOTE_HOME/btcpayserver-docker/; sudo bash -c ./backup.sh"

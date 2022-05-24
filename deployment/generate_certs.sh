@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -exu
-cd "$(dirname "$0")"
+set -e
 
 
 if [ "$VPS_HOSTING_TARGET" = aws ]; then

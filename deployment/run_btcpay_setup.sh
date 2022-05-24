@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 
 # export BTCPAY_FASTSYNC_ARCHIVE_FILENAME="utxo-snapshot-bitcoin-testnet-1445586.tar"
@@ -11,7 +11,7 @@ set -ex
 cat > "$SITE_PATH/btcpay.sh" <<EOL
 #!/bin/bash
 
-set -ex
+set -e
 
 # wait for cloud-init to complete yo
 while [ ! -f /var/lib/cloud/instance/boot-finished ]; do

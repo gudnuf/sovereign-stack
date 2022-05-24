@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 
 ssh "$FQDN" "
   set -x
@@ -32,7 +32,7 @@ ssh "$FQDN" "
 
 # Start services back up.
 ssh "$FQDN" "
-  set -ex
+  set -e
   cd /home/ubuntu/umbrel
 
   git config pull.rebase true

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 
@@ -269,6 +269,7 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
     deploy:
       restart_policy:
         condition: on-failure
+        
 EOL
 
 if [ "$DEPLOY_ONION_SITE" = true ]; then

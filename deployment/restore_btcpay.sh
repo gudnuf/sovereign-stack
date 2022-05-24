@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+u
 
 # this scripts ASSUMES services have already been taken down.
 
