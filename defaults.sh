@@ -17,9 +17,10 @@ export BTCPAY_HOSTNAME="btcpay"
 export UMBREL_HOSTNAME="umbrel"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
-export NOSTR_HOSTNAME="messages"
+export NOSTR_HOSTNAME="relay"
 export NOSTR_ACCOUNT_PUBKEY=
 
+# used by 'aws' deployments only; planned deprecation
 export DDNS_PASSWORD=
 
 # this is where the html is sourced from.
@@ -66,18 +67,18 @@ export DUPLICITY_BACKUP_PASSPHRASE=
 export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-configurator;"
 export SSH_HOME="$HOME/.ssh"
 export VLAN_INTERFACE=
-export CACHE_DIR="$HOME/cache"
 export VM_NAME=
 export DEV_MEMORY_MB="4096"
 export DEV_CPU_COUNT="4"
 export SSHFS_PATH="/tmp/sshfs_temp"
+export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 
 export NEXTCLOUD_SPACE_GB=10
 
 DEV_LXD_REMOTE="$(lxc remote get-default)"
 export DEV_LXD_REMOTE="$DEV_LXD_REMOTE"
 
-export SITE_TITLE=
+#export SITE_TITLE=
 
 # we use this later when we create a VM, we annotate what git commit (from a tag) we used.
 LATEST_GIT_TAG="$(git describe --abbrev=0)"
@@ -94,7 +95,7 @@ if [ ! -f "$(which rsync)" ]; then
 fi
 
 # shellcheck disable=1091
-export SITE_PATH="$HOME/.sites"
+
 export LXD_DISK_TO_USE=
 
 
@@ -107,8 +108,9 @@ ENABLE_NGINX_CACHING=false
 # 2 ensure install.sh has been run by checking for tor, docker-machine, lxd, wait-for-it, etc.
 # 3 pretty much just run the install script if anything is awry
 # 4 maybe check to ensure all the CNAME and A+ records are there first so we can quit before machine creation.
-
-export SITE_PATH="$SITE_PATH/$DOMAIN_NAME"
+export SITE_PATH_HOME="$HOME/ss-sites"
+SITE_PATH="$SITE_PATH_HOME/$DOMAIN_NAME"
+mkdir -p "$SITE_PATH"
 if [ ! -d "$SITE_PATH" ]; then
     echo "ERROR: '$SITE_PATH' does not exist."
     exit 1

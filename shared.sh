@@ -8,53 +8,6 @@ if [ ! -d "$SITE_PATH" ]; then
     exit 1
 fi
 
-function new_pass {
-    apg -a 1 -M nc -n 3 -m 26 -E GHIJKLMNOPQRSTUVWXYZ | head -n1 | awk '{print $1;}'
-} 
-
-# check to see if the enf file exists. exist if not.
-SITE_DEFINITION_PATH="$SITE_PATH/site_definition"
-if [ ! -f "$SITE_DEFINITION_PATH" ]; then
-    echo "WARNING: '$SITE_DEFINITION_PATH' does not exist! We have stubbed one out for you, but you need to UPDATE IT!"
-
-    # stub out a site_definition with new passwords.
-    cat >"$SITE_DEFINITION_PATH" <<EOL
-#!/bin/bash
-
-export SITE_TITLE="Short Title of Project"
-export DOMAIN_NAME="domain.tld"
-export DDNS_PASSWORD=
-export SMTP_PASSWORD=
-
-# TODO VERIFY SECURE RNG
-export GHOST_MYSQL_PASSWORD="$(new_pass)"
-export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
-export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"
-export GITEA_MYSQL_PASSWORD="$(new_pass)"
-export NEXTCLOUD_MYSQL_ROOT_PASSWORD="$(new_pass)"
-#export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
-export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
-#export DEPLOY_WWW_SERVER=false
-#export DEPLOY_BTCPAY_SERVER=false
-#export DEPLOY_UMBREL_VPS=false
-export DEPLOY_GHOST=true
-export DEPLOY_NOSTR=false
-export DEPLOY_NEXTCLOUD=true
-export DEPLOY_ONION_SITE=false
-export NOSTR_ACCOUNT_PUBKEY="CHANGE_ME"
-
-# valid options: 'regtest' and 'mainnet'
-#export BTC_CHAIN=regtest
-#export WWW_INSTANCE_TYPE="t2.medium"
-#export BTCPAY_ADDITIONAL_HOSTNAMES="pay.domain.tld"
-
-EOL
-
-    chmod 0744 "$SITE_DEFINITION_PATH"
-    exit 1
-
-fi
-
 DOCKER_YAML_PATH="$SITE_PATH/appstack.yml"
 export DOCKER_YAML_PATH="$DOCKER_YAML_PATH"
 
@@ -96,7 +49,7 @@ export NOSTR_FQDN="$NOSTR_HOSTNAME.$DOMAIN_NAME"
 
 export ADMIN_ACCOUNT_USERNAME="info"
 export CERTIFICATE_EMAIL_ADDRESS="$ADMIN_ACCOUNT_USERNAME@$DOMAIN_NAME"
-export MAIL_FROM="$SITE_TITLE <$CERTIFICATE_EMAIL_ADDRESS>"
+#export MAIL_FROM="$SITE_TITLE <$CERTIFICATE_EMAIL_ADDRESS>"
 export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
 export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
 
@@ -145,6 +98,21 @@ export ROOT_DISK_SIZE_GB=$ROOT_DISK_SIZE_GB
 export WWW_INSTANCE_TYPE="$WWW_INSTANCE_TYPE"
 export REMOTE_BACKUP_PATH="$REMOTE_BACKUP_PATH"
 export BTCPAY_ADDITIONAL_HOSTNAMES="$BTCPAY_ADDITIONAL_HOSTNAMES"
+
+
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+    # check to ensure the admin has specified a MACVLAN interface
+    if [ -z "$MACVLAN_INTERFACE" ]; then
+        echo "ERROR: MACVLAN_INTERFACE not defined in project."
+        exit 1
+    fi
+elif [ "$VPS_HOSTING_TARGET" = aws ]; then
+    # we require DDNS on AWS to set the public DNS to the right host.
+    if [ -z "$DDNS_PASSWORD" ]; then
+        echo "ERROR: Ensure DDNS_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+fi
 
 if [ "$DEPLOY_GHOST" = true ]; then
     if [ -z "$GHOST_MYSQL_PASSWORD" ]; then
@@ -198,25 +166,15 @@ if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
     exit 1
 fi
 
-if [ -z "$SMTP_PASSWORD" ]; then
-    echo "ERROR: Ensure SMTP_PASSWORD is configured in your site_definition."
-    exit 1
-fi
-
-if [ -z "$DDNS_PASSWORD" ]; then
-    echo "ERROR: Ensure DDNS_PASSWORD is configured in your site_definition."
-    exit 1
-fi
-
 if [ -z "$DOMAIN_NAME" ]; then
     echo "ERROR: Ensure DOMAIN_NAME is configured in your site_definition."
     exit 1
 fi
 
-if [ -z "$SITE_TITLE" ]; then
-    echo "ERROR: Ensure SITE_TITLE is configured in your site_definition."
-    exit 1
-fi
+#if [ -z "$SITE_TITLE" ]; then
+#    echo "ERROR: Ensure SITE_TITLE is configured in your site_definition."
+#    exit 1
+#fi
 
 if [ -z "$DEPLOY_BTCPPAY_SERVER" ]; then
     echo "ERROR: Ensure DEPLOY_BTCPPAY_SERVER is configured in your site_definition."
