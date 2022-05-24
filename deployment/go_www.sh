@@ -31,11 +31,11 @@ fi
 # if [ "$VPS_HOSTING_TARGET" != lxd ]; then
 
 
-    # really we should change this if clause to some thing like
-    # "if the perimeter firewall allows port 80/443, then go ahead."
+# really we should change this if clause to some thing like
+# "if the perimeter firewall allows port 80/443, then go ahead."
 if [ "$RUN_CERT_RENEWAL" = true ]; then
-        ./generate_certs.sh
-    fi
+    ./generate_certs.sh
+fi
 
 if [ "$RUN_BACKUP"  = true ]; then
     ./backup_www.sh

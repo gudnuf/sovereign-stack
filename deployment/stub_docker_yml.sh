@@ -33,7 +33,6 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
       - ${REMOTE_HOME}/ghost_site:/var/lib/ghost/content
     environment:
       - url=https://${FQDN}
-      - mail__from="${MAIL_FROM}"
       - mail__options__service=SMTP
       - mail__transport=SMTP
       - mail__options__host=${SMTP_SERVER}
@@ -189,7 +188,6 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
       - ${REMOTE_HOME}/tor_ghost:/var/lib/ghost/content
     environment:
       - url=https://${ONION_ADDRESS}
-      - mail__from=${MAIL_FROM}
       - mail__options__service=SMTP
       - mail__transport=SMTP
       - mail__options__host=${SMTP_SERVER}
@@ -217,20 +215,6 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
     ports:
       - 0.0.0.0:443:443
       - 0.0.0.0:80:80
-      - 0.0.0.0:8448:8448
-    networks:
-      - ghost-net
-EOL
-
-
-# NGINX required
-cat >>"$DOCKER_YAML_PATH" <<EOL
-  nginx:
-    image: ${NGINX_IMAGE}
-    ports:
-      - 0.0.0.0:443:443
-      - 0.0.0.0:80:80
-      - 0.0.0.0:8448:8448
     networks:
       - ghost-net
 EOL
@@ -262,7 +246,7 @@ fi
 # the rest of the nginx config
 cat >>"$DOCKER_YAML_PATH" <<EOL
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ${REMOTE_HOME}/letsencrypt:/etc/letsencrypt:ro
     configs:
       - source: nginx-config
         target: /etc/nginx/nginx.conf

@@ -41,12 +41,14 @@ export BTCPAY_ENABLE_SSH=true
 
 cd btcpayserver-docker
 
-# run fast_sync if it's not been done before.
-if [ ! -f /home/ubuntu/fast_sync_completed ]; then
-    cd ./contrib/FastSync
-    ./load-utxo-set.sh
-    touch /home/ubuntu/fast_sync_completed
-    cd -
+if [ "${BTC_CHAIN}" != regtest ]; then
+    # run fast_sync if it's not been done before.
+    if [ ! -f /home/ubuntu/fast_sync_completed ]; then
+        cd ./contrib/FastSync
+        ./load-utxo-set.sh
+        touch /home/ubuntu/fast_sync_completed
+        cd -
+    fi
 fi
 
 # provision the btcpay server

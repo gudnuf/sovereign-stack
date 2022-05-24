@@ -2,12 +2,6 @@
 
 set -eux
 
-# check to ensure the admin has specified a MACVLAN interface
-if [ -z "$MACVLAN_INTERFACE" ]; then
-    echo "ERROR: MACVLAN_INTERFACE not defined in project."
-    exit 1
-fi
-
 # The base VM image.
 BASE_LXC_IMAGE="ubuntu/22.04/cloud"
 
@@ -24,7 +18,7 @@ export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
 envsubst < ./lxc_profile.yml > "$SITE_PATH/cloud-init-$APP_TO_DEPLOY.yml"
 
 # configure the profile with our generated cloud-init.yml file.
-lxc profile edit "$LXD_VM_NAME" < "$SITE_PATH/cloud-init-$APP_TO_DEPLOY.yml"
+cat "$SITE_PATH/cloud-init-$APP_TO_DEPLOY.yml" | lxc profile edit "$LXD_VM_NAME" 
 
 function wait_for_lxc_ip {
 
