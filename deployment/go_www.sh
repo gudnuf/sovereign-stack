@@ -24,27 +24,18 @@ fi
 # stop services.
 if docker stack list --format "{{.Name}}" | grep -q webstack; then
     docker stack rm webstack
-    sleep 20
+    sleep 15
 fi
 
 # this will generate letsencrypt certs and pull them down locally.
-if [ "$VPS_HOSTING_TARGET" != lxd ]; then
+# if [ "$VPS_HOSTING_TARGET" != lxd ]; then
+
+
     # really we should change this if clause to some thing like
     # "if the perimeter firewall allows port 80/443, then go ahead."
-    if [ "$VPS_HOSTING_TARGET" = aws ] && [ "$RUN_CERT_RENEWAL" = true ]; then
+if [ "$RUN_CERT_RENEWAL" = true ]; then
         ./generate_certs.sh
     fi
-else
-    # restore the certs. If they don't exist in a backup we restore from SITE_PATH
-    if [ -f "$SITE_PATH/certs.tar.gz" ]; then
-        scp "$SITE_PATH/certs.tar.gz" "ubuntu@$FQDN:$REMOTE_HOME/certs.tar.gz"
-        ssh "$FQDN" "sudo tar -xvf $REMOTE_HOME/certs.tar.gz -C /etc"
-    else
-        echo "ERROR: Certificates do not exist locally."
-        exit 1
-    fi
-fi
-
 
 if [ "$RUN_BACKUP"  = true ]; then
     ./backup_www.sh
