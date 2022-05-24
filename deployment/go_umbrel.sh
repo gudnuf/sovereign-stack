@@ -39,7 +39,7 @@ ssh "$FQDN" "
   git fetch --all --tags
   git checkout master
   git pull
-  git checkout tags/v0.4.17
+  git checkout tags/v0.4.18
 
   # To use Umbrel on mainnet, run:
   sudo NETWORK=$BTC_CHAIN /home/ubuntu/umbrel/scripts/start
