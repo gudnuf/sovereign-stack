@@ -1,16 +1,18 @@
 #!/bin/bash
 
-set -ex
+set -e
 cd "$(dirname "$0")"
 
-sudo apt-get remove docker docker-engine docker.io containerd runc
-
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+cat ./certs/docker.gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 sudo apt-get update
 
-sudo apt-get install -y wait-for-it dnsutils rsync sshfs apt-transport-https ca-certificates curl gnupg lsb-release docker-ce-cli python3-pip libusb-1.0-0-dev pinentry-curses
+sudo apt-get install -y wait-for-it dnsutils rsync sshfs \
+                        apt-transport-https ca-certificates \
+                        curl gnupg lsb-release docker-ce-cli \
+                        docker-ce python3-pip libusb-1.0-0-dev \
+                        pinentry-curses containerd.io docker-compose-plugin
 #libudev-dev
 
 # install lxd as a snap if it's not installed. We only really use the LXC part of this package.
@@ -41,3 +43,13 @@ if [ ! -f "$(pwd)/env" ]; then
     echo "Check out 'https://www.sovereign-stack.org/env' for an example."
     exit 1
 fi
+
+
+# make ss-deploy available to the user
+
+sudo groupadd docker
+sudo usermod -aG docker "$USER"
+
+
+# TODO CHECK IF EXISTS
+echo "alias ss-deploy='/home/$USER/sovereign-stack/deploy.sh \$@'" >> "$HOME/.bashrc"
