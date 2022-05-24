@@ -35,12 +35,8 @@ MACVLAN_INTERFACE=
 
 for i in "$@"; do
     case $i in
-        --domain=*)
-            DOMAIN_NAME="${i#*=}"
-            shift
-        ;;
-        --hosting-provider=*)
-            VPS_HOSTING_TARGET="${i#*=}"
+        --aws)
+            VPS_HOSTING_TARGET=aws
             shift
         ;;
         --restore)
