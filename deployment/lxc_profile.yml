@@ -29,6 +29,7 @@ config:
       - jq
       - git
       - nano
+      - wait-for-it
 
     groups:
       - docker
@@ -119,6 +120,15 @@ config:
           PasswordAuthentication no
           UsePAM no
           LogLevel INFO
+
+      - path: /etc/docker/daemon.json
+        content: |
+          {
+            "registry-mirrors": [
+              "${REGISTRY_URL}"
+            ]
+          }
+
 
     runcmd:
       - cat ${REMOTE_HOME}/docker.asc | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
