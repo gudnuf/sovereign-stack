@@ -85,4 +85,4 @@ else
     exit
 fi
 
-echo "Successfull deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET; Latest git tag is $LATEST_GIT_TAG" >> "$SITE_PATH/debug.log"
+echo "Successfull deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;" >> "$SITE_PATH/debug.log"

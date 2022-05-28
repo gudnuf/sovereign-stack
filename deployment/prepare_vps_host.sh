@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -exu
 
 # scan the remote machine and install it's identity in our SSH known_hosts file.
 ssh-keyscan -H -t ecdsa "$FQDN" >> "$SSH_HOME/known_hosts"

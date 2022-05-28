@@ -29,7 +29,7 @@ while true; do
         echo ""
         echo "SUCCESS: The DNS appears to be configured correctly."
 
-        echo "INFO: Waiting $DDNS_SLEEP_SECONDS seconds to allow stale DNS records to expire."
+        echo "INFO: Waiting $DDNS_SLEEP_SECONDS seconds to allow cached DNS records to expire."
         sleep "$DDNS_SLEEP_SECONDS";
         break;
     fi

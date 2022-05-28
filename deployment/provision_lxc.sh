@@ -58,7 +58,7 @@ function run_ddns {
                 echo ""
                 echo "SUCCESS: The DNS appears to be configured correctly."
 
-                echo "INFO: Waiting $DDNS_SLEEP_SECONDS seconds to allow stale DNS records to expire."
+                echo "INFO: Waiting $DDNS_SLEEP_SECONDS seconds to allow cached DNS records to expire."
                 sleep "$DDNS_SLEEP_SECONDS";
                 break;
             fi
@@ -69,11 +69,13 @@ function run_ddns {
 }
 
 # create the default storage pool if necessary
-if ! lxc storage list --format csv | grep -q default; then
+if ! lxc storage list --format csv | grep -q "sovereign-stack"; then
     if [ -n "$LXD_DISK_TO_USE" ]; then
-        lxc storage create default zfs source="$LXD_DISK_TO_USE" size="${ROOT_DISK_SIZE_GB}GB"
+        lxc storage create "sovereign-stack" zfs source="$LXD_DISK_TO_USE"
+        # size="${ROOT_DISK_SIZE_GB}GB"
     else
-        lxc storage create default zfs size="${ROOT_DISK_SIZE_GB}GB"
+        lxc storage create "sovereign-stack" zfs
+        # size="${ROOT_DISK_SIZE_GB}GB"
     fi
 fi
 

@@ -25,6 +25,7 @@ export DDNS_PASSWORD=
 
 # this is where the html is sourced from.
 export SITE_HTML_PATH=
+export BTCPAY_ADDITIONAL_HOSTNAMES=
 
 # enter your AWS Access Key and Secret Access Key here.
 export AWS_ACCESS_KEY=
@@ -78,29 +79,20 @@ export NEXTCLOUD_SPACE_GB=10
 DEV_LXD_REMOTE="$(lxc remote get-default)"
 export DEV_LXD_REMOTE="$DEV_LXD_REMOTE"
 
-#export SITE_TITLE=
-
-# we use this later when we create a VM, we annotate what git commit (from a tag) we used.
-LATEST_GIT_TAG="$(git describe --abbrev=0)"
-export LATEST_GIT_TAG="$LATEST_GIT_TAG"
-
+# first of all, if there are uncommited changes, we quit. You better stash or commit!
+# Remote VPS instances are tagged with your current git HEAD so we know which code revision
+# used when provisioning the VPS.
 LATEST_GIT_COMMIT="$(cat ./.git/refs/heads/master)"
 export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
 
+# check if there are any uncommited changes. It's dangerous to instantiate VMs using
+# code that hasn't been committed.
+# if git update-index --refresh | grep -q "needs update"; then
+#     echo "ERROR: You have uncommited changes! Better stash your work with 'git stash'."
+#     exit 1
+# fi
 
-# let's ensure all the tools are installed
-if [ ! -f "$(which rsync)" ]; then
-    echo "ERROR: rsync is not installed. You may want to install your dependencies."
-    exit 1
-fi
-
-# shellcheck disable=1091
-
-export LXD_DISK_TO_USE=
-
-
-ENABLE_NGINX_CACHING=false
-
+ENABLE_NGINX_CACHING=true
 
 
 # TODO
@@ -118,12 +110,6 @@ fi
 
 export SITE_PATH="$SITE_PATH"
 export BTC_CHAIN="$BTC_CHAIN"
-
-# if we're running aws/public, we enable nginx caching since it's a public site.
-if [ "$VPS_HOSTING_TARGET" = aws ]; then
-    # TODO the correct behavior is to be =true, but cookies aren't working right now.
-    ENABLE_NGINX_CACHING=true
-fi
 
 DEFAULT_DB_IMAGE="mariadb:10.6.5"
 export ENABLE_NGINX_CACHING="$ENABLE_NGINX_CACHING"

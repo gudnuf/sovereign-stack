@@ -9,7 +9,7 @@ cd "$(dirname "$0")"
 # maybe something like https://superuser.com/questions/616182/how-to-mount-local-directory-to-remote-like-sshfs
 
 # step 1: run duplicity on the remote system to backup all files to the remote system.
-ssh "$FQDN" sudo PASSPHRASE="$DUPLICITY_BACKUP_PASSPHRASE" duplicity --exclude "$REMOTE_HOME/backups" "$REMOTE_HOME" "file://$REMOTE_BACKUP_PATH"
+ssh "$FQDN" sudo PASSPHRASE="$DUPLICITY_BACKUP_PASSPHRASE" duplicity --allow-source-mismatch --exclude "$REMOTE_HOME/backups" "$REMOTE_HOME" "file://$REMOTE_BACKUP_PATH"
 ssh "$FQDN" sudo chown -R ubuntu:ubuntu "$REMOTE_BACKUP_PATH"
 
 # now let's pull down the latest files from the backup directory.

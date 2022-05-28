@@ -1,6 +1,12 @@
 #!/bin/bash
 
-set -eu
+set -ex
+
+VALUE=${SITE_PATH:-}
+if [ -z "$VALUE" ]; then
+    echo "ERROR: Your SITE_PATH is undefined. Did you specify the domain correctly?"
+    exit 1
+fi
 
 # check to see if the enf file exists. exist if not.
 if [ ! -d "$SITE_PATH" ]; then
@@ -27,13 +33,7 @@ export UNIX_BACKUP_TIMESTAMP="$UNIX_BACKUP_TIMESTAMP"
 REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$APP_TO_DEPLOY/$BACKUP_TIMESTAMP"
 LOCAL_BACKUP_PATH="$SITE_PATH/backups/$APP_TO_DEPLOY/$BACKUP_TIMESTAMP"
 export LOCAL_BACKUP_PATH="$LOCAL_BACKUP_PATH"
-BACKUP_PATH_CREATED=false
-if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
-    mkdir -p "$LOCAL_BACKUP_PATH"
-    BACKUP_PATH_CREATED=true
-fi
 
-export BACKUP_PATH_CREATED="$BACKUP_PATH_CREATED"
 mkdir -p "$SSHFS_PATH"
 
 # VALIDATE THE INPUT from the ENVFILE
@@ -49,7 +49,6 @@ export NOSTR_FQDN="$NOSTR_HOSTNAME.$DOMAIN_NAME"
 
 export ADMIN_ACCOUNT_USERNAME="info"
 export CERTIFICATE_EMAIL_ADDRESS="$ADMIN_ACCOUNT_USERNAME@$DOMAIN_NAME"
-#export MAIL_FROM="$SITE_TITLE <$CERTIFICATE_EMAIL_ADDRESS>"
 export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
 export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
 
@@ -170,11 +169,6 @@ if [ -z "$DOMAIN_NAME" ]; then
     echo "ERROR: Ensure DOMAIN_NAME is configured in your site_definition."
     exit 1
 fi
-
-#if [ -z "$SITE_TITLE" ]; then
-#    echo "ERROR: Ensure SITE_TITLE is configured in your site_definition."
-#    exit 1
-#fi
 
 if [ -z "$DEPLOY_BTCPPAY_SERVER" ]; then
     echo "ERROR: Ensure DEPLOY_BTCPPAY_SERVER is configured in your site_definition."

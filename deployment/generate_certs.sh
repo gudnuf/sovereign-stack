@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 # let's do a refresh of the certificates. Let's Encrypt will not run if it's not time.
 docker pull certbot/certbot:latest

@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 check_dependencies () {
   for cmd in "$@"; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-      echo "This script requires \"${cmd}\" to be installed. Please run 'sudo ~/sovereign-stack/install.sh'"
+      echo "This script requires \"${cmd}\" to be installed. Please run 'install.sh'."
       exit 1
     fi
   done
@@ -15,7 +15,6 @@ check_dependencies () {
 # Check system's dependencies
 check_dependencies wait-for-it dig rsync sshfs lxc docker-machine duplicity
 # TODO remove dependency on Docker-machine. That's what we use to provision VM on 3rd party vendors. Looking for LXD endpoint.
-
 
 MIGRATE_VPS=false
 DOMAIN_NAME=
@@ -26,11 +25,9 @@ USER_RUN_RESTORE=false
 BTC_CHAIN=regtest
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
-BTCPAY_ADDITIONAL_HOSTNAMES=
-LXD_DISK_TO_USE=
 DEPLOY_BTCPAY_SERVER=false
-REDEPLOY_STACK=false
 MACVLAN_INTERFACE=
+LXD_DISK_TO_USE=
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -43,6 +40,10 @@ for i in "$@"; do
             USER_RUN_RESTORE=true
             RUN_CERT_RENEWAL=false
             USER_NO_BACKUP=true
+            shift
+        ;;
+        --domain=*)
+            DOMAIN_NAME="${i#*=}"
             shift
         ;;
         --update-btcpay)
@@ -87,18 +88,37 @@ done
 export CLUSTERS_DIR="$HOME/ss-clusters"
 export CACHES_DIR="$HOME/ss-cache"
 export SSH_HOME="$HOME/.ssh"
-
+export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
-CURRENT_REMOTE="$(lxc remote get-default)"
+
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+    CURRENT_REMOTE="$(lxc remote get-default)"
+elif [ "$VPS_HOSTING_TARGET" = aws ]; then
+    CURRENT_REMOTE="docker-machine"
+fi
+
 export LXD_REMOTE_PATH="$CLUSTERS_DIR/$CURRENT_REMOTE"
 export CURRENT_REMOTE="$CURRENT_REMOTE"
 
-mkdir -p "$CACHES_DIR" "$LXD_REMOTE_PATH"
 
-CLUSTER_DEFINTION="$LXD_REMOTE_PATH/cluster_definition"
-export CLUSTER_DEFINTION="$CLUSTER_DEFINTION"
-if [ ! -f "$CLUSTER_DEFINTION" ]; then
-    # stub out a cluster_definition.
+# if an authorized_keys file does not exist, we'll stub one out with the current user.
+# add additional id_rsa.pub entries manually for more administrative logins.
+if [ ! -f "$LXD_REMOTE_PATH/authorized_keys" ]; then
+    mkdir -p "u"
+    cat "$SSH_HOME/id_rsa.pub" >> "$LXD_REMOTE_PATH/authorized_keys"
+    echo "INFO: Sovereign Stack just stubbed out '$LXD_REMOTE_PATH/authorized_keys'. Go update it."
+    echo "      Add ssh pubkeys for your various management machines, if any. We've stubbed it out"
+    echo "      with your ssh pubkey at '$HOME/.ssh/id_rsa.pub'."
+    exit 1
+fi
+
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+    mkdir -p "$CACHES_DIR" "$LXD_REMOTE_PATH"
+    CLUSTER_DEFINTION="$LXD_REMOTE_PATH/cluster_definition"
+    export CLUSTER_DEFINTION="$CLUSTER_DEFINTION"
+    
+    if [ ! -f "$CLUSTER_DEFINTION" ]; then
+        # stub out a cluster_definition.
     cat >"$CLUSTER_DEFINTION" <<EOL
 #!/bin/bash
 
@@ -111,7 +131,7 @@ SITE_LIST="domain1.tld"
 
 # REQUIRED - change the MACVLAN_INTERFACE to the host adapter that attaches to the SERVERS LAN segment/VLAN/subnet.
 MACVLAN_INTERFACE="REQUIRED_CHANGE_ME"
-#LXD_DISK_TO_USE=""
+LXD_DISK_TO_USE=""
 
 # Deploy a registry cache on your management machine.
 DEPLOY_REGISTRY=true
@@ -127,28 +147,19 @@ export SITE_LIST="\$SITE_LIST"
 
 EOL
 
-    chmod 0744 "$CLUSTER_DEFINTION"
-    echo "We stubbed out a '$CLUSTER_DEFINTION' file for you."
-    echo "Use this file to customize your cluster deployment;"
-    echo "Check out 'https://www.sovereign-stack.org/cluster-definition' for an example."
-    exit 1
-fi
+        chmod 0744 "$CLUSTER_DEFINTION"
+        echo "We stubbed out a '$CLUSTER_DEFINTION' file for you."
+        echo "Use this file to customize your cluster deployment;"
+        echo "Check out 'https://www.sovereign-stack.org/cluster-definition' for an example."
+        exit 1
+    fi
 
-
-# if an authorized_keys file does not exist, we'll stub one out with the current user.
-# add additional id_rsa.pub entries manually for more administrative logins.
-if [ ! -f "$LXD_REMOTE_PATH/authorized_keys" ]; then
-    cat "$SSH_HOME/id_rsa.pub" >> "$LXD_REMOTE_PATH/authorized_keys"
-    echo "INFO: Sovereign Stack just stubbed out '$LXD_REMOTE_PATH/authorized_keys'. Go update it."
-    echo "      Add ssh pubkeys for your various management machines, if any. We've stubbed it out"
-    echo "      with your ssh pubkey at '$HOME/.ssh/id_rsa.pub'."
-    exit 1
-fi
-
-
-#########################################
-# check for the env file. Source it if there.
-if [ -f "$CLUSTER_DEFINTION" ]; then
+    #########################################
+    if [ ! -f "$CLUSTER_DEFINTION" ]; then
+        echo "ERROR: CLUSTER DEFINITION NOT PRESENT."
+        exit 1
+    fi
+        
     source "$CLUSTER_DEFINTION"
 
     ###########################3
@@ -159,7 +170,7 @@ if [ -f "$CLUSTER_DEFINTION" ]; then
 
     # if the registry URL isn't defined, then we just use the upstream dockerhub.
     # recommended to run a registry cache on your management machine though.
-    if [ ! -z "$REGISTRY_URL" ]; then
+    if [ -n "$REGISTRY_URL" ]; then
 
 cat > "$LXD_REMOTE_PATH/registry.yml" <<EOL
 version: 0.1
@@ -177,7 +188,7 @@ EOL
         if ! docker info | grep -q "Swarm: active"; then
             docker swarm init
         fi
-    
+
         mkdir -p "${CACHES_DIR}/registry_images"
 
         # run a docker reigstry pull through cache on the management 
@@ -185,90 +196,14 @@ EOL
             docker stack deploy -c management/registry_mirror.yml registry
         fi
     fi
-else
-    echo "ERROR: CLUSTER DEFINITION NOT PRESENT."
-    exit 1
 fi
 
-# iterate through our site list as provided by operator from cluster_definition
-for i in ${SITE_LIST//,/ }; do
-    export DOMAIN_NAME="$i"
-
-    source ./defaults.sh
-
-    if [ -f "$SITE_PATH/site_definition" ]; then
-        source "$SITE_PATH/site_definition"
-    else
-
-        # check to see if the enf file exists. exist if not.
-        SITE_DEFINITION_PATH="$SITE_PATH/site_definition"
-        if [ ! -f "$SITE_DEFINITION_PATH" ]; then
         
 function new_pass {
     apg -a 1 -M nc -n 3 -m 26 -E GHIJKLMNOPQRSTUVWXYZ | head -n1 | awk '{print $1;}'
-} 
+}
 
-# stub out a site_definition with new passwords.
-cat >"$SITE_DEFINITION_PATH" <<EOL
-#!/bin/bash
-
-#export SITE_TITLE="Short Title of Project"
-export DOMAIN_NAME="domain.tld"
-
-# duplicitiy backup archive password
-export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
-
-# AWS only
-#export DDNS_PASSWORD=
-#export SMTP_PASSWORD=
-
-## WWW
-export DEPLOY_WWW_SERVER=true
-
-# REQUIRED - CHANGE ME - RESERVE ME IN DHCP
-export WWW_MAC_ADDRESS="CHANGE_ME"
-
-# Deploy APPS to www
-export DEPLOY_GHOST=true
-export DEPLOY_NOSTR=false
-export DEPLOY_NEXTCLOUD=true
-export DEPLOY_ONION_SITE=false
-export NOSTR_ACCOUNT_PUBKEY="CHANGE_ME"
-
-# passwords for WWW apps
-export GHOST_MYSQL_PASSWORD="$(new_pass)"
-export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
-export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"
-export GITEA_MYSQL_PASSWORD="$(new_pass)"
-export NEXTCLOUD_MYSQL_ROOT_PASSWORD="$(new_pass)"
-export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
-
-
-## BTCPAY SERVER
-export DEPLOY_BTCPAY_SERVER=false
-
-# REQUIRED if DEPLOY_BTCPAY_SERVER=true
-#export BTCPAY_MAC_ADDRESS="CHANGE_ME"
-
-## BTCPAY Server
-export DEPLOY_UMBREL_VPS=false
-
-# REQUIRED if DEPLOY_UMBREL_VPS=true
-#export UMBREL_MAC_ADDRESS="CHANGE_ME"
-
-# CHAIN to DEPLOY; valid are 'testnet' and 'mainnet'
-export BTC_CHAIN=regtest
-
-EOL
-
-            chmod 0744 "$SITE_DEFINITION_PATH"
-            echo "INFO: we stubbed a new site_defintion for you at '$SITE_DEFINITION_PATH'. Go update it yo!"
-            exit 1
-
-fi
-
-        exit 1
-    fi
+function run_domain {
 
     export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
     export LXD_DISK_TO_USE="$LXD_DISK_TO_USE"
@@ -279,19 +214,16 @@ fi
     export MIGRATE_VPS="$MIGRATE_VPS"
     export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
     export MACVLAN_INTERFACE="$MACVLAN_INTERFACE"
+    export LXD_DISK_TO_USE="$LXD_DISK_TO_USE"
 
-    # # first of all, if there are uncommited changes, we quit. You better stash your work yo!
-    # if git update-index --refresh| grep -q "needs update"; then
-    #     echo "ERROR: You have uncommited changes! Better stash your work with 'git stash'."
-    #     exit 1
-    # fi
-
+    source ./defaults.sh
     # iterate over all our server endpoints and provision them if needed.
     # www
     VPS_HOSTNAME=
     for APP_TO_DEPLOY in btcpay www umbrel; do
         FQDN=
         export APP_TO_DEPLOY="$APP_TO_DEPLOY"
+
         # shellcheck disable=SC1091
         source ./shared.sh
 
@@ -322,6 +254,14 @@ fi
             fi
         fi
 
+        # create the local packup path if it's not there!
+        BACKUP_PATH_CREATED=false
+        if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
+            mkdir -p "$LOCAL_BACKUP_PATH"
+            BACKUP_PATH_CREATED=true
+        fi
+
+        export BACKUP_PATH_CREATED="$BACKUP_PATH_CREATED"
         export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
         export VPS_HOSTNAME="$VPS_HOSTNAME"
         export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
@@ -391,5 +331,106 @@ fi
         fi
     done
 
-done
+}
 
+
+function stub_site_definition {
+
+    source ./defaults.sh
+
+    if [ -f "$SITE_PATH/site_definition" ]; then
+        source "$SITE_PATH/site_definition"
+    else
+
+        # check to see if the enf file exists. exist if not.
+        SITE_DEFINITION_PATH="$SITE_PATH/site_definition"
+        if [ ! -f "$SITE_DEFINITION_PATH" ]; then
+
+            # stub out a site_definition with new passwords.
+            cat >"$SITE_DEFINITION_PATH" <<EOL
+#!/bin/bash
+
+# Set the domain name for the identity site.
+export DOMAIN_NAME="domain.tld"
+
+# duplicitiy backup archive password
+export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
+
+# AWS only
+#export DDNS_PASSWORD=
+#export SMTP_PASSWORD=
+
+## WWW
+export DEPLOY_WWW_SERVER=true
+
+# REQUIRED - CHANGE ME - RESERVE ME IN DHCP
+export WWW_MAC_ADDRESS="CHANGE_ME"
+
+# Deploy APPS to www
+export DEPLOY_GHOST=true
+export DEPLOY_NEXTCLOUD=true
+export DEPLOY_NOSTR=false
+
+# set if NOSTR_ACCOUNT_PUBKEY=true
+export NOSTR_ACCOUNT_PUBKEY="CHANGE_ME"
+
+export DEPLOY_GITEA=false
+export DEPLOY_ONION_SITE=false
+
+# passwords for WWW apps
+## GHOST
+export GHOST_MYSQL_PASSWORD="$(new_pass)"
+export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
+
+## NEXTCLOUD
+export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"
+export NEXTCLOUD_MYSQL_ROOT_PASSWORD="$(new_pass)"
+
+## GITEA
+export GITEA_MYSQL_PASSWORD="$(new_pass)"
+export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
+
+## BTCPAY SERVER; if true, then a BTCPay server is deployed.
+export DEPLOY_BTCPAY_SERVER=false
+
+# REQUIRED if DEPLOY_BTCPAY_SERVER=true
+#export BTCPAY_MAC_ADDRESS="CHANGE_ME"
+
+## BTCPAY Server
+export DEPLOY_UMBREL_VPS=false
+
+# REQUIRED if DEPLOY_UMBREL_VPS=true
+#export UMBREL_MAC_ADDRESS="CHANGE_ME"
+
+# CHAIN to DEPLOY; valid are 'testnet' and 'mainnet'
+export BTC_CHAIN=regtest
+
+EOL
+
+            chmod 0744 "$SITE_DEFINITION_PATH"
+            echo "INFO: we stubbed a new site_defintion for you at '$SITE_DEFINITION_PATH'. Go update it yo!"
+            exit 1
+
+        fi
+    fi
+
+}
+
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+    # iterate through our site list as provided by operator from cluster_definition
+    for i in ${SITE_LIST//,/ }; do
+        export DOMAIN_NAME="$i"
+
+        stub_site_definition
+
+        # run the logic for a domain deployment.
+        run_domain
+
+    done
+
+elif [ "$VPS_HOSTING_TARGET" = aws ]; then
+    stub_site_definition
+
+    # if we're on AWS, we can just provision each system separately.
+    run_domain
+fi

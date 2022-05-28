@@ -47,7 +47,6 @@ if [ "$APP_TO_DEPLOY" = www ] || [ "$APP_TO_DEPLOY" = certonly ]; then
         --amazonec2-ami "$AWS_AMI_ID" \
         --amazonec2-root-size "$ROOT_DISK_SIZE_GB" \
         --amazonec2-instance-type "$WWW_INSTANCE_TYPE" \
-        --engine-label tag="$LATEST_GIT_TAG" \
         --engine-label commit="$LATEST_GIT_COMMIT" \
         "$FQDN"
         
@@ -63,7 +62,6 @@ elif [ "$APP_TO_DEPLOY" = btcpay ]; then
         --amazonec2-ami "$AWS_AMI_ID" \
         --amazonec2-root-size "$ROOT_DISK_SIZE_GB" \
         --amazonec2-instance-type "$BTCPAY_INSTANCE_TYPE" \
-        --engine-label tag="$LATEST_GIT_TAG" \
         --engine-label commit="$LATEST_GIT_COMMIT" \
         "$FQDN"
 

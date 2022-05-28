@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 cd "$(dirname "$0")"
 
 cat ./certs/docker.gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -21,7 +21,7 @@ if ! snap list | grep -q lxd; then
 fi
 
 # let's ensure docker-machine is available. This is only temporary though.
-curl -L https://github.com/docker/machine/releases/download/v0.16.2/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
+curl -L "https://github.com/docker/machine/releases/download/v0.16.2/docker-machine-$(uname -s)-$(uname -m)" >/tmp/docker-machine &&
     chmod +x /tmp/docker-machine &&
     sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
 
@@ -49,7 +49,6 @@ fi
 
 sudo groupadd docker
 sudo usermod -aG docker "$USER"
-
 
 # TODO CHECK IF EXISTS
 echo "alias ss-deploy='/home/$USER/sovereign-stack/deploy.sh \$@'" >> "$HOME/.bashrc"
