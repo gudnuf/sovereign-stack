@@ -33,12 +33,6 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
       - ${REMOTE_HOME}/ghost_site:/var/lib/ghost/content
     environment:
       - url=https://${FQDN}
-      - mail__options__service=SMTP
-      - mail__transport=SMTP
-      - mail__options__host=${SMTP_SERVER}
-      - mail__options__port=${SMTP_PORT}
-      - mail__options__auth__user=${SMTP_LOGIN}
-      - mail__options__auth__pass=\${SMTP_PASSWORD}
       - database__client=mysql
       - database__connection__host=ghostdb
       - database__connection__user=ghost

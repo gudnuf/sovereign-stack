@@ -358,7 +358,6 @@ export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 
 # AWS only
 #export DDNS_PASSWORD=
-#export SMTP_PASSWORD=
 
 ## WWW
 export DEPLOY_WWW_SERVER=true
