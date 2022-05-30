@@ -404,6 +404,9 @@ export DEPLOY_UMBREL_VPS=false
 # CHAIN to DEPLOY; valid are 'testnet' and 'mainnet'
 export BTC_CHAIN=regtest
 
+# set to false to disable nginx caching; helps when making website updates.
+# export ENABLE_NGINX_CACHING=true
+
 EOL
 
             chmod 0744 "$SITE_DEFINITION_PATH"

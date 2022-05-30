@@ -12,7 +12,8 @@ sudo apt-get install -y wait-for-it dnsutils rsync sshfs \
                         apt-transport-https ca-certificates \
                         curl gnupg lsb-release docker-ce-cli \
                         docker-ce python3-pip libusb-1.0-0-dev \
-                        pinentry-curses containerd.io docker-compose-plugin
+                        pinentry-curses containerd.io docker-compose-plugin \
+                        libcanberra-gtk-module
 #libudev-dev
 
 # install lxd as a snap if it's not installed. We only really use the LXC part of this package.

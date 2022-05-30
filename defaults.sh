@@ -45,7 +45,7 @@ export AWS_REGION="us-east-1"
 # AMI NAME:
 # ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20220420
 export AWS_AMI_ID="ami-09d56f8956ab235b3"
-WWW_INSTANCE_TYPE="t2.micro"
+WWW_INSTANCE_TYPE="t2.small"
 BTCPAY_INSTANCE_TYPE="t2.medium"
 
 # goal will be to keep any particular instance to run AT OR BELOW t2.medium. 
