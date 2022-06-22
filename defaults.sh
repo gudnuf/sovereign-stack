@@ -66,7 +66,8 @@ export NEXTCLOUD_MYSQL_ROOT_PASSWORD=
 export GITEA_MYSQL_ROOT_PASSWORD=
 export DUPLICITY_BACKUP_PASSPHRASE=
 #opt-add-fireflyiii;opt-add-zammad
-export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-configurator;"
+
+
 export SSH_HOME="$HOME/.ssh"
 export VLAN_INTERFACE=
 export VM_NAME=
@@ -76,9 +77,6 @@ export SSHFS_PATH="/tmp/sshfs_temp"
 export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 
 export NEXTCLOUD_SPACE_GB=10
-
-DEV_LXD_REMOTE="$(lxc remote get-default)"
-export DEV_LXD_REMOTE="$DEV_LXD_REMOTE"
 
 # first of all, if there are uncommited changes, we quit. You better stash or commit!
 # Remote VPS instances are tagged with your current git HEAD so we know which code revision
@@ -101,15 +99,9 @@ ENABLE_NGINX_CACHING=true
 # 2 ensure install.sh has been run by checking for tor, docker-machine, lxd, wait-for-it, etc.
 # 3 pretty much just run the install script if anything is awry
 # 4 maybe check to ensure all the CNAME and A+ records are there first so we can quit before machine creation.
-export SITE_PATH_HOME="$HOME/ss-sites"
-SITE_PATH="$SITE_PATH_HOME/$DOMAIN_NAME"
-mkdir -p "$SITE_PATH"
-if [ ! -d "$SITE_PATH" ]; then
-    echo "ERROR: '$SITE_PATH' does not exist."
-    exit 1
-fi
 
-export SITE_PATH="$SITE_PATH"
+BTC_CHAIN=regtest
+
 export BTC_CHAIN="$BTC_CHAIN"
 
 DEFAULT_DB_IMAGE="mariadb:10.6.5"
@@ -125,6 +117,9 @@ export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
-export WWW_MAC_ADDRESS=
-export BTCPAY_MAC_ADDRESS=
-export UMBREL_MAC_ADDRESS=
+export WWW_MAC_ADDRESS="aa:bb:cc:00:00:00"
+export BTCPAY_MAC_ADDRESS="aa:bb:cc:00:00:01"
+export UMBREL_MAC_ADDRESS="aa:bb:cc:00:00:02"
+
+export CLUSTERS_DIR="$HOME/ss-clusters"
+export SITES_PATH="$HOME/ss-sites"

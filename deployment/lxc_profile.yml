@@ -30,20 +30,23 @@ config:
       - git
       - nano
       - wait-for-it
+      - dnsutils
+      - wget
+
 
     groups:
       - docker
 
+
     users:
       - name: ubuntu
+        groups: docker
         shell: /bin/bash
         lock_passwd: false
-        groups: 
-          - docker
-        sudo: 
-          - ALL=(ALL) NOPASSWD:ALL
+        sudo: ALL=(ALL) NOPASSWD:ALL
         ssh_authorized_keys:
           - ${SSH_AUTHORIZED_KEY}
+
 
     write_files:
       - path: ${REMOTE_HOME}/docker.asc
@@ -113,32 +116,31 @@ config:
 
       - path: /etc/ssh/ssh_config
         content: |
-          Port 22
-          ListenAddress 0.0.0.0
-          Protocol 2
-          ChallengeResponseAuthentication no
-          PasswordAuthentication no
-          UsePAM no
-          LogLevel INFO
+              Port 22
+              ListenAddress 0.0.0.0
+              Protocol 2
+              ChallengeResponseAuthentication no
+              PasswordAuthentication no
+              UsePAM no
+              LogLevel INFO
 
       - path: /etc/docker/daemon.json
         content: |
-          {
-            "registry-mirrors": [
-              "${REGISTRY_URL}"
-            ]
-          }
+              {
+                "registry-mirrors": [
+                  "${REGISTRY_URL}"
+                ]
+              }
 
 
     runcmd:
       - cat ${REMOTE_HOME}/docker.asc | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
       - sudo rm ${REMOTE_HOME}/docker.asc
       - echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
-      - sudo apt-get remove docker docker.io containerd runc
       - sudo apt-get update
       - sudo apt-get install -y docker-ce docker-ce-cli containerd.io
       - echo "alias ll='ls -lah'" >> ${REMOTE_HOME}/.bash_profile
-      - sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      - sudo curl -s -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       - sudo chmod +x /usr/local/bin/docker-compose
       - sudo apt-get install -y openssh-server
 
@@ -146,13 +148,8 @@ description: Default LXD profile for ${DOMAIN_NAME}
 devices:
   root:
     path: /
-    pool: default
+    pool: sovereign-stack
     type: disk
   config:
     source: cloud-init:config
     type: disk
-  enp5s0:
-    nictype: macvlan
-    parent: ${MACVLAN_INTERFACE}
-    type: nic
-name: ${LXD_VM_NAME}

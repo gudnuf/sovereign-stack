@@ -16,18 +16,23 @@ check_dependencies () {
 check_dependencies wait-for-it dig rsync sshfs lxc docker-machine duplicity
 # TODO remove dependency on Docker-machine. That's what we use to provision VM on 3rd party vendors. Looking for LXD endpoint.
 
+# let's check to ensure the management machine is on the Baseline ubuntu 21.04
+if ! lsb_release -d | grep -q "Ubuntu 22.04 LTS"; then
+    echo "ERROR: Your machine is not running the Ubuntu 22.04 LTS baseline OS on your management machine."
+    exit 1
+fi
+
 MIGRATE_VPS=false
 DOMAIN_NAME=
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=true
 USER_NO_BACKUP=false
 USER_RUN_RESTORE=false
-BTC_CHAIN=regtest
+
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
 DEPLOY_BTCPAY_SERVER=false
-MACVLAN_INTERFACE=
-LXD_DISK_TO_USE=
+CURRENT_REMOTE="$(lxc remote get-default)"
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -62,18 +67,6 @@ for i in "$@"; do
             RUN_CERT_RENEWAL=false
             shift
         ;;
-        --mainnet)
-            BTC_CHAIN=mainnet
-            shift
-        ;;
-        --testnet)
-            BTC_CHAIN=testnet
-            shift
-        ;;
-        --regtest)
-            BTC_CHAIN=regtest
-            shift
-        ;;
         --reconfigure-btcpay)
             RECONFIGURE_BTCPAY_SERVER=true
             shift
@@ -85,26 +78,26 @@ for i in "$@"; do
 done
 
 # set up our default paths.
-export CLUSTERS_DIR="$HOME/ss-clusters"
+source ./defaults.sh
+
 export CACHES_DIR="$HOME/ss-cache"
 export SSH_HOME="$HOME/.ssh"
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
 
-if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    CURRENT_REMOTE="$(lxc remote get-default)"
-elif [ "$VPS_HOSTING_TARGET" = aws ]; then
+if [ "$VPS_HOSTING_TARGET" = aws ]; then
     CURRENT_REMOTE="docker-machine"
 fi
 
-export LXD_REMOTE_PATH="$CLUSTERS_DIR/$CURRENT_REMOTE"
 export CURRENT_REMOTE="$CURRENT_REMOTE"
+export LXD_REMOTE_PATH="$CLUSTERS_DIR/$CURRENT_REMOTE"
 
+# ensure our cluster path is created.
+mkdir -p "$LXD_REMOTE_PATH"
 
 # if an authorized_keys file does not exist, we'll stub one out with the current user.
 # add additional id_rsa.pub entries manually for more administrative logins.
 if [ ! -f "$LXD_REMOTE_PATH/authorized_keys" ]; then
-    mkdir -p "u"
     cat "$SSH_HOME/id_rsa.pub" >> "$LXD_REMOTE_PATH/authorized_keys"
     echo "INFO: Sovereign Stack just stubbed out '$LXD_REMOTE_PATH/authorized_keys'. Go update it."
     echo "      Add ssh pubkeys for your various management machines, if any. We've stubbed it out"
@@ -113,54 +106,16 @@ if [ ! -f "$LXD_REMOTE_PATH/authorized_keys" ]; then
 fi
 
 if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    mkdir -p "$CACHES_DIR" "$LXD_REMOTE_PATH"
-    CLUSTER_DEFINTION="$LXD_REMOTE_PATH/cluster_definition"
-    export CLUSTER_DEFINTION="$CLUSTER_DEFINTION"
-    
-    if [ ! -f "$CLUSTER_DEFINTION" ]; then
-        # stub out a cluster_definition.
-    cat >"$CLUSTER_DEFINTION" <<EOL
-#!/bin/bash
-
-# Note: the path above ./ corresponds to your LXD Remote. If your remote is set to 'cluster1'
-# Then $HOME/clusters/cluster1 will be your cluster working path.
-
-# This is REQUIRED. A list of all sites in ~/sites/ that will be deployed. 
-# e.g., 'domain1.tld,domain2.tld,domain3.tld'
-SITE_LIST="domain1.tld"
-
-# REQUIRED - change the MACVLAN_INTERFACE to the host adapter that attaches to the SERVERS LAN segment/VLAN/subnet.
-MACVLAN_INTERFACE="REQUIRED_CHANGE_ME"
-LXD_DISK_TO_USE=""
-
-# Deploy a registry cache on your management machine.
-DEPLOY_REGISTRY=true
-
-# only relevant
-export REGISTRY_URL="http://\$HOSTNAME:5000"
-export REGISTRY_USERNAME=<USERNAME TO DOCKERHUB.COM>
-export REGISTRY_PASSWORD=<PASSWORD TO DOCKERHUB.COM>
-
-export MACVLAN_INTERFACE="\$MACVLAN_INTERFACE"
-export LXD_DISK_TO_USE="\$LXD_DISK_TO_USE"
-export SITE_LIST="\$SITE_LIST"
-
-EOL
-
-        chmod 0744 "$CLUSTER_DEFINTION"
-        echo "We stubbed out a '$CLUSTER_DEFINTION' file for you."
-        echo "Use this file to customize your cluster deployment;"
-        echo "Check out 'https://www.sovereign-stack.org/cluster-definition' for an example."
-        exit 1
-    fi
+    CLUSTER_DEFINITION="$LXD_REMOTE_PATH/cluster_definition"
+    export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
     #########################################
-    if [ ! -f "$CLUSTER_DEFINTION" ]; then
-        echo "ERROR: CLUSTER DEFINITION NOT PRESENT."
+    if [ ! -f "$CLUSTER_DEFINITION" ]; then
+        echo "ERROR: The cluster defintion could not be found. You may need to re-run 'ss-cluster create'."
         exit 1
     fi
         
-    source "$CLUSTER_DEFINTION"
+    source "$CLUSTER_DEFINITION"
 
     ###########################3
     # # This section is done to the management machine. We deploy a registry pull through cache on port 5000
@@ -206,65 +161,184 @@ function new_pass {
 function run_domain {
 
     export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
-    export LXD_DISK_TO_USE="$LXD_DISK_TO_USE"
     export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
-
     export BTC_CHAIN="$BTC_CHAIN"
     export UPDATE_BTCPAY="$UPDATE_BTCPAY"
     export MIGRATE_VPS="$MIGRATE_VPS"
     export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
-    export MACVLAN_INTERFACE="$MACVLAN_INTERFACE"
-    export LXD_DISK_TO_USE="$LXD_DISK_TO_USE"
 
-    source ./defaults.sh
     # iterate over all our server endpoints and provision them if needed.
     # www
     VPS_HOSTNAME=
-    for APP_TO_DEPLOY in btcpay www umbrel; do
+    for APP_TO_DEPLOY in www btcpay umbrel; do
         FQDN=
-        export APP_TO_DEPLOY="$APP_TO_DEPLOY"
 
         # shellcheck disable=SC1091
         source ./shared.sh
 
-        # skip this iteration if the site_definition says not to deploy btcpay server.
-        if [ "$APP_TO_DEPLOY" = btcpay ]; then
-            VPS_HOSTNAME="$BTCPAY_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$BTCPAY_MAC_ADDRESS"
-            if [ "$DEPLOY_BTCPAY_SERVER" = false ]; then
-                continue
-            fi
+        if [ ! -f "$SITE_PATH/site_definition" ]; then
+            echo "ERROR: Something went wrong. Your site_definition is missing."
+            exit 1
         fi
 
-        # skip if the server config is set to not deploy.
-        if [ "$APP_TO_DEPLOY" = www ]; then
-            VPS_HOSTNAME="$WWW_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$WWW_MAC_ADDRESS"
-            if [ "$DEPLOY_WWW_SERVER" = false ]; then
-                continue
-            fi
-        fi
-
-        # skip umbrel if 
-        if [ "$APP_TO_DEPLOY" = umbrel ]; then
-            VPS_HOSTNAME="$UMBREL_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$UMBREL_MAC_ADDRESS"
-            if [ "$DEPLOY_UMBREL_VPS" = false ]; then
-                continue
-            fi
-        fi
+        source "$SITE_PATH/site_definition"
 
         # create the local packup path if it's not there!
         BACKUP_PATH_CREATED=false
+
+        export BACKUP_PATH_CREATED="$BACKUP_PATH_CREATED"
+        export MAC_ADDRESS_TO_PROVISION=
+        export VPS_HOSTNAME="$VPS_HOSTNAME"
+        export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
+        export APP_TO_DEPLOY="$APP_TO_DEPLOY"
+        BACKUP_TIMESTAMP="$(date +"%Y-%m")"
+        UNIX_BACKUP_TIMESTAMP="$(date +%s)"
+        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$APP_TO_DEPLOY/$BACKUP_TIMESTAMP"
+        LOCAL_BACKUP_PATH="$SITE_PATH/backups/$APP_TO_DEPLOY/$BACKUP_TIMESTAMP"
+        export LOCAL_BACKUP_PATH="$LOCAL_BACKUP_PATH"
+
+        export BACKUP_TIMESTAMP="$BACKUP_TIMESTAMP"
+        export UNIX_BACKUP_TIMESTAMP="$UNIX_BACKUP_TIMESTAMP"
+
+        export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
+        
         if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
             mkdir -p "$LOCAL_BACKUP_PATH"
             BACKUP_PATH_CREATED=true
         fi
 
-        export BACKUP_PATH_CREATED="$BACKUP_PATH_CREATED"
-        export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
-        export VPS_HOSTNAME="$VPS_HOSTNAME"
-        export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
+        DDNS_HOST=
+        if [ "$APP_TO_DEPLOY" = www ]; then
+            VPS_HOSTNAME="$WWW_HOSTNAME"
+            MAC_ADDRESS_TO_PROVISION="$WWW_MAC_ADDRESS"
+            DDNS_HOST="$WWW_HOSTNAME"
+            ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
+
+            if [ "$DEPLOY_WWW_SERVER" = false ]; then
+                continue
+            fi
+        elif [ "$APP_TO_DEPLOY" = btcpay ]; then
+            DDNS_HOST="$BTCPAY_HOSTNAME"
+            VPS_HOSTNAME="$BTCPAY_HOSTNAME"
+            MAC_ADDRESS_TO_PROVISION="$BTCPAY_MAC_ADDRESS"
+            if [ "$BTC_CHAIN" = mainnet ]; then
+                ROOT_DISK_SIZE_GB=150
+            elif [ "$BTC_CHAIN" = testnet ]; then
+                ROOT_DISK_SIZE_GB=40
+            fi
+
+            if [ "$DEPLOY_BTCPAY_SERVER" = false ]; then
+                continue
+            fi
+
+        elif [ "$APP_TO_DEPLOY" = umbrel ]; then
+            DDNS_HOST="$UMBREL_HOSTNAME"
+            VPS_HOSTNAME="$UMBREL_HOSTNAME"
+            MAC_ADDRESS_TO_PROVISION="$UMBREL_MAC_ADDRESS"
+            if [ "$BTC_CHAIN" = mainnet ]; then
+                ROOT_DISK_SIZE_GB=1000
+            elif [ "$BTC_CHAIN" = testnet ]; then
+                ROOT_DISK_SIZE_GB=70
+            fi
+
+            if [ "$DEPLOY_UMBREL_VPS" = false ]; then
+                continue
+            fi
+        elif [ "$APP_TO_DEPLOY" = certonly ]; then
+            DDNS_HOST="$WWW_HOSTNAME"
+            ROOT_DISK_SIZE_GB=8
+        else
+            echo "ERROR: APP_TO_DEPLOY not within allowable bounds."
+            exit
+        fi
+
+        export DDNS_HOST="$DDNS_HOST"
+        export FQDN="$DDNS_HOST.$DOMAIN_NAME"
+        export LXD_VM_NAME="${FQDN//./-}"
+        export REMOTE_BACKUP_PATH="$REMOTE_BACKUP_PATH"
+
+        # This next section of if statements is our sanity checking area.
+        if [ "$VPS_HOSTING_TARGET" = aws ]; then
+            # we require DDNS on AWS to set the public DNS to the right host.
+            if [ -z "$DDNS_PASSWORD" ]; then
+                echo "ERROR: Ensure DDNS_PASSWORD is configured in your site_definition."
+                exit 1
+            fi
+        fi
+
+        if [ "$DEPLOY_GHOST" = true ]; then
+            if [ -z "$GHOST_MYSQL_PASSWORD" ]; then
+                echo "ERROR: Ensure GHOST_MYSQL_PASSWORD is configured in your site_definition."
+                exit 1
+            fi
+
+            if [ -z "$GHOST_MYSQL_ROOT_PASSWORD" ]; then
+                echo "ERROR: Ensure GHOST_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+                exit 1
+            fi
+        fi
+
+        if [ "$DEPLOY_GITEA" = true ]; then
+            if [ -z "$GITEA_MYSQL_PASSWORD" ]; then
+                echo "ERROR: Ensure GITEA_MYSQL_PASSWORD is configured in your site_definition."
+                exit 1
+            fi
+            if [ -z "$GITEA_MYSQL_ROOT_PASSWORD" ]; then
+                echo "ERROR: Ensure GITEA_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+                exit 1
+            fi
+        fi
+
+        if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+            if [ -z "$NEXTCLOUD_MYSQL_ROOT_PASSWORD" ]; then
+                echo "ERROR: Ensure NEXTCLOUD_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+                exit 1
+            fi
+
+            if [ -z "$NEXTCLOUD_MYSQL_PASSWORD" ]; then
+                echo "ERROR: Ensure NEXTCLOUD_MYSQL_PASSWORD is configured in your site_definition."
+                exit 1
+            fi
+        fi
+
+        if [ "$DEPLOY_NOSTR" = true ]; then
+            if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
+                echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
+                exit 1
+            fi
+
+            if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
+                echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
+                exit 1
+            fi    
+        fi
+
+        if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
+            echo "ERROR: Ensure DUPLICITY_BACKUP_PASSPHRASE is configured in your site_definition."
+            exit 1
+        fi
+
+        if [ -z "$DOMAIN_NAME" ]; then
+            echo "ERROR: Ensure DOMAIN_NAME is configured in your site_definition."
+            exit 1
+        fi
+
+        if [ -z "$DEPLOY_BTCPPAY_SERVER" ]; then
+            echo "ERROR: Ensure DEPLOY_BTCPPAY_SERVER is configured in your site_definition."
+            exit 1
+        fi
+
+
+        if [ -z "$DEPLOY_UMBREL_VPS" ]; then
+            echo "ERROR: Ensure DEPLOY_UMBREL_VPS is configured in your site_definition."
+            exit 1
+        fi
+
+        if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then 
+            echo "ERROR: You MUST specify a Nostr public key. This is how you get all your social features."
+            echo "INFO: Go to your site_definition file and set the NOSTR_ACCOUNT_PUBKEY variable."
+            exit 1
+        fi
 
         # generate the docker yaml and nginx configs.
         bash -c ./deployment/stub_docker_yml.sh
@@ -333,13 +407,13 @@ function run_domain {
 
 }
 
-
 function stub_site_definition {
 
-    source ./defaults.sh
+    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+    mkdir -p "$SITE_PATH"
 
     if [ -f "$SITE_PATH/site_definition" ]; then
-        source "$SITE_PATH/site_definition"
+            source ./shared.sh
     else
 
         # check to see if the enf file exists. exist if not.
@@ -362,8 +436,8 @@ export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 ## WWW
 export DEPLOY_WWW_SERVER=true
 
-# REQUIRED - CHANGE ME - RESERVE ME IN DHCP
-export WWW_MAC_ADDRESS="CHANGE_ME"
+# see https://www.sovereign-stack.org/mac-addresses-for-new-type-vms/ for more info
+# export WWW_MAC_ADDRESS="CHANGE_ME"
 
 # Deploy APPS to www
 export DEPLOY_GHOST=true
@@ -392,16 +466,16 @@ export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 ## BTCPAY SERVER; if true, then a BTCPay server is deployed.
 export DEPLOY_BTCPAY_SERVER=false
 
-# REQUIRED if DEPLOY_BTCPAY_SERVER=true
-#export BTCPAY_MAC_ADDRESS="CHANGE_ME"
+# https://www.sovereign-stack.org/mac-addresses-for-new-type-vms/
+#export BTCPAY_MAC_ADDRESS=""
 
-## BTCPAY Server
+## Deploy and Umbrel node?
 export DEPLOY_UMBREL_VPS=false
 
-# REQUIRED if DEPLOY_UMBREL_VPS=true
-#export UMBREL_MAC_ADDRESS="CHANGE_ME"
+# REQUIRED if DEPLOY_UMBREL_VPS=true; https://www.sovereign-stack.org/mac-addresses-for-new-type-vms/
+# export UMBREL_MAC_ADDRESS=""
 
-# CHAIN to DEPLOY; valid are 'testnet' and 'mainnet'
+# CHAIN to DEPLOY; valid are 'regtest', 'testnet', and 'mainnet'
 export BTC_CHAIN=regtest
 
 # set to false to disable nginx caching; helps when making website updates.
@@ -418,10 +492,12 @@ EOL
 
 }
 
+# let's iterate over the user-supplied domain list and provision each domain.
 if [ "$VPS_HOSTING_TARGET" = lxd ]; then
     # iterate through our site list as provided by operator from cluster_definition
     for i in ${SITE_LIST//,/ }; do
         export DOMAIN_NAME="$i"
+        export SITE_PATH=""
 
         stub_site_definition
 

@@ -4,6 +4,8 @@ set -eux
 cd "$(dirname "$0")"
 
 # let's make sure we have an ssh keypair. We just use ~/.ssh/id_rsa
+# TODO convert this to SSH private key held on Trezor. THus trezor-T required for 
+# login operations. This should be configurable of course.
 if [ ! -f "$SSH_HOME/id_rsa" ]; then
     # generate a new SSH key for the base vm image.
     ssh-keygen -f "$SSH_HOME/id_rsa" -t ecdsa -b 521 -N ""
@@ -24,6 +26,23 @@ EOF
 
 fi
 
+function prepare_host {
+    # scan the remote machine and install it's identity in our SSH known_hosts file.
+    ssh-keyscan -H -t ecdsa "$FQDN" >> "$SSH_HOME/known_hosts"
+
+    # create a directory to store backup archives. This is on all new vms.
+    ssh "$FQDN" mkdir -p "$REMOTE_HOME/backups"
+
+    if [ "$APP_TO_DEPLOY" = btcpay ]; then
+        echo "INFO: new machine detected. Provisioning BTCPay server scripts."
+
+        ./btcpayserver/run_setup.sh
+        
+        exit
+    fi
+
+}
+
 # when set to true, this flag indicates that a new VPS was created during THIS script run.
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
     # let's create the remote VPS if needed.
@@ -32,7 +51,7 @@ if [ "$VPS_HOSTING_TARGET" = aws ]; then
 
         ./provision_vps.sh
 
-        ./prepare_vps_host.sh
+        prepare_host
     fi
 elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
     ssh-keygen -f "$SSH_HOME/known_hosts" -R "$FQDN"
@@ -51,8 +70,7 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
         ./provision_lxc.sh
     fi
 
-    # prepare the VPS to support our applications and backups and stuff.
-    ./prepare_vps_host.sh
+    prepare_host
 fi
 
 # if the local docker client isn't logged in, do so;
@@ -64,12 +82,11 @@ fi
 # this tells our local docker client to target the remote endpoint via SSH
 export DOCKER_HOST="ssh://ubuntu@$FQDN"    
 
-
 # the following scripts take responsibility for the rest of the provisioning depending on the app you're deploying.
 if [ "$APP_TO_DEPLOY" = www ]; then
     ./go_www.sh
 elif [ "$APP_TO_DEPLOY" = btcpay ]; then
-    ./go_btcpay.sh
+    ./btcpayserver/go.sh
 elif [ "$APP_TO_DEPLOY" = umbrel ]; then
     ./go_umbrel.sh
 elif [ "$APP_TO_DEPLOY" = certonly ]; then
@@ -85,4 +102,4 @@ else
     exit
 fi
 
-echo "Successfull deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;" >> "$SITE_PATH/debug.log"
+echo "Successfull deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;"
