@@ -2,8 +2,6 @@
 
 set -ex
 
-
-
 # NOTE This script is meant to be executed on your LXD bare metal servers. This script 
 # ensures that the LXD daemon is installed via snap package, then initialize the daemon
 # to operate in clustered mode
