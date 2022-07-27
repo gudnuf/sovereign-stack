@@ -1,16 +1,40 @@
+#!/bin/bash
+
+set -eux
+
+VIRTUAL_MACHINE="$1"
+
+# generate the custom cloud-init file. Cloud init installs and configures sshd
+SSH_AUTHORIZED_KEY=$(<"$SSH_HOME/id_rsa.pub")
+eval "$(ssh-agent -s)"
+ssh-add "$SSH_HOME/id_rsa"
+export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
+
+export FILENAME="$VIRTUAL_MACHINE.yml"
+mkdir -p "$CLUSTER_PATH/cloud-init"
+YAML_PATH="$CLUSTER_PATH/cloud-init/$FILENAME"
+
+# If we are deploying the www, we attach the vm to the underlay via macvlan.
+cat > "$YAML_PATH" <<EOF
 config:
   limits.cpu: "${DEV_CPU_COUNT}"
   limits.memory: "${DEV_MEMORY_MB}MB"
+
+EOF
+
+# if VIRTUAL_MACHINE=sovereign-stack then we are building the base image.
+if [ "$VIRTUAL_MACHINE" = "sovereign-stack" ]; then
+    # this is for the base image only...
+    cat >> "$YAML_PATH" <<EOF
   user.vendor-data: |
     #cloud-config
-
     apt_mirror: http://us.archive.ubuntu.com/ubuntu/
     package_update: true
     package_upgrade: false
     package_reboot_if_required: false
 
     preserve_hostname: false
-    fqdn: ${FQDN}
+    fqdn: sovereign-stack
 
     packages:
       - curl
@@ -33,10 +57,8 @@ config:
       - dnsutils
       - wget
 
-
     groups:
       - docker
-
 
     users:
       - name: ubuntu
@@ -49,7 +71,7 @@ config:
 
 
     write_files:
-      - path: ${REMOTE_HOME}/docker.asc
+      - path: /home/ubuntu/docker.asc
         content: |
               -----BEGIN PGP PUBLIC KEY BLOCK-----
 
@@ -132,19 +154,41 @@ config:
                 ]
               }
 
-
     runcmd:
-      - cat ${REMOTE_HOME}/docker.asc | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
-      - sudo rm ${REMOTE_HOME}/docker.asc
+      - cat /home/ubuntu/docker.asc | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+      - sudo rm /home/ubuntu/docker.asc
       - echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
       - sudo apt-get update
       - sudo apt-get install -y docker-ce docker-ce-cli containerd.io
-      - echo "alias ll='ls -lah'" >> ${REMOTE_HOME}/.bash_profile
+      - echo "alias ll='ls -lah'" >> /home/ubuntu/.bash_profile
       - sudo curl -s -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       - sudo chmod +x /usr/local/bin/docker-compose
       - sudo apt-get install -y openssh-server
+      
 
-description: Default LXD profile for ${DOMAIN_NAME}
+EOF
+
+else 
+    # all other machines.
+    cat >> "$YAML_PATH" <<EOF
+  user.vendor-data: |
+    #cloud-config
+    apt_mirror: http://us.archive.ubuntu.com/ubuntu/
+    package_update: false
+    package_upgrade: false
+    package_reboot_if_required: false
+
+    preserve_hostname: false
+    fqdn: ${FQDN}
+
+    
+EOF
+
+fi
+
+# If we are deploying the www, we attach the vm to the underlay via macvlan.
+cat >> "$YAML_PATH" <<EOF
+description: Default LXD profile for ${FILENAME}
 devices:
   root:
     path: /
@@ -153,3 +197,26 @@ devices:
   config:
     source: cloud-init:config
     type: disk
+EOF
+
+
+# If we are deploying the www, we attach the vm to the underlay via macvlan.
+cat >> "$YAML_PATH" <<EOF
+  enp5s0:
+    nictype: macvlan
+    parent: ${DATA_PLANE_MACVLAN_INTERFACE}
+    type: nic
+  enp6s0:
+    nictype: bridged
+    parent: lxdfanSS
+    type: nic
+name: ${FILENAME}
+EOF
+
+# let's create a profile for the BCM TYPE-1 VMs. This is per VM.
+if ! lxc profile list --format csv | grep -q "$VIRTUAL_MACHINE"; then
+    lxc profile create "$VIRTUAL_MACHINE"
+fi
+
+# configure the profile with our generated cloud-init.yml file.
+cat "$YAML_PATH" | lxc profile edit "$VIRTUAL_MACHINE" 

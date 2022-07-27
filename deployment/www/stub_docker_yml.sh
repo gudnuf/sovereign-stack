@@ -122,11 +122,12 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
     environment:
       - USER_UID=1000
       - USER_GID=1000
+      - ROOT_URL=https://${GITEA_FQDN}
       - GITEA__database__DB_TYPE=mysql
       - GITEA__database__HOST=gitea-db:3306
       - GITEA__database__NAME=gitea
       - GITEA__database__USER=gitea
-      - GITEA__PASSWD=${GITEA_MYSQL_PASSWORD}
+      - GITEA__PASSWD=\${GITEA_MYSQL_PASSWORD}
     networks:
       - gitea-net
       - giteadb-net

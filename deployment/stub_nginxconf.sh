@@ -205,6 +205,7 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         }
 
         location / {
+            #set_from_accept_language \$lang en es;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header Host \$http_host;
 

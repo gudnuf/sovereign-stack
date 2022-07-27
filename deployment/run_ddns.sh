@@ -5,7 +5,7 @@ set -eux
 DDNS_STRING=
 
 # for the www stack, we register only the domain name so our URLs look like https://$DOMAIN_NAME
-if [ "$APP_TO_DEPLOY" = www ] || [ "$APP_TO_DEPLOY" = certonly ]; then
+if [ "$VIRTUAL_MACHINE" = www ] || [ "$VIRTUAL_MACHINE" = certonly ]; then
     DDNS_STRING="@"
 else
     DDNS_STRING="$DDNS_HOST"

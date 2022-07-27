@@ -44,16 +44,6 @@ if [ ! -f /usr/local/bin/docker-machine ]; then
         sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
 fi
 
-# if there's a ./env file here, let's execute it. Admins can put various deployment-specific things there.
-if [ ! -f "$(pwd)/env" ]; then
-    echo "#!/bin/bash" >> "$(pwd)/env"
-    chmod 0744 "$(pwd)/env"
-    echo "We stubbed out a '$(pwd)/env' file for you. Put any LXD-remote specific information in there."
-    echo "Check out 'https://www.sovereign-stack.org/env' for an example."
-    exit 1
-fi
-
-
 # make ss-deploy available to the user
 if ! groups | grep -q docker; then
     sudo groupadd docker
@@ -64,12 +54,12 @@ sudo usermod -aG docker "$USER"
 # make the Sovereign Stack commands available to the user.
 # we use ~/.bashrc
 ADDED_COMMAND=false
-if ! cat "$HOME/.bashrc" | grep -q "ss-deploy"; then
+if ! < "$HOME/.bashrc" grep -q "ss-deploy"; then
     echo "alias ss-deploy='/home/$USER/sovereign-stack/deploy.sh \$@'" >> "$HOME/.bashrc"
     ADDED_COMMAND=true
 fi
 
-if ! cat "$HOME/.bashrc" | grep -q "ss-cluster"; then
+if ! < "$HOME/.bashrc" grep -q "ss-cluster"; then
     echo "alias ss-cluster='/home/$USER/sovereign-stack/cluster.sh \$@'" >> "$HOME/.bashrc"
     ADDED_COMMAND=true
 fi

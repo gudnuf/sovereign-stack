@@ -13,7 +13,8 @@ check_dependencies () {
 }
 
 # Check system's dependencies
-check_dependencies wait-for-it dig rsync sshfs lxc docker-machine duplicity
+check_dependencies wait-for-it dig rsync sshfs lxc docker-machine
+
 # TODO remove dependency on Docker-machine. That's what we use to provision VM on 3rd party vendors. Looking for LXD endpoint.
 
 # let's check to ensure the management machine is on the Baseline ubuntu 21.04
@@ -24,15 +25,18 @@ fi
 
 MIGRATE_VPS=false
 DOMAIN_NAME=
+RESTORE_ARCHIVE=
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=true
 USER_NO_BACKUP=false
 USER_RUN_RESTORE=false
-
+RESTORE_BTCPAY=false
+USER_SKIP_WWW=false
+USER_SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
 DEPLOY_BTCPAY_SERVER=false
-CURRENT_REMOTE="$(lxc remote get-default)"
+CLUSTER_NAME="$(lxc remote get-default)"
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -41,10 +45,18 @@ for i in "$@"; do
             VPS_HOSTING_TARGET=aws
             shift
         ;;
-        --restore)
+        --restore-www)
             USER_RUN_RESTORE=true
             RUN_CERT_RENEWAL=false
             USER_NO_BACKUP=true
+            shift
+        ;;
+        --restore-btcpay)
+            RESTORE_BTCPAY=true
+            shift
+        ;;
+        --archive=*)
+            RESTORE_ARCHIVE="${i#*=}"
             shift
         ;;
         --domain=*)
@@ -55,12 +67,22 @@ for i in "$@"; do
             UPDATE_BTCPAY=true
             shift
         ;;
+        --skip-www)
+            USER_SKIP_WWW=true
+            shift
+        ;;
+        --skip-btcpay)
+            USER_SKIP_BTCPAY=true
+            shift
+        ;;
         --no-backup)
             USER_NO_BACKUP=true
             shift
         ;;
-        --migrate)
+        --migrate-btcpay)
             MIGRATE_VPS=true
+            RESTORE_BTCPAY=true
+            RUN_CERT_RENEWAL=false
             shift
         ;;
         --no-cert-renew)
@@ -84,29 +106,36 @@ export CACHES_DIR="$HOME/ss-cache"
 export SSH_HOME="$HOME/.ssh"
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
+export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
 
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
-    CURRENT_REMOTE="docker-machine"
+
+    if [ -z "$DOMAIN_NAME" ]; then
+        echo "ERROR: Please specify a domain name with --domain= when using --aws."
+        exit 1
+    fi
+
+    CLUSTER_NAME="docker-machine"
 fi
 
-export CURRENT_REMOTE="$CURRENT_REMOTE"
-export LXD_REMOTE_PATH="$CLUSTERS_DIR/$CURRENT_REMOTE"
+export CLUSTER_NAME="$CLUSTER_NAME"
+export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
 
 # ensure our cluster path is created.
-mkdir -p "$LXD_REMOTE_PATH"
+mkdir -p "$CLUSTER_PATH"
 
 # if an authorized_keys file does not exist, we'll stub one out with the current user.
 # add additional id_rsa.pub entries manually for more administrative logins.
-if [ ! -f "$LXD_REMOTE_PATH/authorized_keys" ]; then
-    cat "$SSH_HOME/id_rsa.pub" >> "$LXD_REMOTE_PATH/authorized_keys"
-    echo "INFO: Sovereign Stack just stubbed out '$LXD_REMOTE_PATH/authorized_keys'. Go update it."
+if [ ! -f "$CLUSTER_PATH/authorized_keys" ]; then
+    cat "$SSH_HOME/id_rsa.pub" >> "$CLUSTER_PATH/authorized_keys"
+    echo "INFO: Sovereign Stack just stubbed out '$CLUSTER_PATH/authorized_keys'. Go update it."
     echo "      Add ssh pubkeys for your various management machines, if any. We've stubbed it out"
     echo "      with your ssh pubkey at '$HOME/.ssh/id_rsa.pub'."
     exit 1
 fi
 
 if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    CLUSTER_DEFINITION="$LXD_REMOTE_PATH/cluster_definition"
+    CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
     export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
     #########################################
@@ -127,7 +156,7 @@ if [ "$VPS_HOSTING_TARGET" = lxd ]; then
     # recommended to run a registry cache on your management machine though.
     if [ -n "$REGISTRY_URL" ]; then
 
-cat > "$LXD_REMOTE_PATH/registry.yml" <<EOL
+cat > "$CLUSTER_PATH/registry.yml" <<EOL
 version: 0.1
 http:
   addr: 0.0.0.0:5000
@@ -146,17 +175,34 @@ EOL
 
         mkdir -p "${CACHES_DIR}/registry_images"
 
-        # run a docker reigstry pull through cache on the management 
-        if ! docker stack list | grep -q registry; then
-            docker stack deploy -c management/registry_mirror.yml registry
+        # run a docker registry pull through cache on the management machine.
+        if [ "$DEPLOY_MGMT_REGISTRY" = true ]; then
+            if ! docker stack list | grep -q registry; then
+                docker stack deploy -c management/registry_mirror.yml registry
+            fi
         fi
     fi
 fi
 
-        
+# this is our password generation mechanism. Relying on GPG for secure password generation
 function new_pass {
-    apg -a 1 -M nc -n 3 -m 26 -E GHIJKLMNOPQRSTUVWXYZ | head -n1 | awk '{print $1;}'
+    gpg --gen-random --armor 1 25
 }
+
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+    # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
+    # which is set up during LXD cluster creation ss-cluster.
+    LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep ss-config)"
+    CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
+    DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
+    DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
+
+    export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
+    export DISK_TO_USE="$DISK_TO_USE"
+
+    ./deployment/create_lxc_base.sh
+
+fi
 
 function run_domain {
 
@@ -170,7 +216,8 @@ function run_domain {
     # iterate over all our server endpoints and provision them if needed.
     # www
     VPS_HOSTNAME=
-    for APP_TO_DEPLOY in www btcpay umbrel; do
+    # OPTINOAL umbrel
+    for VIRTUAL_MACHINE in www btcpayserver umbrel; do
         FQDN=
 
         # shellcheck disable=SC1091
@@ -190,11 +237,11 @@ function run_domain {
         export MAC_ADDRESS_TO_PROVISION=
         export VPS_HOSTNAME="$VPS_HOSTNAME"
         export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
-        export APP_TO_DEPLOY="$APP_TO_DEPLOY"
+        export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
         BACKUP_TIMESTAMP="$(date +"%Y-%m")"
         UNIX_BACKUP_TIMESTAMP="$(date +%s)"
-        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$APP_TO_DEPLOY/$BACKUP_TIMESTAMP"
-        LOCAL_BACKUP_PATH="$SITE_PATH/backups/$APP_TO_DEPLOY/$BACKUP_TIMESTAMP"
+        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
+        LOCAL_BACKUP_PATH="$SITE_PATH/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
         export LOCAL_BACKUP_PATH="$LOCAL_BACKUP_PATH"
 
         export BACKUP_TIMESTAMP="$BACKUP_TIMESTAMP"
@@ -208,16 +255,20 @@ function run_domain {
         fi
 
         DDNS_HOST=
-        if [ "$APP_TO_DEPLOY" = www ]; then
+        if [ "$VIRTUAL_MACHINE" = www ]; then
+            if [ "$DEPLOY_WWW_SERVER" = false ] || [ "$USER_SKIP_WWW" = true ]; then
+                continue
+            fi
+
             VPS_HOSTNAME="$WWW_HOSTNAME"
             MAC_ADDRESS_TO_PROVISION="$WWW_MAC_ADDRESS"
             DDNS_HOST="$WWW_HOSTNAME"
             ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
-
-            if [ "$DEPLOY_WWW_SERVER" = false ]; then
+        elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$USER_SKIP_BTCPAY" = true ]; then
+            if [ "$DEPLOY_BTCPAY_SERVER" = false ]; then
                 continue
             fi
-        elif [ "$APP_TO_DEPLOY" = btcpay ]; then
+
             DDNS_HOST="$BTCPAY_HOSTNAME"
             VPS_HOSTNAME="$BTCPAY_HOSTNAME"
             MAC_ADDRESS_TO_PROVISION="$BTCPAY_MAC_ADDRESS"
@@ -226,12 +277,11 @@ function run_domain {
             elif [ "$BTC_CHAIN" = testnet ]; then
                 ROOT_DISK_SIZE_GB=40
             fi
-
-            if [ "$DEPLOY_BTCPAY_SERVER" = false ]; then
+        elif [ "$VIRTUAL_MACHINE" = umbrel ]; then
+            if [ "$DEPLOY_UMBREL_VPS" = false ]; then
                 continue
             fi
-
-        elif [ "$APP_TO_DEPLOY" = umbrel ]; then
+            
             DDNS_HOST="$UMBREL_HOSTNAME"
             VPS_HOSTNAME="$UMBREL_HOSTNAME"
             MAC_ADDRESS_TO_PROVISION="$UMBREL_MAC_ADDRESS"
@@ -240,15 +290,12 @@ function run_domain {
             elif [ "$BTC_CHAIN" = testnet ]; then
                 ROOT_DISK_SIZE_GB=70
             fi
-
-            if [ "$DEPLOY_UMBREL_VPS" = false ]; then
-                continue
-            fi
-        elif [ "$APP_TO_DEPLOY" = certonly ]; then
-            DDNS_HOST="$WWW_HOSTNAME"
+        elif [ "$VIRTUAL_MACHINE" = "sovereign-stack" ]; then
+            DDNS_HOST="sovereign-stack-base"
             ROOT_DISK_SIZE_GB=8
+            MAC_ADDRESS_TO_PROVISION="$SOVEREIGN_STACK_MAC_ADDRESS"
         else
-            echo "ERROR: APP_TO_DEPLOY not within allowable bounds."
+            echo "ERROR: VIRTUAL_MACHINE not within allowable bounds."
             exit
         fi
 
@@ -328,7 +375,6 @@ function run_domain {
             exit 1
         fi
 
-
         if [ -z "$DEPLOY_UMBREL_VPS" ]; then
             echo "ERROR: Ensure DEPLOY_UMBREL_VPS is configured in your site_definition."
             exit 1
@@ -339,9 +385,7 @@ function run_domain {
             echo "INFO: Go to your site_definition file and set the NOSTR_ACCOUNT_PUBKEY variable."
             exit 1
         fi
-
-        # generate the docker yaml and nginx configs.
-        bash -c ./deployment/stub_docker_yml.sh
+    
         bash -c ./deployment/stub_nginxconf.sh
 
         MACHINE_EXISTS=false
@@ -360,19 +404,19 @@ function run_domain {
         if [ "$MACHINE_EXISTS"  = true ]; then
             # we delete the machine if the user has directed us to
             if [ "$MIGRATE_VPS" = true ]; then
-                # run the domain_init based on user input.
-                if [ "$USER_NO_BACKUP"  = true ]; then
-                    echo "Machine exists. We don't need to back it up because the user has directed --no-backup."
-                else
-                    echo "Machine exists.  Since we're going to delete it, let's grab a backup. We don't need to restore services since we're deleting it."
-                    RUN_RESTORE=false RUN_BACKUP=true RUN_SERVICES=false "$(pwd)/deployment/domain_init.sh"
-                fi
+                # get a backup of the machine. This is what we restore to the new VPS.
+                echo "INFO: Machine exists.  Since we're going to delete it, let's grab a backup. We don't need to restore services since we're deleting it."
+                RESTORE_BTCPAY=false UPDATE_BTCPAY=false RUN_RESTORE=false RUN_BACKUP=true RUN_SERVICES=false ./deployment/domain_init.sh
 
                 # delete the remote VPS.
                 if [ "$VPS_HOSTING_TARGET" = aws ]; then
-                    if [ "$APP_TO_DEPLOY" != btcpay ]; then
-                    # docker-machine rm -f "$FQDN"
-                    echo "ERROR: NOT IMPLEMENTED"
+                    RESPONSE=
+                    read -r -p "Do you want to continue with deleting '$FQDN' (y/n)": RESPONSE
+                    if [ "$RESPONSE" = y ]; then
+                        docker-machine rm -f "$FQDN"
+                    else
+                        echo "STOPPING the migration. User entered something other than 'y'."
+                        exit 1
                     fi
                 elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
                     lxc delete --force "$LXD_VM_NAME"
@@ -382,7 +426,7 @@ function run_domain {
                 # Then we run the script again to re-instantiate a new VPS, restoring all user data 
                 # if restore directory doesn't exist, then we end up with a new site.
                 echo "INFO: Recreating the remote VPS then restoring user data."
-                RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true "$(pwd)/deployment/domain_init.sh"
+                RESTORE_BTCPAY=true UPDATE_BTCPAY=false RUN_RESTORE=true RUN_BACKUP=false RUN_SERVICES=true ./deployment/domain_init.sh
             else
                 if [ "$USER_NO_BACKUP"  = true ]; then
                     RUN_BACKUP=false
@@ -392,7 +436,7 @@ function run_domain {
                     echo "INFO: Maintaining existing VPS. RUN_BACKUP=$RUN_BACKUP RUN_RESTORE=$USER_RUN_RESTORE"
                 fi
 
-                RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true "$(pwd)/deployment/domain_init.sh"
+                RESTORE_BTCPAY=false UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true ./deployment/domain_init.sh
             fi
         else
             if [ "$MIGRATE_VPS" = true ]; then
@@ -401,7 +445,7 @@ function run_domain {
 
             # The machine does not exist. Let's bring it into existence, restoring from latest backup.
             echo "Machine does not exist. RUN_RESTORE=$USER_RUN_RESTORE RUN_BACKUP=false" 
-            RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true "$(pwd)/deployment/domain_init.sh"
+            RESTORE_BTCPAY=false UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true ./deployment/domain_init.sh
         fi
     done
 
@@ -425,7 +469,7 @@ function stub_site_definition {
 #!/bin/bash
 
 # Set the domain name for the identity site.
-export DOMAIN_NAME="domain.tld"
+export DOMAIN_NAME="${DOMAIN_NAME}"
 
 # duplicitiy backup archive password
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
@@ -435,9 +479,6 @@ export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 
 ## WWW
 export DEPLOY_WWW_SERVER=true
-
-# see https://www.sovereign-stack.org/mac-addresses-for-new-type-vms/ for more info
-# export WWW_MAC_ADDRESS="CHANGE_ME"
 
 # Deploy APPS to www
 export DEPLOY_GHOST=true
@@ -466,14 +507,8 @@ export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 ## BTCPAY SERVER; if true, then a BTCPay server is deployed.
 export DEPLOY_BTCPAY_SERVER=false
 
-# https://www.sovereign-stack.org/mac-addresses-for-new-type-vms/
-#export BTCPAY_MAC_ADDRESS=""
-
 ## Deploy and Umbrel node?
 export DEPLOY_UMBREL_VPS=false
-
-# REQUIRED if DEPLOY_UMBREL_VPS=true; https://www.sovereign-stack.org/mac-addresses-for-new-type-vms/
-# export UMBREL_MAC_ADDRESS=""
 
 # CHAIN to DEPLOY; valid are 'regtest', 'testnet', and 'mainnet'
 export BTC_CHAIN=regtest

@@ -1,6 +1,7 @@
 #!/bin/bash
 
-set -e
+set -ex
+cd "$(dirname "$0")"
 
 # export BTCPAY_FASTSYNC_ARCHIVE_FILENAME="utxo-snapshot-bitcoin-testnet-1445586.tar"
 # BTCPAY_REMOTE_RESTORE_PATH="/var/lib/docker/volumes/generated_bitcoin_datadir/_data"
@@ -11,26 +12,28 @@ cat > "$SITE_PATH/btcpay.sh" <<EOL
 #!/bin/bash
 
 set -ex
+cd "\$(dirname "\$0")"
 
 # wait for cloud-init to complete yo
 while [ ! -f /var/lib/cloud/instance/boot-finished ]; do
     sleep 1
 done
 
-# if [ -d "btcpayserver-docker" ] && [ "$EXISTING_BRANCH" != "master" ] && [ "$EXISTING_REMOTE" != "master" ]; then 
-#     echo "existing btcpayserver-docker folder found that did not match our specified fork. Moving. (Current branch: $EXISTING_BRANCH, Current remote: $EXISTING_REMOTE)"; 
-#     mv "btcpayserver-docker" "btcpayserver-docker_$(date +%s)"; 
-# fi
-
-# if [ -d "btcpayserver-docker" ] && [ "$EXISTING_BRANCH" == "master" ] && [ "$EXISTING_REMOTE" == "master" ]; then 
-#     echo "existing btcpayserver-docker folder found, pulling instead of cloning."; 
-#     git pull; 
-# fi
+#curl -SL https://github.com/docker/compose/releases/download/v2.6.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
+#chmod 0777 /usr/local/bin/docker-compose
 
 if [ ! -d "btcpayserver-docker" ]; then 
     echo "cloning btcpayserver-docker"; 
-    git clone -b master https://github.com/btcpayserver/btcpayserver-docker btcpayserver-docker; 
+    git clone -b master https://github.com/btcpayserver/btcpayserver-docker btcpayserver-docker;
+    git config --global --add safe.directory /home/ubuntu/btcpayserver-docker
+else
+    cd ./btcpayserver-docker
+    git pull
+    git pull --all --tags
+    cd -
 fi
+
+cd btcpayserver-docker
 
 export BTCPAY_HOST="${FQDN}"
 export NBITCOIN_NETWORK="${BTC_CHAIN}"
@@ -39,16 +42,12 @@ export LETSENCRYPT_EMAIL="${CERTIFICATE_EMAIL_ADDRESS}"
 export BTCPAYGEN_LIGHTNING="clightning"
 export BTCPAYGEN_CRYPTO1="btc"
 
-# opt-save-storage keeps 1 year of blocks (prunes to 100 GB)
-# opt-add-btctransmuter adds transmuter software
-# 
-export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-configurator;opt-add-nostr-relay;opt-add-tor-relay"
+export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-nostr-relay;opt-add-tor-relay"
 #export BTCPAYGEN_EXCLUDE_FRAGMENTS="nginx-https"
 export BTCPAY_ADDITIONAL_HOSTS="${BTCPAY_ADDITIONAL_HOSTNAMES}"
 export BTCPAYGEN_REVERSEPROXY="nginx"
 export BTCPAY_ENABLE_SSH=false
-
-cd btcpayserver-docker
+export BTCPAY_BASE_DIRECTORY=${REMOTE_HOME}
 
 if [ "\$NBITCOIN_NETWORK" != regtest ]; then
     # run fast_sync if it's not been done before.
@@ -60,9 +59,10 @@ if [ "\$NBITCOIN_NETWORK" != regtest ]; then
     fi
 fi
 
-# provision the btcpay server
+# provision the btcpayserver
 . ./btcpay-setup.sh -i
 
+sleep 15
 EOL
 
 # send the setup script to the remote machine.

@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -exu
+cd "$(dirname "$0")"
 
 TOR_CONFIG_PATH=
 
@@ -38,11 +39,11 @@ if [ "$RUN_CERT_RENEWAL" = true ]; then
 fi
 
 if [ "$RUN_BACKUP"  = true ]; then
-    ./backup_www.sh
+    ./backup.sh
 fi
 
 if [ "$RUN_RESTORE" = true ]; then
-    ./restore_www.sh
+    ./restore.sh
 fi
 
 if [ "$DEPLOY_ONION_SITE" = true ]; then
@@ -71,6 +72,11 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
 fi
 
 if [ "$RUN_SERVICES" = true ]; then
+    mkdir -p "$SITE_PATH/stacks"
+    DOCKER_YAML_PATH="$SITE_PATH/stacks/www.yml"
+    export DOCKER_YAML_PATH="$DOCKER_YAML_PATH"
+    bash -c ./stub_docker_yml.sh
+
     docker stack deploy -c "$DOCKER_YAML_PATH" webstack
 
     # start a browser session; point it to port 80 to ensure HTTPS redirect.

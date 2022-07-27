@@ -70,7 +70,7 @@ export DUPLICITY_BACKUP_PASSPHRASE=
 
 export SSH_HOME="$HOME/.ssh"
 export VLAN_INTERFACE=
-export VM_NAME=
+export VM_NAME="sovereign-stack-base"
 export DEV_MEMORY_MB="4096"
 export DEV_CPU_COUNT="4"
 export SSHFS_PATH="/tmp/sshfs_temp"
@@ -91,7 +91,7 @@ export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
 #     exit 1
 # fi
 
-ENABLE_NGINX_CACHING=true
+ENABLE_NGINX_CACHING=false
 
 
 # TODO
@@ -104,22 +104,35 @@ BTC_CHAIN=regtest
 
 export BTC_CHAIN="$BTC_CHAIN"
 
-DEFAULT_DB_IMAGE="mariadb:10.6.5"
+DEFAULT_DB_IMAGE="mariadb:10.8.3-jammy"
 export ENABLE_NGINX_CACHING="$ENABLE_NGINX_CACHING"
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:4.44.0"
+export GHOST_IMAGE="ghost:5.2.4"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
-export NGINX_IMAGE="nginx:1.21.6"
-export NEXTCLOUD_IMAGE="nextcloud:23.0.2"
+export NGINX_IMAGE="nginx:1.23.0"
+export NEXTCLOUD_IMAGE="nextcloud:24.0.2"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
+export SOVEREIGN_STACK_MAC_ADDRESS="aa:bb:cc:00:00:03"
 export WWW_MAC_ADDRESS="aa:bb:cc:00:00:00"
 export BTCPAY_MAC_ADDRESS="aa:bb:cc:00:00:01"
 export UMBREL_MAC_ADDRESS="aa:bb:cc:00:00:02"
 
 export CLUSTERS_DIR="$HOME/ss-clusters"
 export SITES_PATH="$HOME/ss-sites"
+
+
+# The base VM image.
+export BASE_LXC_IMAGE="ubuntu/22.04/cloud"
+
+# Deploy a registry cache on your management machine.
+export DEPLOY_MGMT_REGISTRY=true
+
+
+export REMOTE_HOME="/home/ubuntu"
+
+export BTCPAY_SERVER_APPPATH="$REMOTE_HOME/btcpayserver-docker"

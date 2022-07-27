@@ -36,7 +36,7 @@ if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
 fi
 
 # Note, we assume the script has already made sure the machine doesn't exist.
-if [ "$APP_TO_DEPLOY" = www ] || [ "$APP_TO_DEPLOY" = certonly ]; then
+if [ "$VIRTUAL_MACHINE" = www ] || [ "$VIRTUAL_MACHINE" = certonly ]; then
     # creates a public VM in AWS and provisions the bcm website.
     docker-machine create --driver amazonec2 \
         --amazonec2-open-port 80 \
@@ -50,7 +50,7 @@ if [ "$APP_TO_DEPLOY" = www ] || [ "$APP_TO_DEPLOY" = certonly ]; then
         --engine-label commit="$LATEST_GIT_COMMIT" \
         "$FQDN"
         
-elif [ "$APP_TO_DEPLOY" = btcpay ]; then
+elif [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
     # creates a public VM in AWS and provisions the bcm website.
     docker-machine create --driver amazonec2 \
         --amazonec2-open-port 80 \
@@ -67,7 +67,7 @@ elif [ "$APP_TO_DEPLOY" = btcpay ]; then
 
 fi
 
-docker-machine scp "$LXD_REMOTE_PATH/authorized_keys" "$FQDN:$REMOTE_HOME/authorized_keys"
+docker-machine scp "$CLUSTER_PATH/authorized_keys" "$FQDN:$REMOTE_HOME/authorized_keys"
 docker-machine ssh "$FQDN" "cat $REMOTE_HOME/authorized_keys >> $REMOTE_HOME/.ssh/authorized_keys"
 
 # we have to ensure ubuntu is able to do sudo less docker commands.

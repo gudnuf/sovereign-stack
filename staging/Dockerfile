@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y wait-for-it dnsutils rsync duplicity sshfs snapd lxd-client
+RUN apt-get update && apt-get install -y wait-for-it dnsutils rsync sshfs snapd lxd-client
 
 RUN mkdir /sovereign-stack
 COPY ./deployment /sovereign-stack

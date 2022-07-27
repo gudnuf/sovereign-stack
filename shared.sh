@@ -14,10 +14,6 @@ if [ ! -d "$SITE_PATH" ]; then
     exit 1
 fi
 
-DOCKER_YAML_PATH="$SITE_PATH/appstack.yml"
-export DOCKER_YAML_PATH="$DOCKER_YAML_PATH"
-export REMOTE_HOME="/home/ubuntu"
-
 mkdir -p "$SSHFS_PATH"
 
 # VALIDATE THE INPUT from the ENVFILE
@@ -35,8 +31,6 @@ export ADMIN_ACCOUNT_USERNAME="info"
 export CERTIFICATE_EMAIL_ADDRESS="$ADMIN_ACCOUNT_USERNAME@$DOMAIN_NAME"
 export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
 
-
-export VM_NAME="sovereign-stack-base"
 export REMOTE_NEXTCLOUD_PATH="$REMOTE_HOME/nextcloud"
 export REMOTE_GITEA_PATH="$REMOTE_HOME/gitea"
 

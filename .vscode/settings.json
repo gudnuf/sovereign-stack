@@ -13,8 +13,9 @@
     "shellcheck.customArgs": [],
     "shellcheck.ignorePatterns": {},
     "shellcheck.exclude": [
-        "1090",
-        "1091"
+        "SC1090",
+        "SC1091",
+        "SC2029"
     ],
     "terminal.integrated.fontFamily": "monospace",
     "workbench.colorCustomizations": {

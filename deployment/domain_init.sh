@@ -3,6 +3,7 @@
 set -eux
 cd "$(dirname "$0")"
 
+
 # let's make sure we have an ssh keypair. We just use ~/.ssh/id_rsa
 # TODO convert this to SSH private key held on Trezor. THus trezor-T required for 
 # login operations. This should be configurable of course.
@@ -33,12 +34,10 @@ function prepare_host {
     # create a directory to store backup archives. This is on all new vms.
     ssh "$FQDN" mkdir -p "$REMOTE_HOME/backups"
 
-    if [ "$APP_TO_DEPLOY" = btcpay ]; then
+    if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
         echo "INFO: new machine detected. Provisioning BTCPay server scripts."
 
         ./btcpayserver/run_setup.sh
-        
-        exit
     fi
 
 }
@@ -80,26 +79,9 @@ if [ ! -f "$HOME/.docker/config.json" ]; then
 fi
 
 # this tells our local docker client to target the remote endpoint via SSH
-export DOCKER_HOST="ssh://ubuntu@$FQDN"    
+export DOCKER_HOST="ssh://ubuntu@$FQDN"
 
 # the following scripts take responsibility for the rest of the provisioning depending on the app you're deploying.
-if [ "$APP_TO_DEPLOY" = www ]; then
-    ./go_www.sh
-elif [ "$APP_TO_DEPLOY" = btcpay ]; then
-    ./btcpayserver/go.sh
-elif [ "$APP_TO_DEPLOY" = umbrel ]; then
-    ./go_umbrel.sh
-elif [ "$APP_TO_DEPLOY" = certonly ]; then
-    # renew the certs; certbot takes care of seeing if we need to actually renew.
-    if [ "$RUN_CERT_RENEWAL" = true ]; then
-        ./generate_certs.sh
-    fi
-    
-    echo "INFO: Please run 'docker-machine rm -f $FQDN' to remove the remote VPS."
-    exit
-else
-    echo "ERROR: APP_TO_DEPLOY not set correctly. Please refer to the documentation for allowable values."
-    exit
-fi
+bash -c "./$VIRTUAL_MACHINE/go.sh"
 
 echo "Successfull deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;"

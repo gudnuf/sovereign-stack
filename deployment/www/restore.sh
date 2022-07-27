@@ -13,7 +13,7 @@ ssh "$FQDN" sudo rm -rf "$REMOTE_HOME/*"
 ssh "$FQDN" mkdir -p "$REMOTE_BACKUP_PATH"
 
 # TODO instead of scp the files up there, lets' mount the local backup folder to a remote folder then just run a duplicity restore.
-scp -r "$LOCAL_BACKUP_PATH/" "$FQDN:$REMOTE_HOME/backups/$APP_TO_DEPLOY"
+scp -r "$LOCAL_BACKUP_PATH/" "$FQDN:$REMOTE_HOME/backups/$VIRTUAL_MACHINE"
 
 # now we run duplicity to restore the archive.
 ssh "$FQDN" sudo PASSPHRASE="$DUPLICITY_BACKUP_PASSPHRASE" duplicity --force restore "file://$REMOTE_BACKUP_PATH/" "$REMOTE_HOME/"

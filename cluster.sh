@@ -1,51 +1,50 @@
 #!/bin/bash
 
-set -ex
+set -eux
+cd "$(dirname "$0")"
 
 # NOTE This script is meant to be executed on your LXD bare metal servers. This script 
 # ensures that the LXD daemon is installed via snap package, then initialize the daemon
 # to operate in clustered mode
 
-COMMAND="$1"
+COMMAND="${1:-}"
 DATA_PLANE_MACVLAN_INTERFACE=
 DISK_TO_USE=loop
 
 if [ "$COMMAND" = create ]; then
 
     # override the cluster name.
-    CLUSTER_NAME="$2"
+    CLUSTER_NAME="${2:-}"
 
     if [ -z "$CLUSTER_NAME" ]; then
         echo "ERROR: The cluster name was not provided."
         exit 1
     fi
 
+    #shellcheck disable=SC1091
     source ./defaults.sh
 
-    export LXD_REMOTE_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
-    CLUSTER_DEFINITION="$LXD_REMOTE_PATH/cluster_definition"
+    export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
+    CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
     export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
-    mkdir -p "$LXD_REMOTE_PATH"
+    mkdir -p "$CLUSTER_PATH"
     if [ ! -f "$CLUSTER_DEFINITION" ]; then
         # stub out a cluster_definition.
     cat >"$CLUSTER_DEFINITION" <<EOL
 #!/bin/bash
 
 # Note: the path above ./ corresponds to your LXD Remote. If your remote is set to 'cluster1'
-# Then $HOME/clusters/cluster1 will be your cluster working path.
+# Then $HOME/ss-clusters/cluster1 will be your cluster working path.
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
 
-# This is REQUIRED. A list of all sites in ~/sites/ that will be deployed. 
+# This is REQUIRED. A list of all sites in ~/ss-sites/ that will be deployed. 
 # e.g., 'domain1.tld,domain2.tld,domain3.tld' Add all your domains that will
 # run within this SS deployment.
 SITE_LIST="domain1.tld"
 
-# Deploy a registry cache on your management machine.
-DEPLOY_REGISTRY=true
-
 # only relevant
-export REGISTRY_URL="http://${HOSTNAME}:5000"
+export REGISTRY_URL="http://$(hostname).$(resolvectl status | grep 'DNS Domain:' | awk '{ print $3 }'):5000"
 export REGISTRY_USERNAME=""
 export REGISTRY_PASSWORD=""
 
@@ -61,8 +60,7 @@ EOL
     source "$CLUSTER_DEFINITION"
 
     if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
-        FQDN="$3"
-        echo "FQDN: $FQDN"
+        FQDN="${3:-}"
 
         if [ -z "$FQDN" ]; then
             echo "ERROR: The Fully Qualified Domain Name of the new cluster member was not set."
@@ -143,7 +141,9 @@ EOL
     # The MGMT Plane IP is the IP address that the LXD API binds to, which happens
     # to be the same as whichever SSH connection you're coming in on.
     MGMT_PLANE_IP="$(ssh ubuntu@"$FQDN" env | grep SSH_CONNECTION | cut -d " " -f 3)"
-
+    IP_OF_MGMT_MACHINE="$(ssh ubuntu@"$FQDN" env | grep SSH_CLIENT | cut -d " " -f 1 )"
+    IP_OF_MGMT_MACHINE="${IP_OF_MGMT_MACHINE#*=}"
+    IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 
     # if the LXD_CLUSTER_PASSWORD wasnt set, we can generate a random one using gpg.
     if [ -z "$LXD_CLUSTER_PASSWORD" ]; then
@@ -163,13 +163,8 @@ EOL
 
     ssh -t "ubuntu@$FQDN" "
 # set host firewall policy. 
-# allow SSH from management network.
-sudo ufw allow from 192.168.1.0/24 proto tcp to $MGMT_PLANE_IP port 22
-sudo ufw allow from 192.168.4.0/24 proto tcp to $MGMT_PLANE_IP port 8443
-
-# allow 8443 from management subnets
-sudo ufw allow from 192.168.1.0/24 proto tcp to $MGMT_PLANE_IP port 8443
-sudo ufw allow from 192.168.4.0/24 proto tcp to $MGMT_PLANE_IP port 8443
+# allow LXD API from management network.
+sudo ufw allow from ${IP_OF_MGMT_MACHINE}/32 proto tcp to $MGMT_PLANE_IP port 8443
 
 # enable it.
 if sudo ufw status | grep -q 'Status: inactive'; then
@@ -189,7 +184,7 @@ fi
     fi
 
     # stub out the lxd init file for the remote SSH endpoint.
-    CLUSTER_MASTER_LXD_INIT="$LXD_REMOTE_PATH/$CLUSTER_NAME-primary.yml"
+    CLUSTER_MASTER_LXD_INIT="$CLUSTER_PATH/$CLUSTER_NAME-primary.yml"
     cat >"$CLUSTER_MASTER_LXD_INIT" <<EOF
 config:
   core.https_address: ${MGMT_PLANE_IP}:8443
@@ -235,18 +230,18 @@ EOF
     cat "$CLUSTER_MASTER_LXD_INIT" | ssh "ubuntu@$FQDN" lxd init --preseed
 
     # not ensure the service is active on the remote host.
-    if wait-for-it -t 5 "$FQDN:8443"; then
+    if wait-for-it -t 20 "$FQDN:8443"; then
         # now create a remote on your local LXC client and switch to it.
         # the software will now target the new cluster.
         lxc remote add "$CLUSTER_NAME" "$FQDN" --password="$LXD_CLUSTER_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
         lxc remote switch "$CLUSTER_NAME"
 
         echo "INFO: You have create a new cluster named '$CLUSTER_NAME'. Great! We switched your lxd remote to it."
+    else
+        echo "ERROR: Could not detect the LXD endpoint. Something went wrong."
+        exit 1
     fi
 
-    echo "SUCCESS: Congrats, you have created a new LXD cluster named '$CLUSTER_NAME'. We create a new lxd remote and switched your local lxd client to it."
-    echo "         You can go inspect by running 'lxc remote list'. Your current cluster path is '$CLUSTER_DEFINITION'."
-    echo ""
     echo "HINT: Now you can consider running 'ss-deploy'."
 else
   echo "ERROR: invalid command."

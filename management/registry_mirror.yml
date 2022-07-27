@@ -48,7 +48,7 @@ services:
 
 configs:
   registry-config:
-    file: ${LXD_REMOTE_PATH}/registry.yml
+    file: ${CLUSTER_PATH}/registry.yml
 
 volumes:
   registry_data:
