@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-set -o pipefail -o errexit
+set -o pipefail -o errexit -x
 
 if [ "$(id -u)" != "0" ]; then
   printf "\n🚨 This script must be run as root.\n"
@@ -51,7 +51,7 @@ fi
 cd $restore_dir
 
 echo "ℹ️ Extracting files in $(pwd) …"
-tar -xvf $backup_path -C $restore_dir
+tar -h -xvf $backup_path -C $restore_dir
 
 # basic control checks
 if [ ! -f "$dbdump_name" ]; then
@@ -94,7 +94,6 @@ cd $restore_dir
 {
   printf "\nℹ️ Starting database container …\n"
   docker-compose -f $BTCPAY_DOCKER_COMPOSE up -d postgres
-  sleep 10
   dbcontainer=$(docker ps -a -q -f "name=postgres")
   if [ -z "$dbcontainer" ]; then
     echo "🚨 Database container could not be started or found."

@@ -37,6 +37,7 @@ UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
 DEPLOY_BTCPAY_SERVER=false
 CLUSTER_NAME="$(lxc remote get-default)"
+RUN_BACKUP=true
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -81,7 +82,6 @@ for i in "$@"; do
         ;;
         --migrate-btcpay)
             MIGRATE_VPS=true
-            RESTORE_BTCPAY=true
             RUN_CERT_RENEWAL=false
             shift
         ;;
@@ -107,6 +107,7 @@ export SSH_HOME="$HOME/.ssh"
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
 export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
+
 
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
 
@@ -404,6 +405,12 @@ function run_domain {
         if [ "$MACHINE_EXISTS"  = true ]; then
             # we delete the machine if the user has directed us to
             if [ "$MIGRATE_VPS" = true ]; then
+                
+                # if the RESTORE_ARCHIVE is not set, then 
+                if [ -z "$RESTORE_ARCHIVE" ]; then
+                    RESTORE_ARCHIVE="$LOCAL_BACKUP_PATH/$UNIX_BACKUP_TIMESTAMP.tar.gz"
+                fi
+
                 # get a backup of the machine. This is what we restore to the new VPS.
                 echo "INFO: Machine exists.  Since we're going to delete it, let's grab a backup. We don't need to restore services since we're deleting it."
                 RESTORE_BTCPAY=false UPDATE_BTCPAY=false RUN_RESTORE=false RUN_BACKUP=true RUN_SERVICES=false ./deployment/domain_init.sh
@@ -426,17 +433,11 @@ function run_domain {
                 # Then we run the script again to re-instantiate a new VPS, restoring all user data 
                 # if restore directory doesn't exist, then we end up with a new site.
                 echo "INFO: Recreating the remote VPS then restoring user data."
-                RESTORE_BTCPAY=true UPDATE_BTCPAY=false RUN_RESTORE=true RUN_BACKUP=false RUN_SERVICES=true ./deployment/domain_init.sh
+                sleep 5
+                RESTORE_BTCPAY=true UPDATE_BTCPAY=false RUN_RESTORE=true RUN_BACKUP=false RUN_SERVICES=true RUN_CERT_RENEWAL=false RESTORE_ARCHIVE="$RESTORE_ARCHIVE" ./deployment/domain_init.sh
+                sleep 5
             else
-                if [ "$USER_NO_BACKUP"  = true ]; then
-                    RUN_BACKUP=false
-                    echo "INFO: Maintaining existing VPS. RUN_BACKUP=$RUN_BACKUP RUN_RESTORE=$USER_RUN_RESTORE"
-                else
-                    RUN_BACKUP=true
-                    echo "INFO: Maintaining existing VPS. RUN_BACKUP=$RUN_BACKUP RUN_RESTORE=$USER_RUN_RESTORE"
-                fi
-
-                RESTORE_BTCPAY=false UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true ./deployment/domain_init.sh
+                RESTORE_BTCPAY="$RESTORE_BTCPAY" UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true ./deployment/domain_init.sh
             fi
         else
             if [ "$MIGRATE_VPS" = true ]; then
