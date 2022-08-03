@@ -5,7 +5,7 @@ set -ex
 # let's do a refresh of the certificates. Let's Encrypt will not run if it's not time.
 docker pull certbot/certbot:latest
 
-# when deploying to AWS, www exists on a separate IP address from btcpay, umbrel, etc.
+# when deploying to AWS, www exists on a separate IP address from btcpay, etc.
 # thus, we structure the certificate accordingly.
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
     docker run -it --rm \

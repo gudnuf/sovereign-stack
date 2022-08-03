@@ -12,7 +12,6 @@ lxc delete --force btcpay-"$LXD_VM_NAME"
 lxc delete --force sovereign-stack
 
 lxc profile delete www-"$LXD_VM_NAME"
-lxc profile delete umbrel-"$LXD_VM_NAME"
 lxc profile delete btcpay-"$LXD_VM_NAME"
 lxc profile delete sovereign-stack
 

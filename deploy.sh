@@ -276,19 +276,6 @@ function run_domain {
             if [ "$BTC_CHAIN" = mainnet ]; then
                 ROOT_DISK_SIZE_GB=150
             elif [ "$BTC_CHAIN" = testnet ]; then
-                ROOT_DISK_SIZE_GB=40
-            fi
-        elif [ "$VIRTUAL_MACHINE" = umbrel ]; then
-            if [ "$DEPLOY_UMBREL_VPS" = false ]; then
-                continue
-            fi
-            
-            DDNS_HOST="$UMBREL_HOSTNAME"
-            VPS_HOSTNAME="$UMBREL_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$UMBREL_MAC_ADDRESS"
-            if [ "$BTC_CHAIN" = mainnet ]; then
-                ROOT_DISK_SIZE_GB=1000
-            elif [ "$BTC_CHAIN" = testnet ]; then
                 ROOT_DISK_SIZE_GB=70
             fi
         elif [ "$VIRTUAL_MACHINE" = "sovereign-stack" ]; then
@@ -373,11 +360,6 @@ function run_domain {
 
         if [ -z "$DEPLOY_BTCPPAY_SERVER" ]; then
             echo "ERROR: Ensure DEPLOY_BTCPPAY_SERVER is configured in your site_definition."
-            exit 1
-        fi
-
-        if [ -z "$DEPLOY_UMBREL_VPS" ]; then
-            echo "ERROR: Ensure DEPLOY_UMBREL_VPS is configured in your site_definition."
             exit 1
         fi
 
@@ -507,9 +489,6 @@ export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 
 ## BTCPAY SERVER; if true, then a BTCPay server is deployed.
 export DEPLOY_BTCPAY_SERVER=false
-
-## Deploy and Umbrel node?
-export DEPLOY_UMBREL_VPS=false
 
 # CHAIN to DEPLOY; valid are 'regtest', 'testnet', and 'mainnet'
 export BTC_CHAIN=regtest

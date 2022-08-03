@@ -4,7 +4,6 @@ set -eu
 
 export DEPLOY_WWW_SERVER=false
 export DEPLOY_BTCPPAY_SERVER=false
-export DEPLOY_UMBREL_VPS=false
 
 export DEPLOY_GHOST=true
 export DEPLOY_NOSTR=false
@@ -14,7 +13,6 @@ export DEPLOY_GITEA=false
 
 export WWW_HOSTNAME="www"
 export BTCPAY_HOSTNAME="btcpay"
-export UMBREL_HOSTNAME="umbrel"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
@@ -120,7 +118,6 @@ export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export SOVEREIGN_STACK_MAC_ADDRESS="aa:bb:cc:00:00:03"
 export WWW_MAC_ADDRESS="aa:bb:cc:00:00:00"
 export BTCPAY_MAC_ADDRESS="aa:bb:cc:00:00:01"
-export UMBREL_MAC_ADDRESS="aa:bb:cc:00:00:02"
 
 export CLUSTERS_DIR="$HOME/ss-clusters"
 export SITES_PATH="$HOME/ss-sites"

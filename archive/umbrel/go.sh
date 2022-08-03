@@ -48,4 +48,4 @@ ssh "$FQDN" "
 # we wait for lightning to comone line too.
 wait-for-it -t -60 "$FQDN:80"
 
-xdg-open "http://$FQDN"
+xdg-open "http://$FQDN" > /dev/null 2>&1
