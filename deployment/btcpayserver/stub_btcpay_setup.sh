@@ -59,10 +59,9 @@ if [ "\$NBITCOIN_NETWORK" != regtest ]; then
     fi
 fi
 
-# provision the btcpayserver
+# run the setup script.
 . ./btcpay-setup.sh -i
 
-sleep 15
 EOL
 
 # send the setup script to the remote machine.

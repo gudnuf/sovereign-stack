@@ -67,13 +67,17 @@ echo "ℹ️ Archiving files in $(pwd)…"
 {
   tar \
     --exclude="volumes/backup_datadir" \
-    --exclude="volumes/generated_bitcoin_datadir/blocks" \
-    --exclude="volumes/generated_bitcoin_datadir/chainstate" \
-    --exclude="volumes/generated_bitcoin_datadir/debug.log" \
-    --exclude="volumes/generated_litecoin_datadir/blocks" \
-    --exclude="volumes/generated_litecoin_datadir/chainstate" \
-    --exclude="volumes/generated_litecoin_datadir/debug.log" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/blocks" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/chainstate" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/debug.log" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/testnet3/blocks" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/testnet3/chainstate" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/testnet3/debug.log" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/regtest/blocks" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/regtest/chainstate" \
+    --exclude="volumes/generated_bitcoin_datadir/_data/regtest/debug.log" \
     --exclude="volumes/generated_postgres_datadir" \
+    --exclude="volumes/generated_tor_relay_datadir" \
     --exclude="volumes/generated_clightning_bitcoin_datadir/_data/lightning-rpc" \
     --exclude="**/logs/*" \
     -cvzf "$backup_path" "$dbdump_name" volumes/generated_*

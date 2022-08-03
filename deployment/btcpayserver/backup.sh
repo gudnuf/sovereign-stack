@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 # the script executed here from the BTCPAY repo will automatically take services down
 # and bring them back up.
 
-ssh "$FQDN" "cd $REMOTE_HOME/; sudo BTCPAY_BASE_DIRECTORY=$REMOTE_HOME bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
+ssh "$FQDN" "mkdir -p $REMOTE_HOME/backups; cd $REMOTE_HOME/; sudo BTCPAY_BASE_DIRECTORY=$REMOTE_HOME bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
 
 # TODO enable encrypted archives
 # TODO switch to btcpay-backup.sh when on LXD fully.

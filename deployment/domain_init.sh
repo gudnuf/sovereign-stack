@@ -36,8 +36,7 @@ function prepare_host {
 
     if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
         echo "INFO: new machine detected. Provisioning BTCPay server scripts."
-
-        ./btcpayserver/run_setup.sh
+        ./btcpayserver/stub_btcpay_setup.sh
     fi
 
 }

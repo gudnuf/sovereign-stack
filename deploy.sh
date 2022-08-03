@@ -23,7 +23,7 @@ if ! lsb_release -d | grep -q "Ubuntu 22.04 LTS"; then
     exit 1
 fi
 
-MIGRATE_VPS=false
+MIGRATE_BTCPAY=false
 DOMAIN_NAME=
 RESTORE_ARCHIVE=
 VPS_HOSTING_TARGET=lxd
@@ -81,7 +81,7 @@ for i in "$@"; do
             shift
         ;;
         --migrate-btcpay)
-            MIGRATE_VPS=true
+            MIGRATE_BTCPAY=true
             RUN_CERT_RENEWAL=false
             shift
         ;;
@@ -211,14 +211,15 @@ function run_domain {
     export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
     export BTC_CHAIN="$BTC_CHAIN"
     export UPDATE_BTCPAY="$UPDATE_BTCPAY"
-    export MIGRATE_VPS="$MIGRATE_VPS"
+    export MIGRATE_BTCPAY="$MIGRATE_BTCPAY"
     export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
 
     # iterate over all our server endpoints and provision them if needed.
     # www
     VPS_HOSTNAME=
-    # OPTINOAL umbrel
-    for VIRTUAL_MACHINE in www btcpayserver umbrel; do
+
+
+    for VIRTUAL_MACHINE in www btcpayserver; do
         FQDN=
 
         # shellcheck disable=SC1091
@@ -386,7 +387,7 @@ function run_domain {
 
         if [ "$MACHINE_EXISTS"  = true ]; then
             # we delete the machine if the user has directed us to
-            if [ "$MIGRATE_VPS" = true ]; then
+            if [ "$MIGRATE_BTCPAY" = true ]; then
                 
                 # if the RESTORE_ARCHIVE is not set, then 
                 if [ -z "$RESTORE_ARCHIVE" ]; then
@@ -422,13 +423,13 @@ function run_domain {
                 RESTORE_BTCPAY="$RESTORE_BTCPAY" UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true ./deployment/domain_init.sh
             fi
         else
-            if [ "$MIGRATE_VPS" = true ]; then
+            if [ "$MIGRATE_BTCPAY" = true ]; then
                 echo "INFO: User has indicated to delete the machine, but it doesn't exist. Going to create it anyway."
             fi
 
             # The machine does not exist. Let's bring it into existence, restoring from latest backup.
             echo "Machine does not exist. RUN_RESTORE=$USER_RUN_RESTORE RUN_BACKUP=false" 
-            RESTORE_BTCPAY=false UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true ./deployment/domain_init.sh
+            RESTORE_BTCPAY="$RESTORE_BTCPAY" UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true ./deployment/domain_init.sh
         fi
     done
 

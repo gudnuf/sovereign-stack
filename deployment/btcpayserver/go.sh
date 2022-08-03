@@ -24,11 +24,19 @@ elif [ "$RESTORE_BTCPAY" = true ]; then
     RUN_SERVICES=true
     OPEN_URL=true
 
+    # if this is a new VM from a migration procedure, then we can now run setup.
+    if [ "$MIGRATE_BTCPAY" = true ]; then
+        ./stub_btcpay_setup.sh
+    fi
+
 elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
     # the administrator may have indicated a reconfig;
     # if so, we re-run setup script.
-    ./run_setup.sh
-    exit
+    ./stub_btcpay_setup.sh
+
+    RUN_BACKUP=false
+    RUN_SERVICES=true
+    OPEN_URL=true
 fi
 
 # if the script gets this far, then we grab a regular backup.
@@ -36,7 +44,6 @@ if [ "$RUN_BACKUP"  = true ]; then
     # we just grab a regular backup
     ./backup.sh "$UNIX_BACKUP_TIMESTAMP"
 fi
-
 
 if [ "$RUN_SERVICES" = true ]; then
     # The default is to resume services, though admin may want to keep services off (eg., for a migration)
@@ -48,6 +55,6 @@ fi
 
 if [ "$OPEN_URL" = true ]; then
     if wait-for-it -t 5 "$FQDN:443"; then
-        xdg-open "https://$FQDN"
+        xdg-open "https://$FQDN" > /dev/null 2>&1
     fi
 fi
