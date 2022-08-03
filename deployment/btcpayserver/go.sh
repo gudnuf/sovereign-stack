@@ -25,7 +25,7 @@ elif [ "$RESTORE_BTCPAY" = true ]; then
     OPEN_URL=true
 
     # if this is a new VM from a migration procedure, then we can now run setup.
-    if [ "$MIGRATE_BTCPAY" = true ]; then
+    if [ "$MIGRATE_VPS" = true ]; then
         ./stub_btcpay_setup.sh
     fi
 
