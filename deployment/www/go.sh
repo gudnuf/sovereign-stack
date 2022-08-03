@@ -85,14 +85,14 @@ if [ "$RUN_SERVICES" = true ]; then
 
     # open bowser tabs.
     if [ "$DEPLOY_GHOST" = true ]; then
-        xdg-open "http://$FQDN"
+        xdg-open "http://$FQDN" > /dev/null 2>&1
     fi
 
     if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-        xdg-open "http://$NEXTCLOUD_FQDN"
+        xdg-open "http://$NEXTCLOUD_FQDN" > /dev/null 2>&1
     fi
 
     if [ "$DEPLOY_GITEA" = true ]; then
-        xdg-open "http://$GITEA_FQDN"
+        xdg-open "http://$GITEA_FQDN" > /dev/null 2>&1
     fi
 fi

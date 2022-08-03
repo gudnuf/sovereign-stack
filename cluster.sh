@@ -229,7 +229,7 @@ EOF
     # configure the LXD Daemon with our preseed.
     cat "$CLUSTER_MASTER_LXD_INIT" | ssh "ubuntu@$FQDN" lxd init --preseed
 
-    # not ensure the service is active on the remote host.
+    # ensure the lxd service is available over the network, then add a lxc remote, then switch the active remote to it.
     if wait-for-it -t 20 "$FQDN:8443"; then
         # now create a remote on your local LXC client and switch to it.
         # the software will now target the new cluster.
