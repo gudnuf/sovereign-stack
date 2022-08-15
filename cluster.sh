@@ -151,14 +151,16 @@ EOL
         exit 1
     fi
 
-    if lxc profile list --format csv | grep -q sovereign-stack; then
-        lxc profile delete sovereign-stack
-        sleep 1
-    fi
+    if ! command -v lxc >/dev/null 2>&1; then
+        if lxc profile list --format csv | grep -q sovereign-stack; then
+            lxc profile delete sovereign-stack
+            sleep 1
+        fi
 
-    if lxc network list --format csv | grep -q lxdfanSS; then
-        lxc network delete lxdfanSS
-        sleep 1
+        if lxc network list --format csv | grep -q lxdbr0; then
+            lxc network delete lxdbr0
+            sleep 1
+        fi
     fi
 
     ssh -t "ubuntu@$FQDN" "
@@ -192,25 +194,15 @@ config:
   images.auto_update_interval: 15
 
 networks:
-- config:
-    bridge.mode: fan
-    fan.underlay_subnet: auto
+- name: lxdbr0
+  type: bridge
+  config:
+    ipv4.nat: "true"
+    ipv6.nat: "true"
+  managed: true
   description: ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-},${DISK_TO_USE:-}
-  name: lxdfanSS
-  type: ""
-  project: default
 
 storage_pools: []
-
-profiles:
-- config: {}
-  description: "inter-vm communication across lxd hosts."
-  devices:
-    eth0:
-      name: eth0
-      network: lxdfanSS
-      type: nic
-  name: sovereign-stack
 
 projects: []
 cluster:

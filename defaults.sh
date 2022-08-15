@@ -3,6 +3,7 @@
 set -eu
 
 export DEPLOY_WWW_SERVER=false
+export WWW_SERVER_MAC_ADDRESS=
 export DEPLOY_BTCPPAY_SERVER=false
 
 export DEPLOY_GHOST=true
@@ -115,9 +116,9 @@ export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
-export SOVEREIGN_STACK_MAC_ADDRESS="aa:bb:cc:00:00:03"
-export WWW_MAC_ADDRESS="aa:bb:cc:00:00:00"
-export BTCPAY_MAC_ADDRESS="aa:bb:cc:00:00:01"
+export SOVEREIGN_STACK_MAC_ADDRESS=
+export WWW_MAC_ADDRESS=
+export BTCPAY_MAC_ADDRESS=
 
 export CLUSTERS_DIR="$HOME/ss-clusters"
 export SITES_PATH="$HOME/ss-sites"

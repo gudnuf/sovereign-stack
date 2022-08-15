@@ -199,6 +199,10 @@ devices:
     type: disk
 EOF
 
+# TODO get the sovereign-stack lxc profile OFF the lxdbr0 bridge network.
+echo "DATA_PLANE_MACVLAN_INTERFACE: $DATA_PLANE_MACVLAN_INTERFACE"
+
+if [ "$VIRTUAL_MACHINE" = sovereign-stack ] ; then
 
 # If we are deploying the www, we attach the vm to the underlay via macvlan.
 cat >> "$YAML_PATH" <<EOF
@@ -206,12 +210,21 @@ cat >> "$YAML_PATH" <<EOF
     nictype: macvlan
     parent: ${DATA_PLANE_MACVLAN_INTERFACE}
     type: nic
-  enp6s0:
-    nictype: bridged
-    parent: lxdfanSS
-    type: nic
 name: ${FILENAME}
 EOF
+
+else
+# If we are deploying the www, we attach the vm to the underlay via macvlan.
+cat >> "$YAML_PATH" <<EOF
+  enp5s0:
+    nictype: macvlan
+    parent: ${DATA_PLANE_MACVLAN_INTERFACE}
+    type: nic
+
+name: ${FILENAME}
+EOF
+
+fi
 
 # let's create a profile for the BCM TYPE-1 VMs. This is per VM.
 if ! lxc profile list --format csv | grep -q "$VIRTUAL_MACHINE"; then
