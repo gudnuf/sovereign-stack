@@ -30,6 +30,7 @@ VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=true
 USER_NO_BACKUP=false
 USER_RUN_RESTORE=false
+RESTORE_WWW_USERDATA=true
 RESTORE_BTCPAY=false
 USER_SKIP_WWW=false
 USER_SKIP_BTCPAY=false
@@ -254,6 +255,7 @@ function run_domain {
         if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
             mkdir -p "$LOCAL_BACKUP_PATH"
             BACKUP_PATH_CREATED=true
+            RESTORE_WWW_USERDATA=false
         fi
 
         DDNS_HOST=
@@ -370,8 +372,6 @@ function run_domain {
             exit 1
         fi
     
-        bash -c ./deployment/stub_nginxconf.sh
-
         MACHINE_EXISTS=false
         if [ "$VPS_HOSTING_TARGET" = aws ] && docker-machine ls -q | grep -q "$FQDN"; then
             MACHINE_EXISTS=true
@@ -382,7 +382,7 @@ function run_domain {
         fi
 
         if [ "$USER_NO_BACKUP" = true ]; then
-            RUN_BACKUP=true
+            RUN_BACKUP=false
         fi
 
         if [ "$MACHINE_EXISTS"  = true ]; then
@@ -490,6 +490,7 @@ export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 
 ## BTCPAY SERVER; if true, then a BTCPay server is deployed.
 export DEPLOY_BTCPAY_SERVER=false
+export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 
 # CHAIN to DEPLOY; valid are 'regtest', 'testnet', and 'mainnet'
 export BTC_CHAIN=regtest

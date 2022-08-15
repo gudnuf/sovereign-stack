@@ -3,6 +3,8 @@
 set -exu
 cd "$(dirname "$0")"
 
+bash -c ./stub_nginxconf.sh
+
 TOR_CONFIG_PATH=
 
 ssh "$FQDN" mkdir -p "$REMOTE_HOME/ghost_site" "$REMOTE_HOME/ghost_db"
@@ -43,7 +45,11 @@ if [ "$RUN_BACKUP"  = true ]; then
 fi
 
 if [ "$RUN_RESTORE" = true ]; then
-    ./restore.sh
+    # Generally speaking we try to restore data. But if the BACKUP directory was
+    # just created, we know that we'll deploy fresh.
+    if [ "$RESTORE_WWW_USERDATA"  = true ]; then
+        ./restore.sh
+    fi
 fi
 
 if [ "$DEPLOY_ONION_SITE" = true ]; then
