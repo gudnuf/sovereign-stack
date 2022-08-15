@@ -18,7 +18,7 @@ check_dependencies wait-for-it dig rsync sshfs lxc docker-machine
 # TODO remove dependency on Docker-machine. That's what we use to provision VM on 3rd party vendors. Looking for LXD endpoint.
 
 # let's check to ensure the management machine is on the Baseline ubuntu 21.04
-if ! lsb_release -d | grep -q "Ubuntu 22.04 LTS"; then
+if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
     echo "ERROR: Your machine is not running the Ubuntu 22.04 LTS baseline OS on your management machine."
     exit 1
 fi

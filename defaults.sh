@@ -108,10 +108,10 @@ DEFAULT_DB_IMAGE="mariadb:10.8.3-jammy"
 export ENABLE_NGINX_CACHING="$ENABLE_NGINX_CACHING"
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.7.0"
+export GHOST_IMAGE="ghost:5.8.2"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
-export NGINX_IMAGE="nginx:1.23.0"
-export NEXTCLOUD_IMAGE="nextcloud:24.0.2"
+export NGINX_IMAGE="nginx:1.23.1"
+export NEXTCLOUD_IMAGE="nextcloud:24.0.3"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 export GITEA_IMAGE="gitea/gitea:latest"
