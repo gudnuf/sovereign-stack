@@ -27,6 +27,6 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
         -v "$REMOTE_HOME/letsencrypt":/etc/letsencrypt \
         -v /var/lib/letsencrypt:/var/lib/letsencrypt \
         -v "$REMOTE_HOME/letsencrypt_logs":/var/log/letsencrypt \
-        certbot/certbot certonly -v --noninteractive --agree-tos --key-type ecdsa --standalone --expand -d "$DOMAIN_NAME" -d "$FQDN" -d "$NEXTCLOUD_FQDN" -d "$GITEA_FQDN" -d "$NOSTR_FQDN" --email "$CERTIFICATE_EMAIL_ADDRESS"
+        certbot/certbot certonly -v --noninteractive --agree-tos --key-type ecdsa --standalone --expand -d "$DOMAIN_NAME" -d "$FQDN" -d "$BTCPAY_USER_FQDN" -d "$NEXTCLOUD_FQDN" -d "$GITEA_FQDN" -d "$NOSTR_FQDN" --email "$CERTIFICATE_EMAIL_ADDRESS"
 
 fi

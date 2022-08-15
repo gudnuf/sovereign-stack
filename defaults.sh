@@ -14,6 +14,7 @@ export DEPLOY_GITEA=false
 
 export WWW_HOSTNAME="www"
 export BTCPAY_HOSTNAME="btcpay"
+export BTCPAY_HOSTNAME_IN_CERT="pay"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
