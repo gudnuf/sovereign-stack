@@ -3,7 +3,6 @@
 set -eux
 cd "$(dirname "$0")"
 
-
 # let's make sure we have an ssh keypair. We just use ~/.ssh/id_rsa
 # TODO convert this to SSH private key held on Trezor. THus trezor-T required for 
 # login operations. This should be configurable of course.
@@ -83,4 +82,4 @@ export DOCKER_HOST="ssh://ubuntu@$FQDN"
 # the following scripts take responsibility for the rest of the provisioning depending on the app you're deploying.
 bash -c "./$VIRTUAL_MACHINE/go.sh"
 
-echo "Successfull deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;"
+echo "Successfully deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;"

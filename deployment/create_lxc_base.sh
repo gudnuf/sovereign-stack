@@ -49,9 +49,7 @@ if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
     lxc config set "$VM_NAME" "volatile.enp5s0.hwaddr=$SOVEREIGN_STACK_MAC_ADDRESS"
 
     lxc start "$VM_NAME"
-
-    # let's wait a minimum of 15 seconds before we start checking for an IP address.
-    sleep 15
+    sleep 10
 
     # let's wait for the LXC vm remote machine to get an IP address.
     ./wait_for_lxc_ip.sh "$VM_NAME"
@@ -59,5 +57,5 @@ if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
     # stop the VM and get a snapshot.
     lxc stop "$VM_NAME"
     lxc publish "$CLUSTER_NAME:$VM_NAME" --alias "$VM_NAME" --public
-    lxc delete "$VM_NAME"
+    
 fi

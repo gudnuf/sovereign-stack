@@ -22,5 +22,7 @@ done
 # we are using IP address here so we don't have to rely on external DNS 
 # configuration for the base image preparataion.
 ssh-keygen -R "$IP_V4_ADDRESS"
+
 ssh-keyscan -H -t ecdsa "$IP_V4_ADDRESS" >> "$SSH_HOME/known_hosts"
+
 ssh "ubuntu@$IP_V4_ADDRESS" sudo chown -R ubuntu:ubuntu /home/ubuntu

@@ -3,9 +3,9 @@
 set -eux
 cd "$(dirname "$0")"
 
-# NOTE This script is meant to be executed on your LXD bare metal servers. This script 
-# ensures that the LXD daemon is installed via snap package, then initialize the daemon
-# to operate in clustered mode
+# This script is meant to be executed on the management machine.
+# it reaches out to an SSH endpoint and provisions that machine
+# to use LXD.
 
 COMMAND="${1:-}"
 DATA_PLANE_MACVLAN_INTERFACE=
@@ -15,6 +15,7 @@ if [ "$COMMAND" = create ]; then
 
     # override the cluster name.
     CLUSTER_NAME="${2:-}"
+    
 
     if [ -z "$CLUSTER_NAME" ]; then
         echo "ERROR: The cluster name was not provided."
@@ -61,6 +62,7 @@ EOL
 
     if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
         FQDN="${3:-}"
+        shift
 
         if [ -z "$FQDN" ]; then
             echo "ERROR: The Fully Qualified Domain Name of the new cluster member was not set."
@@ -85,7 +87,7 @@ EOL
                     shift
                 ;;
                 *)
-                    # unknown option
+
                 ;;
             esac
         done

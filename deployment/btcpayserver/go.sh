@@ -14,10 +14,13 @@ if [ "$UPDATE_BTCPAY" = true ]; then
     # btcpay-update.sh brings services back up, but does not take them down.
     ssh "$FQDN" "sudo bash -c $BTCPAY_SERVER_APPPATH/btcpay-update.sh"
 
+    sleep 20
+    
 elif [ "$RESTORE_BTCPAY" = true ]; then
     # run the update.
     ssh "$FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
-
+    sleep 10 
+    
     ./restore.sh
 
     RUN_BACKUP=false
@@ -54,7 +57,14 @@ if [ "$RUN_SERVICES" = true ]; then
 fi
 
 if [ "$OPEN_URL" = true ]; then
-    if wait-for-it -t 5 "$FQDN:443"; then
-        xdg-open "https://$FQDN" > /dev/null 2>&1
+
+    if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+        if wait-for-it -t 5 "$WWW_FQDN:443"; then
+            xdg-open "https://$WWW_FQDN" > /dev/null 2>&1
+        fi
+    else
+        if wait-for-it -t 5 "$FQDN:443"; then
+            xdg-open "https://$FQDN" > /dev/null 2>&1
+        fi
     fi
 fi
