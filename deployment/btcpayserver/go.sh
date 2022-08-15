@@ -52,6 +52,7 @@ if [ "$RUN_SERVICES" = true ]; then
     # The default is to resume services, though admin may want to keep services off (eg., for a migration)
     # we bring the services back up by default.
     ssh "$FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-up.sh"
+
     OPEN_URL=true
 
 fi

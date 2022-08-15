@@ -188,7 +188,7 @@ fi
     fi
 
     # stub out the lxd init file for the remote SSH endpoint.
-    CLUSTER_MASTER_LXD_INIT="$CLUSTER_PATH/$CLUSTER_NAME-primary.yml"
+    CLUSTER_MASTER_LXD_INIT="$CLUSTER_PATH/$CLUSTER_NAME-lxd_profile.yml"
     cat >"$CLUSTER_MASTER_LXD_INIT" <<EOF
 config:
   core.https_address: ${MGMT_PLANE_IP}:8443
