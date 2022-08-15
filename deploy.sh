@@ -95,7 +95,8 @@ for i in "$@"; do
             shift
         ;;
         *)
-            # unknown option
+        echo "Unexpected option: $1"
+        exit 1
         ;;
     esac
 done
