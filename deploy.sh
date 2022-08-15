@@ -295,6 +295,7 @@ function run_domain {
         export FQDN="$DDNS_HOST.$DOMAIN_NAME"
         export LXD_VM_NAME="${FQDN//./-}"
         export REMOTE_BACKUP_PATH="$REMOTE_BACKUP_PATH"
+        export RESTORE_WWW_USERDATA="$RESTORE_WWW_USERDATA"
 
         # This next section of if statements is our sanity checking area.
         if [ "$VPS_HOSTING_TARGET" = aws ]; then
@@ -464,6 +465,7 @@ export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 
 ## WWW
 export DEPLOY_WWW_SERVER=true
+export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 
 # Deploy APPS to www
 export DEPLOY_GHOST=true

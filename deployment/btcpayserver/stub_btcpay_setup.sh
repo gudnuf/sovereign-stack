@@ -42,12 +42,22 @@ export LETSENCRYPT_EMAIL="${CERTIFICATE_EMAIL_ADDRESS}"
 export BTCPAYGEN_LIGHTNING="clightning"
 export BTCPAYGEN_CRYPTO1="btc"
 
-export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-nostr-relay;opt-add-tor-relay"
-#export BTCPAYGEN_EXCLUDE_FRAGMENTS="nginx-https"
+export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-nostr-relay;"
+
 export BTCPAY_ADDITIONAL_HOSTS="${BTCPAY_ADDITIONAL_HOSTNAMES}"
 export BTCPAYGEN_REVERSEPROXY="nginx"
 export BTCPAY_ENABLE_SSH=false
 export BTCPAY_BASE_DIRECTORY=${REMOTE_HOME}
+EOL
+
+# can add opt-add-tor-relay; in BTCPAYGEN_ADDITIONAL_FRAGMENTS
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+cat >> "$SITE_PATH/btcpay.sh" <<EOL
+export BTCPAYGEN_EXCLUDE_FRAGMENTS="nginx-https"
+EOL
+fi
+
+cat >> "$SITE_PATH/btcpay.sh" <<EOL
 
 if [ "\$NBITCOIN_NETWORK" != regtest ]; then
     # run fast_sync if it's not been done before.
