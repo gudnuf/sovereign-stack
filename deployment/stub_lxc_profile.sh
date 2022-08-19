@@ -181,7 +181,18 @@ else
     preserve_hostname: false
     fqdn: ${FQDN}
 
-    
+  user.network-config: |
+    version: 2
+    ethernets:
+      enp5s0:
+        dhcp4: true
+        match:
+          macaddress: ${MAC_ADDRESS_TO_PROVISION}
+        set-name: enp5s0
+
+      enp6s0:
+        dhcp4: true
+
 EOF
 
 fi
@@ -199,7 +210,7 @@ devices:
     type: disk
 EOF
 
-# TODO get the sovereign-stack lxc profile OFF the lxdbr0 bridge network.
+# TODO get the sovereign-stack lxc profile OFF the lxdbrSS bridge network.
 echo "DATA_PLANE_MACVLAN_INTERFACE: $DATA_PLANE_MACVLAN_INTERFACE"
 
 if [ "$VIRTUAL_MACHINE" = sovereign-stack ] ; then
@@ -207,6 +218,7 @@ if [ "$VIRTUAL_MACHINE" = sovereign-stack ] ; then
 # If we are deploying the www, we attach the vm to the underlay via macvlan.
 cat >> "$YAML_PATH" <<EOF
   enp5s0:
+    name: enp5s0
     nictype: macvlan
     parent: ${DATA_PLANE_MACVLAN_INTERFACE}
     type: nic
@@ -219,6 +231,10 @@ cat >> "$YAML_PATH" <<EOF
   enp5s0:
     nictype: macvlan
     parent: ${DATA_PLANE_MACVLAN_INTERFACE}
+    type: nic
+  enp6s0:
+    name: enp6s0
+    network: lxdbrSS
     type: nic
 
 name: ${FILENAME}

@@ -38,11 +38,12 @@ if [ "$COMMAND" = create ]; then
 # Note: the path above ./ corresponds to your LXD Remote. If your remote is set to 'cluster1'
 # Then $HOME/ss-clusters/cluster1 will be your cluster working path.
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
+export SOVEREIGN_STACK_MAC_ADDRESS="CHANGE_ME_REQUIRED- see www.sovereign-stack.org/reservations/"
 
 # This is REQUIRED. A list of all sites in ~/ss-sites/ that will be deployed. 
 # e.g., 'domain1.tld,domain2.tld,domain3.tld' Add all your domains that will
 # run within this SS deployment.
-SITE_LIST="domain1.tld"
+export SITE_LIST="domain1.tld"
 
 # only relevant
 export REGISTRY_URL="http://$(hostname).$(resolvectl status | grep 'DNS Domain:' | awk '{ print $3 }'):5000"
@@ -92,29 +93,29 @@ EOL
             esac
         done
 
-        # if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
-        #     echo "INFO: It looks like you didn't provide input on the command line for the data plane macvlan interface."
-        #     echo "      We need to know which interface that is! Enter it here now."
-        #     echo ""
+        if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
+            echo "INFO: It looks like you didn't provide input on the command line for the data plane macvlan interface."
+            echo "      We need to know which interface that is! Enter it here now."
+            echo ""
 
-        #     ssh "ubuntu@$FQDN" ip link
+            ssh "ubuntu@$FQDN" ip link
 
-        #     echo "Please enter the network interface that's dedicated to the Sovereign Stack data plane: "
-        #     read DATA_PLANE_MACVLAN_INTERFACE
+            echo "Please enter the network interface that's dedicated to the Sovereign Stack data plane: "
+            read DATA_PLANE_MACVLAN_INTERFACE
 
-        # fi
+        fi
 
-        # if [ -z "$DISK_TO_USE" ]; then
-        #     echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
-        #     echo ""
+        if [ -z "$DISK_TO_USE" ]; then
+            echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
+            echo ""
 
-        #     ssh "ubuntu@$FQDN" lsblk
+            ssh "ubuntu@$FQDN" lsblk
 
-        #     USER_DISK=
-        #     echo "Please enter the disk or partition that Sovereign Stack will use to store data (default: loop):  "
-        #     read USER_DISK
+            USER_DISK=
+            echo "Please enter the disk or partition that Sovereign Stack will use to store data (default: loop):  "
+            read USER_DISK
 
-        # fi
+        fi
 
     else
         echo "ERROR: the cluster already exists! You need to go delete your lxd remote if you want to re-create your cluster."
@@ -159,8 +160,8 @@ EOL
             sleep 1
         fi
 
-        if lxc network list --format csv | grep -q lxdbr0; then
-            lxc network delete lxdbr0
+        if lxc network list --format csv | grep -q lxdbrSS; then
+            lxc network delete lxdbrSS
             sleep 1
         fi
     fi
@@ -168,12 +169,12 @@ EOL
     ssh -t "ubuntu@$FQDN" "
 # set host firewall policy. 
 # allow LXD API from management network.
-sudo ufw allow from ${IP_OF_MGMT_MACHINE}/32 proto tcp to $MGMT_PLANE_IP port 8443
+# sudo ufw allow from ${IP_OF_MGMT_MACHINE}/32 proto tcp to $MGMT_PLANE_IP port 8443
 
 # enable it.
-if sudo ufw status | grep -q 'Status: inactive'; then
-    sudo ufw enable
-fi
+# if sudo ufw status | grep -q 'Status: inactive'; then
+#     sudo ufw enable
+# fi
 
 # install lxd as a snap if it's not installed. We only really use the LXC part of this package.
 if ! snap list | grep -q lxd; then
@@ -196,11 +197,11 @@ config:
   images.auto_update_interval: 15
 
 networks:
-- name: lxdbr0
+- name: lxdbrSS
   type: bridge
   config:
     ipv4.nat: "true"
-    ipv6.nat: "true"
+    ipv6.address: "none"
   managed: true
   description: ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-},${DISK_TO_USE:-}
 

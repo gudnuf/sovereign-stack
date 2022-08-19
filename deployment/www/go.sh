@@ -21,7 +21,7 @@ fi
 
 # enable docker swarm mode so we can support docker stacks.
 if ! docker info | grep -q "Swarm: active"; then
-    docker swarm init
+    docker swarm init --advertise-addr enp6s0
 fi
 
 # stop services.
