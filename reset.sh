@@ -2,14 +2,17 @@
 
 set -x
 
-CLUSTER_NAME="production-primary"
-SSH_ENDPOINT="atlantis"
-DOMAIN_NAME="ancapistan.io"
-export LXD_VM_NAME="${DOMAIN_NAME//./-}"
+CLUSTER_NAME=""
+SSH_ENDPOINT_HOSTNAME=""
+SSH_ENDPOINT_DOMAIN_NAME=""
+TEST_DOMAIN=""
+
+export LXD_VM_NAME="${TEST_DOMAIN//./-}"
 
 lxc delete --force www-"$LXD_VM_NAME"
 lxc delete --force btcpay-"$LXD_VM_NAME"
 lxc delete --force sovereign-stack
+lxc delete --force sovereign-stack-base
 
 lxc profile delete www-"$LXD_VM_NAME"
 lxc profile delete btcpay-"$LXD_VM_NAME"
