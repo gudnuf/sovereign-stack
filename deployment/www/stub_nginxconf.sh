@@ -22,9 +22,25 @@ events {
 
 http {
     client_max_body_size 100m;
-    server_names_hash_bucket_size  128;
     server_tokens off;
     
+    # next two sets commands and connection_upgrade block come from https://docs.btcpayserver.org/FAQ/Deployment/#can-i-use-an-existing-nginx-server-as-a-reverse-proxy-with-ssl-termination
+    # Needed to allow very long URLs to prevent issues while signing PSBTs
+    server_names_hash_bucket_size 128;
+    proxy_buffer_size          128k;
+    proxy_buffers              4 256k;
+    proxy_busy_buffers_size    256k;
+    client_header_buffer_size 500k;
+    large_client_header_buffers 4 500k;
+    http2_max_field_size       500k;
+    http2_max_header_size      500k;
+
+    # Needed websocket support (used by Ledger hardware wallets)
+    map \$http_upgrade \$connection_upgrade {
+        default upgrade;
+        ''      close;
+    }
+
     # this server block returns a 403 for all non-explicit host requests.
     #server {
     #    listen 80 default_server;
@@ -87,6 +103,25 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     }
 
 EOL
+fi
+
+# REDIRECT FOR BTCPAY_USER_FQDN
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+    # gitea http to https redirect.
+    if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+        
+        cat >>"$NGINX_CONF_PATH" <<EOL
+    # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
+    server {
+        listen 80;
+        listen [::]:80;
+        server_name ${BTCPAY_USER_FQDN};
+        return 301 https://${BTCPAY_USER_FQDN}\$request_uri;
+    }
+
+EOL
+
+    fi
 fi
 
 # TLS config for ghost.
@@ -162,6 +197,49 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     proxy_cache_path /tmp/nginx_ghost levels=1:2 keys_zone=ghostcache:600m max_size=100m inactive=24h;
 EOL
 fi
+
+
+
+# SERVER block for BTCPAY Server
+if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+    # gitea http to https redirect.
+    if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+        
+        cat >>"$NGINX_CONF_PATH" <<EOL
+    # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
+    server {
+        listen 443 ssl http2;
+        ssl on;
+        server_name ${BTCPAY_USER_FQDN};
+    
+        # Route everything to the real BTCPay server
+        location / {
+            # URL of BTCPay Server
+            proxy_pass http://10.139.144.10:80;
+            proxy_set_header Host \$http_host;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+
+            # For websockets (used by Ledger hardware wallets)
+            proxy_set_header Upgrade \$http_upgrade;
+        }
+    }
+
+EOL
+
+    fi
+fi
+
+
+
+
+
+
+
+
+
+
 
 # the open server block for the HTTPS listener
 cat >>"$NGINX_CONF_PATH" <<EOL

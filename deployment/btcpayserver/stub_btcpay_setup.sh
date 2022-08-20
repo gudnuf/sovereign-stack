@@ -35,16 +35,12 @@ fi
 
 cd btcpayserver-docker
 
-export BTCPAY_HOST="${FQDN}"
+export BTCPAY_HOST="${BTCPAY_USER_FQDN}"
 export NBITCOIN_NETWORK="${BTC_CHAIN}"
 export LIGHTNING_ALIAS="${DOMAIN_NAME}"
-export LETSENCRYPT_EMAIL="${CERTIFICATE_EMAIL_ADDRESS}"
 export BTCPAYGEN_LIGHTNING="clightning"
 export BTCPAYGEN_CRYPTO1="btc"
-
 export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-nostr-relay;"
-
-export BTCPAY_ADDITIONAL_HOSTS="${BTCPAY_ADDITIONAL_HOSTNAMES}"
 export BTCPAYGEN_REVERSEPROXY="nginx"
 export BTCPAY_ENABLE_SSH=false
 export BTCPAY_BASE_DIRECTORY=${REMOTE_HOME}
@@ -54,6 +50,12 @@ EOL
 if [ "$VPS_HOSTING_TARGET" = lxd ]; then
 cat >> "$SITE_PATH/btcpay.sh" <<EOL
 export BTCPAYGEN_EXCLUDE_FRAGMENTS="nginx-https"
+export REVERSEPROXY_DEFAULT_HOST="$BTCPAY_USER_FQDN"
+EOL
+elif [ "$VPS_HOSTING_TARGET" = aws ]; then
+cat >> "$SITE_PATH/btcpay.sh" <<EOL
+export BTCPAY_ADDITIONAL_HOSTS="${BTCPAY_ADDITIONAL_HOSTNAMES}"
+export LETSENCRYPT_EMAIL="${CERTIFICATE_EMAIL_ADDRESS}"
 EOL
 fi
 

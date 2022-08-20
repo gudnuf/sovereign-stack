@@ -2,7 +2,7 @@
 
 set -eux
 
-VIRTUAL_MACHINE="$1"
+LXD_HOSTNAME="$1"
 
 # generate the custom cloud-init file. Cloud init installs and configures sshd
 SSH_AUTHORIZED_KEY=$(<"$SSH_HOME/id_rsa.pub")
@@ -10,7 +10,7 @@ eval "$(ssh-agent -s)"
 ssh-add "$SSH_HOME/id_rsa"
 export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
 
-export FILENAME="$VIRTUAL_MACHINE.yml"
+export FILENAME="$LXD_HOSTNAME.yml"
 mkdir -p "$CLUSTER_PATH/cloud-init"
 YAML_PATH="$CLUSTER_PATH/cloud-init/$FILENAME"
 
@@ -23,7 +23,7 @@ config:
 EOF
 
 # if VIRTUAL_MACHINE=sovereign-stack then we are building the base image.
-if [ "$VIRTUAL_MACHINE" = "sovereign-stack" ]; then
+if [ "$LXD_HOSTNAME" = "sovereign-stack" ]; then
     # this is for the base image only...
     cat >> "$YAML_PATH" <<EOF
   user.vendor-data: |
@@ -259,9 +259,9 @@ EOF
 fi
 
 # let's create a profile for the BCM TYPE-1 VMs. This is per VM.
-if ! lxc profile list --format csv | grep -q "$VIRTUAL_MACHINE"; then
-    lxc profile create "$VIRTUAL_MACHINE"
+if ! lxc profile list --format csv | grep -q "$LXD_HOSTNAME"; then
+    lxc profile create "$LXD_HOSTNAME"
 fi
 
 # configure the profile with our generated cloud-init.yml file.
-cat "$YAML_PATH" | lxc profile edit "$VIRTUAL_MACHINE" 
+cat "$YAML_PATH" | lxc profile edit "$LXD_HOSTNAME" 
