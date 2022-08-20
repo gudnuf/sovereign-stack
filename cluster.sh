@@ -101,7 +101,7 @@ EOL
             ssh "ubuntu@$FQDN" ip link
 
             echo "Please enter the network interface that's dedicated to the Sovereign Stack data plane: "
-            read DATA_PLANE_MACVLAN_INTERFACE
+            read -r DATA_PLANE_MACVLAN_INTERFACE
 
         fi
 
@@ -113,7 +113,7 @@ EOL
 
             USER_DISK=
             echo "Please enter the disk or partition that Sovereign Stack will use to store data (default: loop):  "
-            read USER_DISK
+            read -r USER_DISK
 
         fi
 
@@ -200,14 +200,13 @@ networks:
 - name: lxdbrSS
   type: bridge
   config:
-    ipv4.nat: "true"
+    ipv4.nat: "false"
     ipv6.address: "none"
+    dns.mode: "dynamic"
   managed: true
   description: ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-},${DISK_TO_USE:-}
+  # lxdbrSS is an isolated bridge; no Internet access.
 
-storage_pools: []
-
-projects: []
 cluster:
   server_name: ${CLUSTER_NAME}
   enabled: true
