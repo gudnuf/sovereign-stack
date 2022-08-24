@@ -1,27 +1,85 @@
 #!/bin/bash
 
-set -exu
+set -exuo
 cd "$(dirname "$0")"
+
+if [ "$DEPLOY_GHOST" = true ]; then
+    if [ -z "$GHOST_MYSQL_PASSWORD" ]; then
+        echo "ERROR: Ensure GHOST_MYSQL_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+
+    if [ -z "$GHOST_MYSQL_ROOT_PASSWORD" ]; then
+        echo "ERROR: Ensure GHOST_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+fi
+
+if [ "$DEPLOY_GITEA" = true ]; then
+    if [ -z "$GITEA_MYSQL_PASSWORD" ]; then
+        echo "ERROR: Ensure GITEA_MYSQL_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+    if [ -z "$GITEA_MYSQL_ROOT_PASSWORD" ]; then
+        echo "ERROR: Ensure GITEA_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+fi
+
+if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+    if [ -z "$NEXTCLOUD_MYSQL_ROOT_PASSWORD" ]; then
+        echo "ERROR: Ensure NEXTCLOUD_MYSQL_ROOT_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+
+    if [ -z "$NEXTCLOUD_MYSQL_PASSWORD" ]; then
+        echo "ERROR: Ensure NEXTCLOUD_MYSQL_PASSWORD is configured in your site_definition."
+        exit 1
+    fi
+fi
+
+if [ "$DEPLOY_NOSTR" = true ]; then
+    if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
+        echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
+        exit 1
+    fi
+
+    if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
+        echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
+        exit 1
+    fi    
+fi
+
+if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
+    echo "ERROR: Ensure DUPLICITY_BACKUP_PASSPHRASE is configured in your site_definition."
+    exit 1
+fi
+
+if [ -z "$DOMAIN_NAME" ]; then
+    echo "ERROR: Ensure DOMAIN_NAME is configured in your site_definition."
+    exit 1
+fi
+
+if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then 
+    echo "ERROR: You MUST specify a Nostr public key. This is how you get all your social features."
+    echo "INFO: Go to your site_definition file and set the NOSTR_ACCOUNT_PUBKEY variable."
+    exit 1
+fi
 
 bash -c ./stub_nginxconf.sh
 
 TOR_CONFIG_PATH=
 
-ssh "$FQDN" mkdir -p "$REMOTE_HOME/ghost_site" "$REMOTE_HOME/ghost_db"
+ssh "$WWW_FQDN" mkdir -p "$REMOTE_HOME/ghost_site" "$REMOTE_HOME/ghost_db"
 
 if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-    ssh "$FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/data"
-    ssh "$FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/logs"
-    ssh "$FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/html"
+    ssh "$WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/data"
+    ssh "$WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/logs"
+    ssh "$WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/html"
 fi
 
 if [ "$DEPLOY_GITEA" = true ]; then
     ssh "$FQDN" "mkdir -p $REMOTE_GITEA_PATH/data $REMOTE_GITEA_PATH/db"
-fi
-
-# enable docker swarm mode so we can support docker stacks.
-if ! docker info | grep -q "Swarm: active"; then
-    docker swarm init --advertise-addr enp6s0
 fi
 
 # stop services.
@@ -30,27 +88,19 @@ if docker stack list --format "{{.Name}}" | grep -q webstack; then
     sleep 15
 fi
 
-# this will generate letsencrypt certs and pull them down locally.
-# if [ "$VPS_HOSTING_TARGET" != lxd ]; then
 
-
-# really we should change this if clause to some thing like
-# "if the perimeter firewall allows port 80/443, then go ahead."
-if [ "$RUN_CERT_RENEWAL" = true ]; then
-    ./generate_certs.sh
-fi
-
-if [ "$RUN_BACKUP"  = true ]; then
+if [ "$BACKUP_WWW"  = true ]; then
     ./backup.sh
 fi
 
-if [ "$RUN_RESTORE" = true ]; then
+if [ "$RESTORE_WWW" = true ]; then
     # Generally speaking we try to restore data. But if the BACKUP directory was
     # just created, we know that we'll deploy fresh.
-    if [ "$RESTORE_WWW_USERDATA"  = true ]; then
-        ./restore.sh
-    fi
+    ./restore.sh
+else
+    ./generate_certs.sh
 fi
+
 
 if [ "$DEPLOY_ONION_SITE" = true ]; then
     # ensure the tor image is built
@@ -58,8 +108,8 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
 
     # if the tor folder doesn't exist, we provision a new one. Otherwise you need to restore.
     # this is how we generate a new torv3 endpoint.
-    if ! ssh "$FQDN" "[ -d $REMOTE_HOME/tor/www ]"; then
-        ssh "$FQDN" "mkdir -p $REMOTE_HOME/tor"
+    if ! ssh "$WWW_FQDN" "[ -d $REMOTE_HOME/tor/www ]"; then
+        ssh "$WWW_FQDN" "mkdir -p $REMOTE_HOME/tor"
         TOR_CONFIG_PATH="$(pwd)/tor/torrc-init"
         export TOR_CONFIG_PATH="$TOR_CONFIG_PATH"
         docker stack deploy -c ./tor.yml torstack
@@ -68,37 +118,37 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
         sleep 20
     fi
 
-    ONION_ADDRESS="$(ssh "$FQDN" sudo cat "${REMOTE_HOME}"/tor/www/hostname)"
+    ONION_ADDRESS="$(ssh "$WWW_FQDN" sudo cat "${REMOTE_HOME}"/tor/www/hostname)"
     export ONION_ADDRESS="$ONION_ADDRESS"
 
     # # Since we run a separate ghost process, we create a new directory and symlink it to the original
-    # if ! ssh "$FQDN" "[ -L $REMOTE_HOME/tor_ghost ]"; then
-    #     ssh "$FQDN" ln -s "$REMOTE_HOME/ghost_site/themes $REMOTE_HOME/tor_ghost/themes"
+    # if ! ssh "$WWW_FQDN" "[ -L $REMOTE_HOME/tor_ghost ]"; then
+    #     ssh "$WWW_FQDN" ln -s "$REMOTE_HOME/ghost_site/themes $REMOTE_HOME/tor_ghost/themes"
     # fi
 fi
 
-if [ "$RUN_SERVICES" = true ]; then
-    mkdir -p "$SITE_PATH/stacks"
-    DOCKER_YAML_PATH="$SITE_PATH/stacks/www.yml"
-    export DOCKER_YAML_PATH="$DOCKER_YAML_PATH"
-    bash -c ./stub_docker_yml.sh
+#if [ "$RUN_SERVICES" = true ]; then
+mkdir -p "$SITE_PATH/stacks"
+DOCKER_YAML_PATH="$SITE_PATH/stacks/www.yml"
+export DOCKER_YAML_PATH="$DOCKER_YAML_PATH"
+bash -c ./stub_docker_yml.sh
 
-    docker stack deploy -c "$DOCKER_YAML_PATH" webstack
+docker stack deploy -c "$DOCKER_YAML_PATH" webstack
 
-    # start a browser session; point it to port 80 to ensure HTTPS redirect.
-    wait-for-it -t 320 "$FQDN:80"
-    wait-for-it -t 320 "$FQDN:443"
+# start a browser session; point it to port 80 to ensure HTTPS redirect.
+wait-for-it -t 320 "$WWW_FQDN:80"
+wait-for-it -t 320 "$WWW_FQDN:443"
 
-    # open bowser tabs.
-    if [ "$DEPLOY_GHOST" = true ]; then
-        xdg-open "http://$FQDN" > /dev/null 2>&1
-    fi
-
-    if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-        xdg-open "http://$NEXTCLOUD_FQDN" > /dev/null 2>&1
-    fi
-
-    if [ "$DEPLOY_GITEA" = true ]; then
-        xdg-open "http://$GITEA_FQDN" > /dev/null 2>&1
-    fi
+# open bowser tabs.
+if [ "$DEPLOY_GHOST" = true ]; then
+    xdg-open "http://$WWW_FQDN" > /dev/null 2>&1
 fi
+
+if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+    xdg-open "http://$NEXTCLOUD_FQDN" > /dev/null 2>&1
+fi
+
+if [ "$DEPLOY_GITEA" = true ]; then
+    xdg-open "http://$GITEA_FQDN" > /dev/null 2>&1
+fi
+#fi

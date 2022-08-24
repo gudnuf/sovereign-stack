@@ -18,8 +18,8 @@ if [ "$VPS_HOSTING_TARGET" = aws ]; then
         certbot/certbot certonly -v --noninteractive --agree-tos --key-type ecdsa --standalone --expand -d "$DOMAIN_NAME" -d "$FQDN" -d "$NEXTCLOUD_FQDN" -d "$GITEA_FQDN" --email "$CERTIFICATE_EMAIL_ADDRESS"
 
 elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
-# with the lxd side, we are trying to expose ALL OUR services from one IP address, which terminates
-# at a cachehing reverse proxy that runs nginx.
+    # with the lxd side, we are trying to expose ALL OUR services from one IP address, which terminates
+    # at a cachehing reverse proxy that runs nginx.
     docker run -it --rm \
         --name certbot \
         -p 80:80 \

@@ -2,10 +2,10 @@
 
 set -x
 
-CLUSTER_NAME=""
-SSH_ENDPOINT_HOSTNAME=""
-SSH_ENDPOINT_DOMAIN_NAME=""
-TEST_DOMAIN=""
+CLUSTER_NAME="development"
+SSH_ENDPOINT_HOSTNAME="atlantis"
+SSH_ENDPOINT_DOMAIN_NAME="ancapistan.io"
+TEST_DOMAIN="ancapistan.casa"
 
 export LXD_VM_NAME="${TEST_DOMAIN//./-}"
 
@@ -21,6 +21,8 @@ lxc profile delete sovereign-stack
 lxc image rm sovereign-stack-base
 lxc image rm ubuntu-base
 
+lxc network delete lxdbrSS
+
 lxc storage delete sovereign-stack
 
 lxc remote switch "local"
@@ -28,6 +30,6 @@ lxc remote remove "$CLUSTER_NAME"
 
 source "$HOME/.bashrc"
 
-./cluster.sh create "$CLUSTER_NAME" "$SSH_ENDPOINT.$DOMAIN_NAME"
+./cluster.sh create "$CLUSTER_NAME" "$SSH_ENDPOINT_HOSTNAME.$SSH_ENDPOINT_DOMAIN_NAME" --data-plane-interface=enp89s0
 
-./deploy.sh
+#./deploy.sh

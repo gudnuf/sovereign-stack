@@ -26,13 +26,9 @@ function run_ddns {
 
                 # we're waiting here to allow dns records to stale out.
                 # this is necessary for certificate renewal; letsencrypt might have stale records
-                # and cert renew won't succeed. HOWEVER, if we're running a restore operation, we SHOULD NOT
-                # do a certificate renewal (we're restoring old certs). Thus it is not necessary to sleep here.
-                if [ "$RUN_RESTORE" = false ]; then
-                    echo "INFO: Waiting $DDNS_SLEEP_SECONDS seconds to allow cached DNS records to expire."
-                    sleep "$DDNS_SLEEP_SECONDS";
-                fi
-                
+                echo "INFO: Waiting $DDNS_SLEEP_SECONDS seconds to allow cached DNS records to expire."
+                sleep "$DDNS_SLEEP_SECONDS";
+    
                 break;
             fi
 

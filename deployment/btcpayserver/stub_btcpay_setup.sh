@@ -19,9 +19,6 @@ while [ ! -f /var/lib/cloud/instance/boot-finished ]; do
     sleep 1
 done
 
-#curl -SL https://github.com/docker/compose/releases/download/v2.6.1/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
-#chmod 0777 /usr/local/bin/docker-compose
-
 if [ ! -d "btcpayserver-docker" ]; then 
     echo "cloning btcpayserver-docker"; 
     git clone -b master https://github.com/btcpayserver/btcpayserver-docker btcpayserver-docker;
@@ -78,5 +75,6 @@ EOL
 
 # send the setup script to the remote machine.
 scp "$SITE_PATH/btcpay.sh" "ubuntu@$FQDN:$REMOTE_HOME/btcpay_setup.sh"
-ssh "$FQDN" "chmod 0744 $REMOTE_HOME/btcpay_setup.sh"
-ssh "$FQDN" "sudo bash -c ./btcpay_setup.sh"
+ssh "$BTCPAY_FQDN" "chmod 0744 $REMOTE_HOME/btcpay_setup.sh"
+ssh "$BTCPAY_FQDN" "sudo bash -c ./btcpay_setup.sh"
+ssh "$BTCPAY_FQDN" "touch $REMOTE_HOME/btcpay.complete"

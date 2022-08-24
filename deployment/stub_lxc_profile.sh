@@ -194,16 +194,16 @@ else
         dhcp4: false
 EOF
 
-    if [[ "$LXD_HOSTNAME" = www-* ]]; then
+    if [[ "$LXD_HOSTNAME" = $WWW_HOSTNAME-* ]]; then
         cat >> "$YAML_PATH" <<EOF
         addresses: [10.139.144.5/24]
         nameservers:
           addresses: [10.139.144.1]
-
+          
 EOF
     fi
 
-    if [[ "$LXD_HOSTNAME" = btcpay-* ]]; then
+    if [[ "$LXD_HOSTNAME" = $BTCPAY_HOSTNAME-* ]]; then
         cat >> "$YAML_PATH" <<EOF
         addresses: [10.139.144.10/24]
         nameservers:
@@ -226,9 +226,7 @@ devices:
     type: disk
 EOF
 
-# TODO get the sovereign-stack lxc profile OFF the lxdbrSS bridge network.
-echo "DATA_PLANE_MACVLAN_INTERFACE: $DATA_PLANE_MACVLAN_INTERFACE"
-
+# Stub out the network piece for the base image.
 if [ "$LXD_HOSTNAME" = sovereign-stack ] ; then
 
 # If we are deploying the www, we attach the vm to the underlay via macvlan.

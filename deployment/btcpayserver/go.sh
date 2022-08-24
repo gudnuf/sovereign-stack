@@ -23,12 +23,11 @@ elif [ "$RESTORE_BTCPAY" = true ]; then
     
     ./restore.sh
 
-    RUN_BACKUP=false
     RUN_SERVICES=true
     OPEN_URL=true
 
     # if this is a new VM from a migration procedure, then we can now run setup.
-    if [ "$MIGRATE_VPS" = true ]; then
+    if [ "$MIGRATE_BTCPAY" = true ]; then
         ./stub_btcpay_setup.sh
     fi
 
@@ -37,13 +36,12 @@ elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
     # if so, we re-run setup script.
     ./stub_btcpay_setup.sh
 
-    RUN_BACKUP=false
     RUN_SERVICES=true
     OPEN_URL=true
 fi
 
 # if the script gets this far, then we grab a regular backup.
-if [ "$RUN_BACKUP"  = true ]; then
+if [ "$BACKUP_BTCPAY"  = true ]; then
     # we just grab a regular backup
     ./backup.sh "$UNIX_BACKUP_TIMESTAMP"
 fi
@@ -60,8 +58,8 @@ fi
 if [ "$OPEN_URL" = true ]; then
 
     if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-        if wait-for-it -t 5 "$WWW_FQDN:443"; then
-            xdg-open "https://$WWW_FQDN" > /dev/null 2>&1
+        if wait-for-it -t 5 "$WWW_FQDN:80"; then
+            xdg-open "http://$WWW_FQDN" > /dev/null 2>&1
         fi
     else
         if wait-for-it -t 5 "$FQDN:443"; then

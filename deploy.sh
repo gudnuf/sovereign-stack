@@ -23,22 +23,25 @@ if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
     exit 1
 fi
 
-MIGRATE_VPS=false
+
 DOMAIN_NAME=
 RESTORE_ARCHIVE=
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=true
-USER_NO_BACKUP=false
-USER_RUN_RESTORE=false
-RESTORE_WWW_USERDATA=true
+
+RESTORE_WWW=false
+BACKUP_WWW=true
 RESTORE_BTCPAY=false
+BACKUP_BTCPAY=true
+MIGRATE_WWW=false
+MIGRATE_BTCPAY=false
+
 USER_SKIP_WWW=false
 USER_SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
 DEPLOY_BTCPAY_SERVER=false
 CLUSTER_NAME="$(lxc remote get-default)"
-RUN_BACKUP=true
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -48,13 +51,14 @@ for i in "$@"; do
             shift
         ;;
         --restore-www)
-            USER_RUN_RESTORE=true
+            RESTORE_WWW=true
+            BACKUP_WWW=false
             RUN_CERT_RENEWAL=false
-            USER_NO_BACKUP=true
             shift
         ;;
         --restore-btcpay)
             RESTORE_BTCPAY=true
+            BACKUP_BTCPAY=false
             shift
         ;;
         --archive=*)
@@ -77,12 +81,21 @@ for i in "$@"; do
             USER_SKIP_BTCPAY=true
             shift
         ;;
-        --no-backup)
-            USER_NO_BACKUP=true
+        --no-backup-www)
+            BACKUP_WWW=false
             shift
         ;;
-        --migrate)
-            MIGRATE_VPS=true
+        --no-backup-btcpay)
+            BACKUP_BTCPAY=false
+            shift
+        ;;
+        --migrate-www)
+            MIGRATE_WWW=true
+            RUN_CERT_RENEWAL=false
+            shift
+        ;;
+        --migrate-btcpay)
+            MIGRATE_BTCPAY=true
             RUN_CERT_RENEWAL=false
             shift
         ;;
@@ -109,7 +122,12 @@ export SSH_HOME="$HOME/.ssh"
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
 export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
-
+export RESTORE_WWW="$RESTORE_WWW"
+export BACKUP_WWW="$BACKUP_WWW"
+export RESTORE_BTCPAY="$RESTORE_BTCPAY"
+export BACKUP_BTCPAY="$RESTORE_BTCPAY"
+export MIGRATE_WWW="$MIGRATE_WWW"
+export MIGRATE_BTCPAY="$MIGRATE_BTCPAY"
 
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
 
@@ -172,7 +190,7 @@ proxy:
 EOL
 
         # enable docker swarm mode so we can support docker stacks.
-        if ! docker info | grep -q "Swarm: active"; then
+        if docker info | grep -q "Swarm: inactive"; then
             docker swarm init
         fi
 
@@ -192,47 +210,74 @@ function new_pass {
     gpg --gen-random --armor 1 25
 }
 
-if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
-    # which is set up during LXD cluster creation ss-cluster.
-    LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep ss-config)"
-    CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
-    DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
-    DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
 
-    export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
-    export DISK_TO_USE="$DISK_TO_USE"
-
-    ./deployment/create_lxc_base.sh
-
-fi
-
-function run_domain {
+function instantiate_vms {
 
     export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
     export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
     export BTC_CHAIN="$BTC_CHAIN"
     export UPDATE_BTCPAY="$UPDATE_BTCPAY"
-    export MIGRATE_VPS="$MIGRATE_VPS"
     export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
 
     # iterate over all our server endpoints and provision them if needed.
     # www
     VPS_HOSTNAME=
 
-
     for VIRTUAL_MACHINE in www btcpayserver; do
         FQDN=
 
-        # shellcheck disable=SC1091
-        source ./shared.sh
-
+        export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
         if [ ! -f "$SITE_PATH/site_definition" ]; then
             echo "ERROR: Something went wrong. Your site_definition is missing."
             exit 1
         fi
 
         source "$SITE_PATH/site_definition"
+
+        # VALIDATE THE INPUT from the ENVFILE
+        if [ -z "$DOMAIN_NAME" ]; then
+            echo "ERROR: DOMAIN_NAME not specified. Use the --domain-name= option."
+            exit 1
+        fi
+
+        # TODO, ensure VPS_HOSTING_TARGET is in range.
+        export NEXTCLOUD_FQDN="$NEXTCLOUD_HOSTNAME.$DOMAIN_NAME"
+        export BTCPAY_FQDN="$BTCPAY_HOSTNAME.$DOMAIN_NAME"
+        export BTCPAY_USER_FQDN="$BTCPAY_HOSTNAME_IN_CERT.$DOMAIN_NAME"
+        export WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
+        export GITEA_FQDN="$GITEA_HOSTNAME.$DOMAIN_NAME"
+        export NOSTR_FQDN="$NOSTR_HOSTNAME.$DOMAIN_NAME"
+        export ADMIN_ACCOUNT_USERNAME="info"
+        export CERTIFICATE_EMAIL_ADDRESS="$ADMIN_ACCOUNT_USERNAME@$DOMAIN_NAME"
+        export REMOTE_NEXTCLOUD_PATH="$REMOTE_HOME/nextcloud"
+        export REMOTE_GITEA_PATH="$REMOTE_HOME/gitea"
+        export BTC_CHAIN="$BTC_CHAIN"
+        export WWW_INSTANCE_TYPE="$WWW_INSTANCE_TYPE"
+        export BTCPAY_ADDITIONAL_HOSTNAMES="$BTCPAY_ADDITIONAL_HOSTNAMES"
+
+
+        # ensure the 
+        if [ ! -f "$PROJECT_PATH/project_definition" ]; then 
+            echo "ERROR: Your project_definition is not set."
+            exit 1
+        fi
+
+        source "$PROJECT_PATH/project_definition"
+
+        if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+            # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
+            # which is set up during LXD cluster creation ss-cluster.
+            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep ss-config)"
+            CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
+            DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
+            DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
+
+            export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
+            export DISK_TO_USE="$DISK_TO_USE"
+
+            ./deployment/create_lxc_base.sh
+
+        fi
 
         # create the local packup path if it's not there!
         BACKUP_PATH_CREATED=false
@@ -247,19 +292,25 @@ function run_domain {
         export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
         LOCAL_BACKUP_PATH="$SITE_PATH/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
         export LOCAL_BACKUP_PATH="$LOCAL_BACKUP_PATH"
-
         export BACKUP_TIMESTAMP="$BACKUP_TIMESTAMP"
         export UNIX_BACKUP_TIMESTAMP="$UNIX_BACKUP_TIMESTAMP"
-
         export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
         
+
+
+        # ensure the admin has set the MAC address for the base image.
+        if [ -z "$SOVEREIGN_STACK_MAC_ADDRESS" ]; then
+            echo "ERROR: SOVEREIGN_STACK_MAC_ADDRESS is undefined. Check your project definition."
+            exit 1
+        fi
+
         if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
             mkdir -p "$LOCAL_BACKUP_PATH"
             BACKUP_PATH_CREATED=true
-            RESTORE_WWW_USERDATA=false
         fi
 
         DDNS_HOST=
+        MIGRATE_VPS=false
         if [ "$VIRTUAL_MACHINE" = www ]; then
             if [ "$DEPLOY_WWW_SERVER" = false ] || [ "$USER_SKIP_WWW" = true ]; then
                 continue
@@ -269,6 +320,9 @@ function run_domain {
             MAC_ADDRESS_TO_PROVISION="$WWW_MAC_ADDRESS"
             DDNS_HOST="$WWW_HOSTNAME"
             ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
+            if [ "$MIGRATE_WWW" = true ]; then
+                MIGRATE_VPS=true
+            fi
         elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$USER_SKIP_BTCPAY" = true ]; then
             if [ "$DEPLOY_BTCPAY_SERVER" = false ]; then
                 continue
@@ -282,10 +336,14 @@ function run_domain {
             elif [ "$BTC_CHAIN" = testnet ]; then
                 ROOT_DISK_SIZE_GB=70
             fi
+
+            if [ "$MIGRATE_BTCPAY" = true ]; then
+                MIGRATE_VPS=true
+            fi
+
         elif [ "$VIRTUAL_MACHINE" = "sovereign-stack" ]; then
             DDNS_HOST="sovereign-stack-base"
             ROOT_DISK_SIZE_GB=8
-            MAC_ADDRESS_TO_PROVISION="$SOVEREIGN_STACK_MAC_ADDRESS"
         else
             echo "ERROR: VIRTUAL_MACHINE not within allowable bounds."
             exit
@@ -294,8 +352,8 @@ function run_domain {
         export DDNS_HOST="$DDNS_HOST"
         export FQDN="$DDNS_HOST.$DOMAIN_NAME"
         export LXD_VM_NAME="${FQDN//./-}"
+        #${PROJECT_NAME//./-}-
         export REMOTE_BACKUP_PATH="$REMOTE_BACKUP_PATH"
-        export RESTORE_WWW_USERDATA="$RESTORE_WWW_USERDATA"
 
         # This next section of if statements is our sanity checking area.
         if [ "$VPS_HOSTING_TARGET" = aws ]; then
@@ -306,74 +364,6 @@ function run_domain {
             fi
         fi
 
-        if [ "$DEPLOY_GHOST" = true ]; then
-            if [ -z "$GHOST_MYSQL_PASSWORD" ]; then
-                echo "ERROR: Ensure GHOST_MYSQL_PASSWORD is configured in your site_definition."
-                exit 1
-            fi
-
-            if [ -z "$GHOST_MYSQL_ROOT_PASSWORD" ]; then
-                echo "ERROR: Ensure GHOST_MYSQL_ROOT_PASSWORD is configured in your site_definition."
-                exit 1
-            fi
-        fi
-
-        if [ "$DEPLOY_GITEA" = true ]; then
-            if [ -z "$GITEA_MYSQL_PASSWORD" ]; then
-                echo "ERROR: Ensure GITEA_MYSQL_PASSWORD is configured in your site_definition."
-                exit 1
-            fi
-            if [ -z "$GITEA_MYSQL_ROOT_PASSWORD" ]; then
-                echo "ERROR: Ensure GITEA_MYSQL_ROOT_PASSWORD is configured in your site_definition."
-                exit 1
-            fi
-        fi
-
-        if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-            if [ -z "$NEXTCLOUD_MYSQL_ROOT_PASSWORD" ]; then
-                echo "ERROR: Ensure NEXTCLOUD_MYSQL_ROOT_PASSWORD is configured in your site_definition."
-                exit 1
-            fi
-
-            if [ -z "$NEXTCLOUD_MYSQL_PASSWORD" ]; then
-                echo "ERROR: Ensure NEXTCLOUD_MYSQL_PASSWORD is configured in your site_definition."
-                exit 1
-            fi
-        fi
-
-        if [ "$DEPLOY_NOSTR" = true ]; then
-            if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
-                echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
-                exit 1
-            fi
-
-            if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
-                echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
-                exit 1
-            fi    
-        fi
-
-        if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
-            echo "ERROR: Ensure DUPLICITY_BACKUP_PASSPHRASE is configured in your site_definition."
-            exit 1
-        fi
-
-        if [ -z "$DOMAIN_NAME" ]; then
-            echo "ERROR: Ensure DOMAIN_NAME is configured in your site_definition."
-            exit 1
-        fi
-
-        if [ -z "$DEPLOY_BTCPPAY_SERVER" ]; then
-            echo "ERROR: Ensure DEPLOY_BTCPPAY_SERVER is configured in your site_definition."
-            exit 1
-        fi
-
-        if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then 
-            echo "ERROR: You MUST specify a Nostr public key. This is how you get all your social features."
-            echo "INFO: Go to your site_definition file and set the NOSTR_ACCOUNT_PUBKEY variable."
-            exit 1
-        fi
-    
         MACHINE_EXISTS=false
         if [ "$VPS_HOSTING_TARGET" = aws ] && docker-machine ls -q | grep -q "$FQDN"; then
             MACHINE_EXISTS=true
@@ -381,10 +371,6 @@ function run_domain {
 
         if [ "$VPS_HOSTING_TARGET" = lxd ] && lxc list --format csv | grep -q "$FQDN"; then
             MACHINE_EXISTS=true
-        fi
-
-        if [ "$USER_NO_BACKUP" = true ]; then
-            RUN_BACKUP=false
         fi
 
         if [ "$MACHINE_EXISTS"  = true ]; then
@@ -398,7 +384,7 @@ function run_domain {
 
                 # get a backup of the machine. This is what we restore to the new VPS.
                 echo "INFO: Machine exists.  Since we're going to delete it, let's grab a backup. We don't need to restore services since we're deleting it."
-                RESTORE_BTCPAY=false UPDATE_BTCPAY=false RUN_RESTORE=false RUN_BACKUP=true RUN_SERVICES=false ./deployment/domain_init.sh
+                ./deployment/deploy_vms.sh
 
                 # delete the remote VPS.
                 if [ "$VPS_HOSTING_TARGET" = aws ]; then
@@ -412,17 +398,16 @@ function run_domain {
                     fi
                 elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
                     lxc delete --force "$LXD_VM_NAME"
-                    USER_RUN_RESTORE=true
                 fi
 
                 # Then we run the script again to re-instantiate a new VPS, restoring all user data 
                 # if restore directory doesn't exist, then we end up with a new site.
                 echo "INFO: Recreating the remote VPS then restoring user data."
-                sleep 5
-                RESTORE_BTCPAY=true UPDATE_BTCPAY=false RUN_RESTORE=true RUN_BACKUP=false RUN_SERVICES=true RUN_CERT_RENEWAL=false RESTORE_ARCHIVE="$RESTORE_ARCHIVE" ./deployment/domain_init.sh
-                sleep 5
+                sleep 2
+
+                ./deployment/deploy_vms.sh
             else
-                RESTORE_BTCPAY="$RESTORE_BTCPAY" UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP="$RUN_BACKUP" RUN_SERVICES=true ./deployment/domain_init.sh
+                ./deployment/deploy_vms.sh
             fi
         else
             if [ "$MIGRATE_VPS" = true ]; then
@@ -430,22 +415,54 @@ function run_domain {
             fi
 
             # The machine does not exist. Let's bring it into existence, restoring from latest backup.
-            echo "Machine does not exist. RUN_RESTORE=$USER_RUN_RESTORE RUN_BACKUP=false" 
-            RESTORE_BTCPAY="$RESTORE_BTCPAY" UPDATE_BTCPAY="$UPDATE_BTCPAY" RUN_RESTORE="$USER_RUN_RESTORE" RUN_BACKUP=false RUN_SERVICES=true ./deployment/domain_init.sh
+            echo "Machine does not exist." 
+            ./deployment/deploy_vms.sh
         fi
+
+
     done
 
 }
 
+function run_domain {
+
+    # if the local docker client isn't logged in, do so;
+    # this helps prevent docker pull errors since they throttle.
+    if [ ! -f "$HOME/.docker/config.json" ]; then
+        echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
+    fi
+
+    # this tells our local docker client to target the remote endpoint via SSH
+    export DOCKER_HOST="ssh://ubuntu@$WWW_FQDN"
+    # enable docker swarm mode so we can support docker stacks.
+    if docker info | grep -q "Swarm: inactive"; then
+        docker swarm init --advertise-addr enp6s0
+    fi
+    bash -c "./deployment/www/go.sh"
+
+
+    export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"
+
+    # enable docker swarm mode so we can support docker stacks.
+    if docker info | grep -q "Swarm: inactive"; then
+        docker swarm init --advertise-addr enp6s0
+    fi
+
+    bash -c "./deployment/btcpayserver/go.sh"
+
+    echo "Successfully deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;"
+
+}
+
 function stub_site_definition {
+    mkdir -p "$SITE_PATH" "$PROJECT_PATH/sites"
 
-    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-    mkdir -p "$SITE_PATH"
+    # create a symlink from the CLUSTERPATH/sites/DOMAIN_NAME to the ss-sites/domain name
+    if [ ! -d "$PROJECT_PATH/sites/$DOMAIN_NAME" ]; then
+        ln -s "$SITE_PATH" "$PROJECT_PATH/sites/$DOMAIN_NAME"
+    fi
 
-    if [ -f "$SITE_PATH/site_definition" ]; then
-            source ./shared.sh
-    else
-
+    if [ ! -f "$SITE_PATH/site_definition" ]; then
         # check to see if the enf file exists. exist if not.
         SITE_DEFINITION_PATH="$SITE_PATH/site_definition"
         if [ ! -f "$SITE_DEFINITION_PATH" ]; then
@@ -462,10 +479,6 @@ export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 
 # AWS only
 #export DDNS_PASSWORD=
-
-## WWW
-export DEPLOY_WWW_SERVER=true
-export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 
 # Deploy APPS to www
 export DEPLOY_GHOST=true

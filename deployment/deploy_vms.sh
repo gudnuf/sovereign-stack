@@ -33,9 +33,12 @@ function prepare_host {
     # create a directory to store backup archives. This is on all new vms.
     ssh "$FQDN" mkdir -p "$REMOTE_HOME/backups"
 
+    # if this execution is for btcpayserver, then we run the stub/btcpay setup script
+    # but only if it hasn't been executed before.
     if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
-        echo "INFO: new machine detected. Provisioning BTCPay server scripts."
-        ./btcpayserver/stub_btcpay_setup.sh
+        if [ "$(ssh "$BTCPAY_FQDN" [[ ! -f "$REMOTE_HOME/btcpay.complete" ]]; echo $?)" -eq 0 ]; then
+            ./btcpayserver/stub_btcpay_setup.sh
+        fi
     fi
 
 }
@@ -44,7 +47,6 @@ function prepare_host {
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
     # let's create the remote VPS if needed.
     if ! docker-machine ls -q --filter name="$FQDN" | grep -q "$FQDN"; then
-        RUN_BACKUP=false
 
         ./provision_vps.sh
 
@@ -55,7 +57,6 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
     # if the machine doesn't exist, we create it.
     if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
-        export RUN_BACKUP=false
 
         # create a base image if needed and instantiate a VM.
         if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
@@ -68,18 +69,5 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
     fi
 
     prepare_host
+
 fi
-
-# if the local docker client isn't logged in, do so;
-# this helps prevent docker pull errors since they throttle.
-if [ ! -f "$HOME/.docker/config.json" ]; then
-    echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
-fi
-
-# this tells our local docker client to target the remote endpoint via SSH
-export DOCKER_HOST="ssh://ubuntu@$FQDN"
-
-# the following scripts take responsibility for the rest of the provisioning depending on the app you're deploying.
-bash -c "./$VIRTUAL_MACHINE/go.sh"
-
-echo "Successfully deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;"

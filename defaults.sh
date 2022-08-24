@@ -74,6 +74,7 @@ export VM_NAME="sovereign-stack-base"
 export DEV_MEMORY_MB="4096"
 export DEV_CPU_COUNT="4"
 export SSHFS_PATH="/tmp/sshfs_temp"
+mkdir -p "$SSHFS_PATH"
 export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 
 export NEXTCLOUD_SPACE_GB=10
@@ -136,3 +137,7 @@ export DEPLOY_MGMT_REGISTRY=true
 export REMOTE_HOME="/home/ubuntu"
 
 export BTCPAY_SERVER_APPPATH="$REMOTE_HOME/btcpayserver-docker"
+export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
+
+# this space is for OS, docker images, etc. DOES NOT INCLUDE USER DATA.
+export ROOT_DISK_SIZE_GB=20

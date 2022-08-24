@@ -51,7 +51,7 @@ EOL
 
 # ghost http to https redirects.
 cat >>"$NGINX_CONF_PATH" <<EOL
-    # http://${DOMAIN_NAME} redirect to https://${FQDN}
+    # http://${DOMAIN_NAME} redirect to https://${WWW_FQDN}
     server {
         listen 80;
         listen [::]:80;
@@ -63,15 +63,16 @@ cat >>"$NGINX_CONF_PATH" <<EOL
             return 301 https://${DOMAIN_NAME}\$request_uri;
         }
     }
+
 EOL
 
 cat >>"$NGINX_CONF_PATH" <<EOL
-    # http://${FQDN} redirect to https://${FQDN}
+    # http://${WWW_FQDN} redirect to https://${WWW_FQDN}
     server {
         listen 80;
         listen [::]:80;
-        server_name ${FQDN};
-        return 301 https://${FQDN}\$request_uri;
+        server_name ${WWW_FQDN};
+        return 301 https://${WWW_FQDN}\$request_uri;
     }
 
 EOL
@@ -128,9 +129,6 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     # global TLS settings
     ssl_prefer_server_ciphers on;
     ssl_protocols TLSv1.3;
-    ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
-    ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
     ssl_session_timeout 1d;
     ssl_session_cache shared:MozSSL:10m;  # about 40000 sessions
     ssl_session_tickets off;
@@ -142,19 +140,29 @@ cat >>"$NGINX_CONF_PATH" <<EOL
 
 
     # default server if hostname not specified.
-    #server {
-    #    listen 443 default_server;
-    #    return 403;
-    #}
+    server {
+        listen 443 default_server;
 
-    # map \$http_user_agent \$og_prefix {
-    #     ~*(googlebot|twitterbot)/  /open-graph;
-    # }
+        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+
+        return 403;
+    }
+
+    # maybe helps with Twitter cards.
+    map \$http_user_agent \$og_prefix {
+        ~*(googlebot|twitterbot)/  /open-graph;
+    }
 
     # https://${DOMAIN_NAME} redirect to https://${FQDN}
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
+
+        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
         
         server_name ${DOMAIN_NAME};
 
@@ -176,9 +184,9 @@ EOL
 fi
 
 cat >>"$NGINX_CONF_PATH" <<EOL
-        # catch all; send request to ${FQDN}
+        # catch all; send request to ${WWW_FQDN}
         location / {
-            return 301 https://${FQDN}\$request_uri;
+            return 301 https://${WWW_FQDN}\$request_uri;
         }
 EOL
 #####################################################
@@ -209,6 +217,11 @@ if [ "$VPS_HOSTING_TARGET" = lxd ]; then
     server {
         listen 443 ssl http2;
         ssl on;
+
+        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+
         server_name ${BTCPAY_USER_FQDN};
     
         # Route everything to the real BTCPay server
@@ -246,7 +259,11 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
 
-        server_name ${FQDN};
+        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+
+        server_name ${WWW_FQDN};
 EOL
 
 # add the Onion-Location header if specifed.
@@ -376,6 +393,11 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
+
+        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+
         server_name ${NEXTCLOUD_FQDN};
         
         location / {

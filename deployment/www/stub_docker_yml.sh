@@ -32,7 +32,7 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
     volumes:
       - ${REMOTE_HOME}/ghost_site:/var/lib/ghost/content
     environment:
-      - url=https://${FQDN}
+      - url=https://${WWW_FQDN}
       - database__client=mysql
       - database__connection__host=ghostdb
       - database__connection__user=ghost
@@ -296,7 +296,7 @@ cat >>"$DOCKER_YAML_PATH" <<EOL
 
 configs:
   nginx-config:
-    file: ${SITE_PATH}/nginx.conf
+    file: ${PROJECT_PATH}/nginx.conf
 EOL
 
 if [ "$DEPLOY_ONION_SITE" = true ]; then
