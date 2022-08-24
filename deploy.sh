@@ -491,16 +491,6 @@ export NEXTCLOUD_MYSQL_ROOT_PASSWORD="$(new_pass)"
 export GITEA_MYSQL_PASSWORD="$(new_pass)"
 export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 
-## BTCPAY SERVER; if true, then a BTCPay server is deployed.
-export DEPLOY_BTCPAY_SERVER=false
-export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-
-# CHAIN to DEPLOY; valid are 'regtest', 'testnet', and 'mainnet'
-export BTC_CHAIN=regtest
-
-# set to false to disable nginx caching; helps when making website updates.
-# export ENABLE_NGINX_CACHING=true
-
 EOL
 
             chmod 0744 "$SITE_DEFINITION_PATH"
@@ -512,18 +502,101 @@ EOL
 
 }
 
+
+function stub_project_definition {
+
+    # check to see if the enf file exists. exist if not.
+    PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
+    if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
+
+        # stub out a site_definition with new passwords.
+        cat >"$PROJECT_DEFINITION_PATH" <<EOL
+#!/bin/bash
+
+# for more info about this file and how to use it, see
+# www.sovereign-stack.org/project-defintion
+
+# Createa a DHCP reservation for the baseline image.
+export SOVEREIGN_STACK_MAC_ADDRESS="CHANGE_ME_REQUIRED"
+
+# Create a DHCP reservation for the www/reverse proxy VM.
+export DEPLOY_WWW_SERVER=true
+export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
+
+# Create a DHCP reservation for the btcpay server VM.
+export DEPLOY_BTCPAY_SERVER=false
+export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
+
+# valid are 'regtest', 'testnet', and 'mainnet'
+export BTC_CHAIN=regtest
+
+# set to true to enable nginx caching; helps when making website updates.
+# export ENABLE_NGINX_CACHING=true
+
+# A list of all sites in ~/ss-sites/ that will be deployed under the project.
+# e.g., 'domain1.tld,domain2.tld,domain3.tld'.
+export SITE_LIST="domain1.tld"
+
+EOL
+
+        chmod 0744 "$PROJECT_DEFINITION_PATH"
+        echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it yo!"
+        echo "INFO: Learn more at https://www.sovereign-stack.org/project-defition/"
+        exit 1
+
+    fi
+
+
+    # source project defition.
+    source "$PROJECT_DEFINITION_PATH"
+}
+
 # let's iterate over the user-supplied domain list and provision each domain.
 if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    # iterate through our site list as provided by operator from cluster_definition
-    for i in ${SITE_LIST//,/ }; do
-        export DOMAIN_NAME="$i"
-        export SITE_PATH=""
 
+    CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
+    PROJECT_PATH="$PROJECTS_DIR/$CURRENT_PROJECT"
+    mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
+    export PROJECT_PATH="$PROJECT_PATH"
+    
+    # create a symlink from ./clusterpath/projects/project
+    if [ ! -d "$CLUSTER_PATH/projects/$CURRENT_PROJECT" ]; then
+        ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$CURRENT_PROJECT"
+    fi
+
+    # check if we need to provision a new lxc project.
+    if [ "$PROJECT_NAME" != "$CURRENT_PROJECT" ]; then
+        if ! lxc project list | grep -q "$PROJECT_NAME"; then
+            echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
+            lxc project create "$PROJECT_NAME"
+        fi
+        
+        echo "INFO: switch to lxd project '$PROJECT_NAME'."
+        lxc project switch "$PROJECT_NAME"
+
+    fi
+
+    stub_project_definition
+
+    # iterate through our site list as provided by operator from cluster_definition
+    iteration=0
+    for DOMAIN_NAME in ${SITE_LIST//,/ }; do
+        export DOMAIN_NAME="$DOMAIN_NAME"
+        export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+
+        # the vms are named accordignt to the first domain listed.
+        if [ $iteration = 0 ]; then
+            # bring the vms up
+            instantiate_vms
+        fi
+
+        # stub out the site_defition if it's doesn't exist.
         stub_site_definition
 
         # run the logic for a domain deployment.
         run_domain
 
+        iteration=$((iteration+1))
     done
 
 elif [ "$VPS_HOSTING_TARGET" = aws ]; then

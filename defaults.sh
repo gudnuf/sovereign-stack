@@ -122,6 +122,7 @@ export WWW_MAC_ADDRESS=
 export BTCPAY_MAC_ADDRESS=
 
 export CLUSTERS_DIR="$HOME/ss-clusters"
+export PROJECTS_DIR="$HOME/ss-projects"
 export SITES_PATH="$HOME/ss-sites"
 
 

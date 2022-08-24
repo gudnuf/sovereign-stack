@@ -11,8 +11,8 @@ ssh-add "$SSH_HOME/id_rsa"
 export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
 
 export FILENAME="$LXD_HOSTNAME.yml"
-mkdir -p "$CLUSTER_PATH/cloud-init"
-YAML_PATH="$CLUSTER_PATH/cloud-init/$FILENAME"
+mkdir -p "$PROJECT_PATH/cloud-init"
+YAML_PATH="$PROJECT_PATH/cloud-init/$FILENAME"
 
 # If we are deploying the www, we attach the vm to the underlay via macvlan.
 cat > "$YAML_PATH" <<EOF

@@ -64,6 +64,11 @@ if ! < "$HOME/.bashrc" grep -q "ss-cluster"; then
     ADDED_COMMAND=true
 fi
 
+if ! < "$HOME/.bashrc" grep -q "ss-projects"; then
+    echo "alias ss-projects='/home/$USER/sovereign-stack/projects.sh \$@'" >> "$HOME/.bashrc"
+    ADDED_COMMAND=true
+fi
+
 if [ "$ADDED_COMMAND" = true ]; then
     echo "WARNING! You need to run 'source ~/.bashrc' before continuing."
 fi

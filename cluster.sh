@@ -38,12 +38,8 @@ if [ "$COMMAND" = create ]; then
 # Note: the path above ./ corresponds to your LXD Remote. If your remote is set to 'cluster1'
 # Then $HOME/ss-clusters/cluster1 will be your cluster working path.
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
-export SOVEREIGN_STACK_MAC_ADDRESS="CHANGE_ME_REQUIRED- see www.sovereign-stack.org/reservations/"
 
-# This is REQUIRED. A list of all sites in ~/ss-sites/ that will be deployed. 
-# e.g., 'domain1.tld,domain2.tld,domain3.tld' Add all your domains that will
-# run within this SS deployment.
-export SITE_LIST="domain1.tld"
+export PROJECT_NAME="[public|private1|private2]"
 
 # only relevant
 export REGISTRY_URL="http://$(hostname).$(resolvectl status | grep 'DNS Domain:' | awk '{ print $3 }'):5000"
@@ -148,7 +144,7 @@ EOL
     IP_OF_MGMT_MACHINE="${IP_OF_MGMT_MACHINE#*=}"
     IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 
-    # if the LXD_CLUSTER_PASSWORD wasnt set, we can generate a random one using gpg.
+    # error out if the cluster password is unset.
     if [ -z "$LXD_CLUSTER_PASSWORD" ]; then
         echo "ERROR: LXD_CLUSTER_PASSWORD must be set in your cluster_definition."
         exit 1
@@ -189,7 +185,7 @@ fi
     fi
 
     # stub out the lxd init file for the remote SSH endpoint.
-    CLUSTER_MASTER_LXD_INIT="$CLUSTER_PATH/$CLUSTER_NAME-lxd_profile.yml"
+    CLUSTER_MASTER_LXD_INIT="$CLUSTER_PATH/lxdinit_profile.yml"
     cat >"$CLUSTER_MASTER_LXD_INIT" <<EOF
 config:
   core.https_address: ${MGMT_PLANE_IP}:8443
@@ -200,10 +196,12 @@ networks:
 - name: lxdbrSS
   type: bridge
   config:
+    ipv4.address: 10.139.144.1/24
     ipv4.nat: "false"
+    ipv4.dhcp: "false"
     ipv6.address: "none"
-    dns.mode: "dynamic"
-  managed: true
+    dns.mode: "none"
+  #managed: true
   description: ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-},${DISK_TO_USE:-}
   # lxdbrSS is an isolated bridge; no Internet access.
 

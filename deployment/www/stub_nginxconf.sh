@@ -11,9 +11,8 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
     fi
 fi
 
-
 # here's the NGINX config. We support ghost and nextcloud.
-NGINX_CONF_PATH="$SITE_PATH/nginx.conf"
+NGINX_CONF_PATH="$PROJECT_PATH/nginx.conf"
 echo "" > "$NGINX_CONF_PATH"
 cat >>"$NGINX_CONF_PATH" <<EOL
 events {
@@ -41,11 +40,11 @@ http {
         ''      close;
     }
 
-    # this server block returns a 403 for all non-explicit host requests.
-    #server {
-    #    listen 80 default_server;
-    #    return 403;
-    #}
+    # return 403 for all non-explicit hostnames
+    server {
+       listen 80 default_server;
+       return 403;
+    }
 
 EOL
 
