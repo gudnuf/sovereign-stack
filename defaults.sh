@@ -14,7 +14,7 @@ export DEPLOY_GITEA=false
 
 export WWW_HOSTNAME="www"
 export BTCPAY_HOSTNAME="btcpay"
-export BTCPAY_HOSTNAME_IN_CERT="pay"
+export BTCPAY_HOSTNAME_IN_CERT="tip"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
@@ -82,8 +82,8 @@ export NEXTCLOUD_SPACE_GB=10
 # first of all, if there are uncommited changes, we quit. You better stash or commit!
 # Remote VPS instances are tagged with your current git HEAD so we know which code revision
 # used when provisioning the VPS.
-LATEST_GIT_COMMIT="$(cat ./.git/refs/heads/master)"
-export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
+#LATEST_GIT_COMMIT="$(cat ./.git/refs/heads/master)"
+#export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
 
 # check if there are any uncommited changes. It's dangerous to instantiate VMs using
 # code that hasn't been committed.
@@ -109,18 +109,18 @@ DEFAULT_DB_IMAGE="mariadb:10.8.3-jammy"
 export ENABLE_NGINX_CACHING="$ENABLE_NGINX_CACHING"
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.9.4"
+export GHOST_IMAGE="ghost:5.12.3"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export NGINX_IMAGE="nginx:1.23.1"
-export NEXTCLOUD_IMAGE="nextcloud:24.0.3"
+export NEXTCLOUD_IMAGE="nextcloud:24.0.4"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 export SOVEREIGN_STACK_MAC_ADDRESS=
-export WWW_MAC_ADDRESS=
-export BTCPAY_MAC_ADDRESS=
+export WWW_SERVER_MAC_ADDRESS=
+export BTCPAYSERVER_MAC_ADDRESS=
 
 export CLUSTERS_DIR="$HOME/ss-clusters"
 export PROJECTS_DIR="$HOME/ss-projects"
@@ -132,7 +132,7 @@ export BASE_LXC_IMAGE="ubuntu/22.04/cloud"
 
 # Deploy a registry cache on your management machine.
 export DEPLOY_MGMT_REGISTRY=true
-
+export OTHER_SITES_LIST=
 
 export REMOTE_HOME="/home/ubuntu"
 

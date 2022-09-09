@@ -3,7 +3,10 @@
 set -eux
 cd "$(dirname "$0")"
 
+export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"
+
 OPEN_URL=false
+RUN_SERVICES=false
 
 # we will re-run the btcpayserver provisioning scripts if directed to do so.
 # if an update does occur, we grab another backup.
@@ -58,8 +61,8 @@ fi
 if [ "$OPEN_URL" = true ]; then
 
     if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-        if wait-for-it -t 5 "$WWW_FQDN:80"; then
-            xdg-open "http://$WWW_FQDN" > /dev/null 2>&1
+        if wait-for-it -t 5 "$PRIMARY_WWW_FQDN:80"; then
+            xdg-open "http://$PRIMARY_WWW_FQDN" > /dev/null 2>&1
         fi
     else
         if wait-for-it -t 5 "$FQDN:443"; then

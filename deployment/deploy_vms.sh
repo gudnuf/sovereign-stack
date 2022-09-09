@@ -60,7 +60,7 @@ elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
         # create a base image if needed and instantiate a VM.
         if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
-            echo "ERROR: You MUST define a MAC Address for all your machines by setting WWW_MAC_ADDRESS, BTCPAY_MAC_ADDRESS in your site defintion."
+            echo "ERROR: You MUST define a MAC Address for all your machines by setting WWW_SERVER_MAC_ADDRESS, BTCPAYSERVER_MAC_ADDRESS in your site defintion."
             echo "INFO: IMPORTANT! You MUST have DHCP Reservations for these MAC addresses. You also need static DNS entries."
             exit 1
         fi

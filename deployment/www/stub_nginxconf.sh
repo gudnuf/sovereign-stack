@@ -4,17 +4,29 @@ set -eu
 cd "$(dirname "$0")"
 
 
-if [ "$DEPLOY_ONION_SITE" = true ]; then
-    if [ -z "$ONION_ADDRESS" ]; then
-        echo "ERROR: ONION_ADDRESS is not defined."
-        exit 1
-    fi
-fi
-
 # here's the NGINX config. We support ghost and nextcloud.
 NGINX_CONF_PATH="$PROJECT_PATH/nginx.conf"
+
+# clear the existing nginx config.
 echo "" > "$NGINX_CONF_PATH"
-cat >>"$NGINX_CONF_PATH" <<EOL
+
+# iterate over all our domains and create the nginx config file.
+iteration=0
+echo "DOMAIN_LIST: $DOMAIN_LIST"
+
+for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
+    export DOMAIN_NAME="$DOMAIN_NAME"
+    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+    export CONTAINER_TLS_PATH="/etc/letsencrypt/${DOMAIN_NAME}/live/${DOMAIN_NAME}"
+    
+    # source the site path so we know what features it has.
+    source ../../reset_env.sh
+    source "$SITE_PATH/site_definition"
+    source ../../domain_env.sh
+
+    echo "Doing DOMAIN_NAME: $DOMAIN_NAME"
+    if [ $iteration = 0 ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
 events {
     worker_connections  1024;
 }
@@ -25,14 +37,13 @@ http {
     
     # next two sets commands and connection_upgrade block come from https://docs.btcpayserver.org/FAQ/Deployment/#can-i-use-an-existing-nginx-server-as-a-reverse-proxy-with-ssl-termination
     # Needed to allow very long URLs to prevent issues while signing PSBTs
-    server_names_hash_bucket_size 128;
-    proxy_buffer_size          128k;
-    proxy_buffers              4 256k;
-    proxy_busy_buffers_size    256k;
-    client_header_buffer_size 500k;
-    large_client_header_buffers 4 500k;
-    http2_max_field_size       500k;
-    http2_max_header_size      500k;
+    server_names_hash_bucket_size   128;
+    proxy_buffer_size               128k;
+    proxy_buffers                   4 256k;
+    proxy_busy_buffers_size         256k;
+    client_header_buffer_size       500k;
+    large_client_header_buffers     4 500k;
+    http2_max_header_size           500k;
 
     # Needed websocket support (used by Ledger hardware wallets)
     map \$http_upgrade \$connection_upgrade {
@@ -43,14 +54,14 @@ http {
     # return 403 for all non-explicit hostnames
     server {
        listen 80 default_server;
-       return 403;
+       return 301 https://${WWW_FQDN}\$request_uri;
     }
 
 EOL
+    fi
 
-
-# ghost http to https redirects.
-cat >>"$NGINX_CONF_PATH" <<EOL
+    # ghost http to https redirects.
+    cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${DOMAIN_NAME} redirect to https://${WWW_FQDN}
     server {
         listen 80;
@@ -66,7 +77,7 @@ cat >>"$NGINX_CONF_PATH" <<EOL
 
 EOL
 
-cat >>"$NGINX_CONF_PATH" <<EOL
+    cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${WWW_FQDN} redirect to https://${WWW_FQDN}
     server {
         listen 80;
@@ -77,9 +88,9 @@ cat >>"$NGINX_CONF_PATH" <<EOL
 
 EOL
 
-# nextcloud http-to-https redirect
-if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    # nextcloud http-to-https redirect
+    if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${NEXTCLOUD_FQDN} redirect to https://${NEXTCLOUD_FQDN}
     server {
         listen 80;
@@ -89,11 +100,11 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     }
 
 EOL
-fi
+    fi
 
-# gitea http to https redirect.
-if [ "$DEPLOY_GITEA" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    # gitea http to https redirect.
+    if [ "$DEPLOY_GITEA" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${GITEA_FQDN} redirect to https://${GITEA_FQDN}
     server {
         listen 80;
@@ -103,12 +114,12 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     }
 
 EOL
-fi
+    fi
 
-# REDIRECT FOR BTCPAY_USER_FQDN
-if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    # gitea http to https redirect.
-    if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+    # REDIRECT FOR BTCPAY_USER_FQDN
+    if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+        # gitea http to https redirect.
+        if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
         
         cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
@@ -121,11 +132,13 @@ if [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
 EOL
 
+        fi
     fi
-fi
-
-# TLS config for ghost.
-cat >>"$NGINX_CONF_PATH" <<EOL
+    
+    
+    if [ "$iteration" = 0 ]; then
+        # TLS config for ghost.
+        cat >>"$NGINX_CONF_PATH" <<EOL
     # global TLS settings
     ssl_prefer_server_ciphers on;
     ssl_protocols TLSv1.3;
@@ -143,34 +156,42 @@ cat >>"$NGINX_CONF_PATH" <<EOL
     server {
         listen 443 default_server;
 
-        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
-        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
 
         return 403;
     }
 
     # maybe helps with Twitter cards.
-    map \$http_user_agent \$og_prefix {
-        ~*(googlebot|twitterbot)/  /open-graph;
-    }
+    #map \$http_user_agent \$og_prefix {
+    #    ~*(googlebot|twitterbot)/  /open-graph;
+    #}
+EOL
+    fi
 
-    # https://${DOMAIN_NAME} redirect to https://${FQDN}
+        cat >>"$NGINX_CONF_PATH" <<EOL
+    # https://${DOMAIN_NAME} redirect to https://${WWW_FQDN}
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
 
-        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
-        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
         
         server_name ${DOMAIN_NAME};
 
-EOL
-###########################################
+        # catch all; send request to ${WWW_FQDN}
+        location / {
+            return 301 https://${WWW_FQDN}\$request_uri;
+        }
 
-if [ "$DEPLOY_NOSTR" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+EOL
+
+
+    if [ "$DEPLOY_NOSTR" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
         # We return a JSON object with name/pubkey mapping per NIP05.
         # https://www.reddit.com/r/nostr/comments/rrzk76/nip05_mapping_usernames_to_dns_domains_by_fiatjaf/sssss
         # TODO I'm not sure about the security of this Access-Control-Allow-Origin. Read up and restrict it if possible.
@@ -181,46 +202,38 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         }
         
 EOL
-fi
+    fi
 
-cat >>"$NGINX_CONF_PATH" <<EOL
-        # catch all; send request to ${WWW_FQDN}
-        location / {
-            return 301 https://${WWW_FQDN}\$request_uri;
-        }
-EOL
-#####################################################
-cat >>"$NGINX_CONF_PATH" <<EOL
+    cat >>"$NGINX_CONF_PATH" <<EOL
     }
 
     #access_log /var/log/nginx/ghost-access.log;
     #error_log /var/log/nginx/ghost-error.log;
-
 EOL
+
 
 if [ "$ENABLE_NGINX_CACHING" = true ]; then
 cat >>"$NGINX_CONF_PATH" <<EOL
     # main TLS listener; proxies requests to ghost service. NGINX configured to cache
     proxy_cache_path /tmp/nginx_ghost levels=1:2 keys_zone=ghostcache:600m max_size=100m inactive=24h;
 EOL
-fi
+    fi
 
 
-
-# SERVER block for BTCPAY Server
-if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    # gitea http to https redirect.
-    if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+    # SERVER block for BTCPAY Server
+    if [ "$VPS_HOSTING_TARGET" = lxd ]; then
+        # gitea http to https redirect.
+        if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
         
-        cat >>"$NGINX_CONF_PATH" <<EOL
+            cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
     server {
         listen 443 ssl http2;
         ssl on;
 
-        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
-        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
 
         server_name ${BTCPAY_USER_FQDN};
     
@@ -240,42 +253,34 @@ if [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
 EOL
 
+        fi
     fi
-fi
-
-
-
-
-
-
-
-
 
 
 
 # the open server block for the HTTPS listener
-cat >>"$NGINX_CONF_PATH" <<EOL
+    cat >>"$NGINX_CONF_PATH" <<EOL
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
 
-        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
-        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
 
         server_name ${WWW_FQDN};
 EOL
 
-# add the Onion-Location header if specifed.
-if [ "$DEPLOY_ONION_SITE" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    # add the Onion-Location header if specifed.
+    if [ "$DEPLOY_ONION_SITE" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
         add_header Onion-Location https://${ONION_ADDRESS}\$request_uri;
         
 EOL
-fi
+    fi
 
-if [ "$ENABLE_NGINX_CACHING" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    if [ "$ENABLE_NGINX_CACHING" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
 
         # No cache + keep cookies for admin and previews
         location ~ ^/(ghost/|p/|private/) {
@@ -284,14 +289,14 @@ cat >>"$NGINX_CONF_PATH" <<EOL
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto  \$scheme;
             proxy_intercept_errors  on;
-            proxy_pass http://ghost:2368;
+            proxy_pass http://ghost-${iteration}:2368;
         }
         
 EOL
 fi
 
 # proxy config for ghost
-cat >>"$NGINX_CONF_PATH" <<EOL
+    cat >>"$NGINX_CONF_PATH" <<EOL
         # Set the crawler policy.
         location = /robots.txt { 
             add_header Content-Type text/plain;
@@ -306,11 +311,11 @@ cat >>"$NGINX_CONF_PATH" <<EOL
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto  \$scheme;
             proxy_intercept_errors  on;
-            proxy_pass http://ghost:2368;
+            proxy_pass http://ghost-${iteration}:2368;
 EOL
 
-if [ "$ENABLE_NGINX_CACHING" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    if [ "$ENABLE_NGINX_CACHING" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
             # https://stanislas.blog/2019/08/ghost-nginx-cache/ for nginx caching instructions
             # Remove cookies which are useless for anonymous visitor and prevent caching
             proxy_ignore_headers Set-Cookie Cache-Control;
@@ -338,10 +343,10 @@ cat >>"$NGINX_CONF_PATH" <<EOL
             proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
    
 EOL
-fi
+    fi
 
 # this is the closing location / block for the ghost HTTPS segment
-cat >>"$NGINX_CONF_PATH" <<EOL
+    cat >>"$NGINX_CONF_PATH" <<EOL
         }
 
 EOL
@@ -354,19 +359,19 @@ EOL
         #     proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
         #     proxy_set_header X-Forwarded-Proto  \$scheme;
         #     proxy_intercept_errors  on;
-        #     proxy_pass http://ghost:2368\$og_prefix\$request_uri;
+        #     proxy_pass http://ghost-${iteration}::2368\$og_prefix\$request_uri;
         # }
 
 # this is the closing server block for the ghost HTTPS segment
-cat >>"$NGINX_CONF_PATH" <<EOL
+    cat >>"$NGINX_CONF_PATH" <<EOL
     
     }
 
 EOL
 
 # tor config
-if [ "$DEPLOY_ONION_SITE" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    if [ "$DEPLOY_ONION_SITE" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
     # server listener for tor v3 onion endpoint
     server {
         listen 443 ssl http2;
@@ -385,18 +390,18 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         }
     }
 EOL
-fi
+    fi
 
-if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
     # TLS listener for ${NEXTCLOUD_FQDN}
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
 
-        ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
-        ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
-        ssl_trusted_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
 
         server_name ${NEXTCLOUD_FQDN};
         
@@ -422,11 +427,12 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         }
     }
 EOL
-fi
+
+    fi
 
 
-if [ "$DEPLOY_GITEA" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
+    if [ "$DEPLOY_GITEA" = true ]; then
+    cat >>"$NGINX_CONF_PATH" <<EOL
     # TLS listener for ${GITEA_FQDN}
     server {
         listen 443 ssl http2;
@@ -447,7 +453,10 @@ cat >>"$NGINX_CONF_PATH" <<EOL
         }
     }
 EOL
-fi
+    fi
+
+    iteration=$((iteration+1))
+done
 
 # add the closing brace.
 cat >>"$NGINX_CONF_PATH" <<EOL

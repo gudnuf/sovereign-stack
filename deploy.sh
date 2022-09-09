@@ -128,6 +128,7 @@ export RESTORE_BTCPAY="$RESTORE_BTCPAY"
 export BACKUP_BTCPAY="$RESTORE_BTCPAY"
 export MIGRATE_WWW="$MIGRATE_WWW"
 export MIGRATE_BTCPAY="$MIGRATE_BTCPAY"
+export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
 
 if [ "$VPS_HOSTING_TARGET" = aws ]; then
 
@@ -150,8 +151,8 @@ mkdir -p "$CLUSTER_PATH"
 if [ ! -f "$CLUSTER_PATH/authorized_keys" ]; then
     cat "$SSH_HOME/id_rsa.pub" >> "$CLUSTER_PATH/authorized_keys"
     echo "INFO: Sovereign Stack just stubbed out '$CLUSTER_PATH/authorized_keys'. Go update it."
-    echo "      Add ssh pubkeys for your various management machines, if any. We've stubbed it out"
-    echo "      with your ssh pubkey at '$HOME/.ssh/id_rsa.pub'."
+    echo "      Add ssh pubkeys for your various management machines, if any."
+    echo "      By default we added your main ssh pubkey: '$HOME/.ssh/id_rsa.pub'."
     exit 1
 fi
 
@@ -214,7 +215,6 @@ function new_pass {
 function instantiate_vms {
 
     export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
-    export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
     export BTC_CHAIN="$BTC_CHAIN"
     export UPDATE_BTCPAY="$UPDATE_BTCPAY"
     export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
@@ -227,12 +227,9 @@ function instantiate_vms {
         FQDN=
 
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-        if [ ! -f "$SITE_PATH/site_definition" ]; then
-            echo "ERROR: Something went wrong. Your site_definition is missing."
-            exit 1
-        fi
 
         source "$SITE_PATH/site_definition"
+        source ./domain_env.sh
 
         # VALIDATE THE INPUT from the ENVFILE
         if [ -z "$DOMAIN_NAME" ]; then
@@ -240,34 +237,10 @@ function instantiate_vms {
             exit 1
         fi
 
-        # TODO, ensure VPS_HOSTING_TARGET is in range.
-        export NEXTCLOUD_FQDN="$NEXTCLOUD_HOSTNAME.$DOMAIN_NAME"
-        export BTCPAY_FQDN="$BTCPAY_HOSTNAME.$DOMAIN_NAME"
-        export BTCPAY_USER_FQDN="$BTCPAY_HOSTNAME_IN_CERT.$DOMAIN_NAME"
-        export WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
-        export GITEA_FQDN="$GITEA_HOSTNAME.$DOMAIN_NAME"
-        export NOSTR_FQDN="$NOSTR_HOSTNAME.$DOMAIN_NAME"
-        export ADMIN_ACCOUNT_USERNAME="info"
-        export CERTIFICATE_EMAIL_ADDRESS="$ADMIN_ACCOUNT_USERNAME@$DOMAIN_NAME"
-        export REMOTE_NEXTCLOUD_PATH="$REMOTE_HOME/nextcloud"
-        export REMOTE_GITEA_PATH="$REMOTE_HOME/gitea"
-        export BTC_CHAIN="$BTC_CHAIN"
-        export WWW_INSTANCE_TYPE="$WWW_INSTANCE_TYPE"
-        export BTCPAY_ADDITIONAL_HOSTNAMES="$BTCPAY_ADDITIONAL_HOSTNAMES"
-
-
-        # ensure the 
-        if [ ! -f "$PROJECT_PATH/project_definition" ]; then 
-            echo "ERROR: Your project_definition is not set."
-            exit 1
-        fi
-
-        source "$PROJECT_PATH/project_definition"
-
         if [ "$VPS_HOSTING_TARGET" = lxd ]; then
             # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
             # which is set up during LXD cluster creation ss-cluster.
-            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep ss-config)"
+            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
             CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
             DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
             DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
@@ -286,27 +259,11 @@ function instantiate_vms {
         export MAC_ADDRESS_TO_PROVISION=
         export VPS_HOSTNAME="$VPS_HOSTNAME"
         export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
-        export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
-        BACKUP_TIMESTAMP="$(date +"%Y-%m")"
-        UNIX_BACKUP_TIMESTAMP="$(date +%s)"
-        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
-        LOCAL_BACKUP_PATH="$SITE_PATH/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
-        export LOCAL_BACKUP_PATH="$LOCAL_BACKUP_PATH"
-        export BACKUP_TIMESTAMP="$BACKUP_TIMESTAMP"
-        export UNIX_BACKUP_TIMESTAMP="$UNIX_BACKUP_TIMESTAMP"
-        export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
-        
-
-
+       
         # ensure the admin has set the MAC address for the base image.
         if [ -z "$SOVEREIGN_STACK_MAC_ADDRESS" ]; then
             echo "ERROR: SOVEREIGN_STACK_MAC_ADDRESS is undefined. Check your project definition."
             exit 1
-        fi
-
-        if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
-            mkdir -p "$LOCAL_BACKUP_PATH"
-            BACKUP_PATH_CREATED=true
         fi
 
         DDNS_HOST=
@@ -317,7 +274,7 @@ function instantiate_vms {
             fi
 
             VPS_HOSTNAME="$WWW_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$WWW_MAC_ADDRESS"
+            MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
             DDNS_HOST="$WWW_HOSTNAME"
             ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
             if [ "$MIGRATE_WWW" = true ]; then
@@ -330,7 +287,7 @@ function instantiate_vms {
 
             DDNS_HOST="$BTCPAY_HOSTNAME"
             VPS_HOSTNAME="$BTCPAY_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$BTCPAY_MAC_ADDRESS"
+            MAC_ADDRESS_TO_PROVISION="$BTCPAYSERVER_MAC_ADDRESS"
             if [ "$BTC_CHAIN" = mainnet ]; then
                 ROOT_DISK_SIZE_GB=150
             elif [ "$BTC_CHAIN" = testnet ]; then
@@ -352,8 +309,25 @@ function instantiate_vms {
         export DDNS_HOST="$DDNS_HOST"
         export FQDN="$DDNS_HOST.$DOMAIN_NAME"
         export LXD_VM_NAME="${FQDN//./-}"
-        #${PROJECT_NAME//./-}-
+        BACKUP_TIMESTAMP="$(date +"%Y-%m")"
+        UNIX_BACKUP_TIMESTAMP="$(date +%s)"
+        export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
+        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$VIRTUAL_MACHINE"
+        export BACKUP_TIMESTAMP="$BACKUP_TIMESTAMP"
+        export UNIX_BACKUP_TIMESTAMP="$UNIX_BACKUP_TIMESTAMP"
+        export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
         export REMOTE_BACKUP_PATH="$REMOTE_BACKUP_PATH"
+        export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
+        LOCAL_BACKUP_PATH="$SITE_PATH/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
+        export LOCAL_BACKUP_PATH="$LOCAL_BACKUP_PATH"
+
+        
+
+        if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
+            mkdir -p "$LOCAL_BACKUP_PATH"
+            BACKUP_PATH_CREATED=true
+        fi
+
 
         # This next section of if statements is our sanity checking area.
         if [ "$VPS_HOSTING_TARGET" = aws ]; then
@@ -383,7 +357,8 @@ function instantiate_vms {
                 fi
 
                 # get a backup of the machine. This is what we restore to the new VPS.
-                echo "INFO: Machine exists.  Since we're going to delete it, let's grab a backup. We don't need to restore services since we're deleting it."
+                echo "INFO: Machine exists.  Since we're going to delete it, let's grab a backup. "
+                echo "      We don't need to restore services since we're deleting it."
                 ./deployment/deploy_vms.sh
 
                 # delete the remote VPS.
@@ -411,7 +386,8 @@ function instantiate_vms {
             fi
         else
             if [ "$MIGRATE_VPS" = true ]; then
-                echo "INFO: User has indicated to delete the machine, but it doesn't exist. Going to create it anyway."
+                echo "INFO: User has indicated to delete the machine, but it doesn't exist."
+                echo "      Going to create it anyway."
             fi
 
             # The machine does not exist. Let's bring it into existence, restoring from latest backup.
@@ -419,40 +395,24 @@ function instantiate_vms {
             ./deployment/deploy_vms.sh
         fi
 
+        # if the local docker client isn't logged in, do so;
+        # this helps prevent docker pull errors since they throttle.
+        if [ ! -f "$HOME/.docker/config.json" ]; then
+            echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
+        fi
+
+        # this tells our local docker client to target the remote endpoint via SSH
+        export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
+
+        # enable docker swarm mode so we can support docker stacks.
+        if docker info | grep -q "Swarm: inactive"; then
+            docker swarm init --advertise-addr enp6s0
+        fi
 
     done
 
 }
 
-function run_domain {
-
-    # if the local docker client isn't logged in, do so;
-    # this helps prevent docker pull errors since they throttle.
-    if [ ! -f "$HOME/.docker/config.json" ]; then
-        echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
-    fi
-
-    # this tells our local docker client to target the remote endpoint via SSH
-    export DOCKER_HOST="ssh://ubuntu@$WWW_FQDN"
-    # enable docker swarm mode so we can support docker stacks.
-    if docker info | grep -q "Swarm: inactive"; then
-        docker swarm init --advertise-addr enp6s0
-    fi
-    bash -c "./deployment/www/go.sh"
-
-
-    export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"
-
-    # enable docker swarm mode so we can support docker stacks.
-    if docker info | grep -q "Swarm: inactive"; then
-        docker swarm init --advertise-addr enp6s0
-    fi
-
-    bash -c "./deployment/btcpayserver/go.sh"
-
-    echo "Successfully deployed '$DOMAIN_NAME' with git commit '$(cat ./.git/refs/heads/master)' VPS_HOSTING_TARGET=$VPS_HOSTING_TARGET;"
-
-}
 
 function stub_site_definition {
     mkdir -p "$SITE_PATH" "$PROJECT_PATH/sites"
@@ -471,36 +431,21 @@ function stub_site_definition {
             cat >"$SITE_DEFINITION_PATH" <<EOL
 #!/bin/bash
 
-# Set the domain name for the identity site.
 export DOMAIN_NAME="${DOMAIN_NAME}"
-
-# duplicitiy backup archive password
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
-
 # AWS only
 #export DDNS_PASSWORD=
-
-# Deploy APPS to www
+#export BTCPAY_HOSTNAME_IN_CERT="store"
 export DEPLOY_GHOST=true
 export DEPLOY_NEXTCLOUD=true
 export DEPLOY_NOSTR=false
-
-# set if NOSTR_ACCOUNT_PUBKEY=true
 export NOSTR_ACCOUNT_PUBKEY="CHANGE_ME"
-
 export DEPLOY_GITEA=false
 export DEPLOY_ONION_SITE=false
-
-# passwords for WWW apps
-## GHOST
 export GHOST_MYSQL_PASSWORD="$(new_pass)"
 export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
-
-## NEXTCLOUD
 export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"
 export NEXTCLOUD_MYSQL_ROOT_PASSWORD="$(new_pass)"
-
-## GITEA
 export GITEA_MYSQL_PASSWORD="$(new_pass)"
 export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 
@@ -526,39 +471,24 @@ function stub_project_definition {
         cat >"$PROJECT_DEFINITION_PATH" <<EOL
 #!/bin/bash
 
-# for more info about this file and how to use it, see
-# www.sovereign-stack.org/project-defintion
+# see https://www.sovereign-stack.org/project-definition for more info.
 
-# Createa a DHCP reservation for the baseline image.
-export SOVEREIGN_STACK_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-
-# Create a DHCP reservation for the www/reverse proxy VM.
 export DEPLOY_WWW_SERVER=true
 export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-
-# Create a DHCP reservation for the btcpay server VM.
-export DEPLOY_BTCPAY_SERVER=false
+export DEPLOY_BTCPAY_SERVER=true
 export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-
-# valid are 'regtest', 'testnet', and 'mainnet'
-export BTC_CHAIN=regtest
-
-# set to true to enable nginx caching; helps when making website updates.
+# export BTC_CHAIN=mainnet
 # export ENABLE_NGINX_CACHING=true
-
-# A list of all sites in ~/ss-sites/ that will be deployed under the project.
-# e.g., 'domain1.tld,domain2.tld,domain3.tld'.
-export SITE_LIST="domain1.tld"
-
+export PRIMARY_DOMAIN="CHANGE_ME"
+export OTHER_SITES_LIST=
 EOL
 
         chmod 0744 "$PROJECT_DEFINITION_PATH"
         echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it yo!"
-        echo "INFO: Learn more at https://www.sovereign-stack.org/project-defition/"
+        echo "INFO: Learn more at https://www.sovereign-stack.org/project-definitions/"
         exit 1
 
     fi
-
 
     # source project defition.
     source "$PROJECT_DEFINITION_PATH"
@@ -568,13 +498,13 @@ EOL
 if [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
     CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
-    PROJECT_PATH="$PROJECTS_DIR/$CURRENT_PROJECT"
+    PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
     mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
     export PROJECT_PATH="$PROJECT_PATH"
     
     # create a symlink from ./clusterpath/projects/project
-    if [ ! -d "$CLUSTER_PATH/projects/$CURRENT_PROJECT" ]; then
-        ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$CURRENT_PROJECT"
+    if [ ! -d "$CLUSTER_PATH/projects/$PROJECT_NAME" ]; then
+        ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$PROJECT_NAME"
     fi
 
     # check if we need to provision a new lxc project.
@@ -589,28 +519,35 @@ if [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
     fi
 
+    # stub out the project definition if needed.
     stub_project_definition
+    
+    # the DOMAIN_LIST is a complete list of all our domains. We often iterate over this list.
+    export DOMAIN_LIST="${PRIMARY_DOMAIN},${OTHER_SITES_LIST}"
+    export DOMAIN_COUNT=$(("$(echo $DOMAIN_LIST | tr -cd , | wc -c)"+1))
 
-    # iterate through our site list as provided by operator from cluster_definition
-    iteration=0
-    for DOMAIN_NAME in ${SITE_LIST//,/ }; do
+    # let's provision our primary domain first.
+    export DOMAIN_NAME="$PRIMARY_DOMAIN"
+    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+    export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
+    
+    stub_site_definition
+    
+    # bring the vms up under the primary domain name.
+    instantiate_vms
+
+    # let's stub out the rest of our site definitions, if any.
+    for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
         export DOMAIN_NAME="$DOMAIN_NAME"
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
-        # the vms are named accordignt to the first domain listed.
-        if [ $iteration = 0 ]; then
-            # bring the vms up
-            instantiate_vms
-        fi
-
         # stub out the site_defition if it's doesn't exist.
         stub_site_definition
-
-        # run the logic for a domain deployment.
-        run_domain
-
-        iteration=$((iteration+1))
     done
+
+    # now let's run the www and btcpay-specific provisioning scripts.
+    bash -c "./deployment/www/go.sh"
+    bash -c "./deployment/btcpayserver/go.sh"
 
 elif [ "$VPS_HOSTING_TARGET" = aws ]; then
     stub_site_definition

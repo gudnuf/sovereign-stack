@@ -47,9 +47,8 @@ if [ "$VIRTUAL_MACHINE" = www ] || [ "$VIRTUAL_MACHINE" = certonly ]; then
         --amazonec2-ami "$AWS_AMI_ID" \
         --amazonec2-root-size "$ROOT_DISK_SIZE_GB" \
         --amazonec2-instance-type "$WWW_INSTANCE_TYPE" \
-        --engine-label commit="$LATEST_GIT_COMMIT" \
         "$FQDN"
-        
+            #    --engine-label commit="$LATEST_GIT_COMMIT" \
 elif [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
     # creates a public VM in AWS and provisions the bcm website.
     docker-machine create --driver amazonec2 \
@@ -62,9 +61,8 @@ elif [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
         --amazonec2-ami "$AWS_AMI_ID" \
         --amazonec2-root-size "$ROOT_DISK_SIZE_GB" \
         --amazonec2-instance-type "$BTCPAY_INSTANCE_TYPE" \
-        --engine-label commit="$LATEST_GIT_COMMIT" \
         "$FQDN"
-
+#        --engine-label commit="$LATEST_GIT_COMMIT" \
 fi
 
 docker-machine scp "$CLUSTER_PATH/authorized_keys" "$FQDN:$REMOTE_HOME/authorized_keys"
