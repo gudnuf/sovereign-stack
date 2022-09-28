@@ -134,6 +134,9 @@ fi
 bash -c ./stub/nginx_yml.sh
 bash -c ./stub/ghost_yml.sh
 
+bash -c ./stub/gitea_yml.sh
+
+
 # # start a browser session; point it to port 80 to ensure HTTPS redirect.
 # wait-for-it -t 320 "$PRIMARY_WWW_FQDN:80"
 # wait-for-it -t 320 "$PRIMARY_WWW_FQDN:443"

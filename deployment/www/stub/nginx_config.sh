@@ -222,7 +222,6 @@ EOL
 
     # SERVER block for BTCPAY Server
     if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-        # gitea http to https redirect.
         if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
         
             cat >>"$NGINX_CONF_PATH" <<EOL
@@ -361,6 +360,29 @@ EOL
             proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
         }
 
+EOL
+
+
+        cat >>"$NGINX_CONF_PATH" <<EOL
+    # TLS listener for ${GITEA_FQDN}
+    server {
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+    
+        server_name ${GITEA_FQDN};
+        
+        location / {
+            proxy_headers_hash_max_size 512;
+            proxy_headers_hash_bucket_size 64;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            proxy_set_header X-NginX-Proxy true;
+            
+            proxy_pass http://gitea:3000;
+        }
+        
 EOL
 
     done

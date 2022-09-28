@@ -15,6 +15,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     # for each language specified in the site_definition, we spawn a separate ghost container
     # at https://www.domain.com/$LANGUAGE_CODE
     for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
+
         STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
 
         # ensure directories on remote host exist so we can mount them into the containers.
@@ -81,22 +82,25 @@ EOL
 networks:
 EOL
 
-        if [ "$DEPLOY_GHOST" = true ]; then
-            GHOSTNET_NAME="ghostnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
-            GHOSTDBNET_NAME="ghostdbnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+            if [ "$DEPLOY_GHOST" = true ]; then
+                GHOSTNET_NAME="ghostnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+                GHOSTDBNET_NAME="ghostdbnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
 
-            cat >>"$DOCKER_YAML_PATH" <<EOL
+                cat >>"$DOCKER_YAML_PATH" <<EOL
     ${GHOSTNET_NAME}:
       name: "reverse-proxy_ghostnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
       external: true
 
     ${GHOSTDBNET_NAME}:
 EOL
-        fi
+            fi
 
         docker stack deploy -c "$DOCKER_YAML_PATH" "$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
-        sleep 1
-    done
-    
-    domain_number=$((domain_number+1))
-done
+
+        sleep 2
+
+        domain_number=$((domain_number+1))
+
+    done # language code
+
+done # domain list

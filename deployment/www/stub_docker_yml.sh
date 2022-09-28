@@ -47,47 +47,6 @@
 # EOL
 #     fi
 
-#     if [ "$DEPLOY_GITEA" = true ]; then
-#         cat >>"$DOCKER_YAML_PATH" <<EOL
-#   gitea:
-#     image: ${GITEA_IMAGE}
-#     volumes:
-#       - ${REMOTE_GITEA_PATH}/data:/data
-#       - /etc/timezone:/etc/timezone:ro
-#       - /etc/localtime:/etc/localtime:ro
-#     environment:
-#       - USER_UID=1000
-#       - USER_GID=1000
-#       - ROOT_URL=https://${GITEA_FQDN}
-#       - GITEA__database__DB_TYPE=mysql
-#       - GITEA__database__HOST=gitea-db:3306
-#       - GITEA__database__NAME=gitea
-#       - GITEA__database__USER=gitea
-#       - GITEA__PASSWD=\${GITEA_MYSQL_PASSWORD}
-#     networks:
-#       - gitea-net
-#       - giteadb-net
-#     deploy:
-#       restart_policy:
-#         condition: on-failure
-
-#   gitea-db:
-#     image: ${GITEA_DB_IMAGE}
-#     networks:
-#       - giteadb-net
-#     volumes:
-#       - ${REMOTE_GITEA_PATH}/db:/var/lib/mysql
-#     environment:
-#       - MYSQL_ROOT_PASSWORD=\${GITEA_MYSQL_ROOT_PASSWORD}
-#       - MYSQL_PASSWORD=\${GITEA_MYSQL_PASSWORD}
-#       - MYSQL_DATABASE=gitea
-#       - MYSQL_USER=gitea
-#     deploy:
-#       restart_policy:
-#         condition: on-failure
-# EOL
-#     fi
-
 
 
 #     if [ "$DEPLOY_ONION_SITE" = true ]; then
@@ -144,11 +103,6 @@
 # EOL
 #     fi
 
-#     if [ "$DEPLOY_GITEA" = true ]; then
-# cat >>"$DOCKER_YAML_PATH" <<EOL
-#       - gitea-net
-# EOL
-#     fi
 
 #     if [ "$DEPLOY_ONION_SITE" = true ]; then
 # cat >>"$DOCKER_YAML_PATH" <<EOL
@@ -176,12 +130,6 @@
 # EOL
 #     fi
 
-#     if [ "$DEPLOY_GITEA" = true ]; then
-#         cat >>"$DOCKER_YAML_PATH" <<EOL
-#   gitea-net:
-#   giteadb-net:
-# EOL
-#     fi
 
 #     if [ "$DEPLOY_ONION_SITE" = true ]; then
 #         cat >>"$DOCKER_YAML_PATH" <<EOL
