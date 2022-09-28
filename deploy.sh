@@ -27,12 +27,13 @@ fi
 DOMAIN_NAME=
 RESTORE_ARCHIVE=
 VPS_HOSTING_TARGET=lxd
-RUN_CERT_RENEWAL=true
+RUN_CERT_RENEWAL=false
 
 RESTORE_WWW=false
-BACKUP_WWW=true
+BACKUP_CERTS=true
+BACKUP_GHOST=true
 RESTORE_BTCPAY=false
-BACKUP_BTCPAY=true
+BACKUP_BTCPAY=false
 MIGRATE_WWW=false
 MIGRATE_BTCPAY=false
 
@@ -52,13 +53,17 @@ for i in "$@"; do
         ;;
         --restore-www)
             RESTORE_WWW=true
-            BACKUP_WWW=false
+            BACKUP_GHOST=false
             RUN_CERT_RENEWAL=false
             shift
         ;;
         --restore-btcpay)
             RESTORE_BTCPAY=true
             BACKUP_BTCPAY=false
+            shift
+        ;;
+        --backup-certs)
+            BACKUP_CERTS=true
             shift
         ;;
         --archive=*)
@@ -81,12 +86,12 @@ for i in "$@"; do
             USER_SKIP_BTCPAY=true
             shift
         ;;
-        --no-backup-www)
-            BACKUP_WWW=false
+        --backup-ghost)
+            BACKUP_GHOST=true
             shift
         ;;
-        --no-backup-btcpay)
-            BACKUP_BTCPAY=false
+        --backup-btcpay)
+            BACKUP_BTCPAY=true
             shift
         ;;
         --migrate-www)
@@ -99,8 +104,8 @@ for i in "$@"; do
             RUN_CERT_RENEWAL=false
             shift
         ;;
-        --no-cert-renew)
-            RUN_CERT_RENEWAL=false
+        --renew-certs)
+            RUN_CERT_RENEWAL=true
             shift
         ;;
         --reconfigure-btcpay)
@@ -123,7 +128,9 @@ export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
 export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
 export RESTORE_WWW="$RESTORE_WWW"
-export BACKUP_WWW="$BACKUP_WWW"
+
+export BACKUP_CERTS="$BACKUP_CERTS"
+export BACKUP_GHOST="$BACKUP_GHOST"
 export RESTORE_BTCPAY="$RESTORE_BTCPAY"
 export BACKUP_BTCPAY="$RESTORE_BTCPAY"
 export MIGRATE_WWW="$MIGRATE_WWW"
@@ -252,10 +259,6 @@ function instantiate_vms {
 
         fi
 
-        # create the local packup path if it's not there!
-        BACKUP_PATH_CREATED=false
-
-        export BACKUP_PATH_CREATED="$BACKUP_PATH_CREATED"
         export MAC_ADDRESS_TO_PROVISION=
         export VPS_HOSTNAME="$VPS_HOSTNAME"
         export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
@@ -309,24 +312,13 @@ function instantiate_vms {
         export DDNS_HOST="$DDNS_HOST"
         export FQDN="$DDNS_HOST.$DOMAIN_NAME"
         export LXD_VM_NAME="${FQDN//./-}"
-        BACKUP_TIMESTAMP="$(date +"%Y-%m")"
-        UNIX_BACKUP_TIMESTAMP="$(date +%s)"
         export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
-        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/$VIRTUAL_MACHINE"
-        export BACKUP_TIMESTAMP="$BACKUP_TIMESTAMP"
-        export UNIX_BACKUP_TIMESTAMP="$UNIX_BACKUP_TIMESTAMP"
         export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
-        export REMOTE_BACKUP_PATH="$REMOTE_BACKUP_PATH"
+        
         export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
-        LOCAL_BACKUP_PATH="$SITE_PATH/backups/$VIRTUAL_MACHINE/$BACKUP_TIMESTAMP"
-        export LOCAL_BACKUP_PATH="$LOCAL_BACKUP_PATH"
+
 
         
-
-        if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
-            mkdir -p "$LOCAL_BACKUP_PATH"
-            BACKUP_PATH_CREATED=true
-        fi
 
 
         # This next section of if statements is our sanity checking area.
@@ -432,6 +424,7 @@ function stub_site_definition {
 #!/bin/bash
 
 export DOMAIN_NAME="${DOMAIN_NAME}"
+export SITE_LANGUAGE_CODES="en"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 # AWS only
 #export DDNS_PASSWORD=
@@ -478,7 +471,6 @@ export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 export DEPLOY_BTCPAY_SERVER=true
 export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 # export BTC_CHAIN=mainnet
-# export ENABLE_NGINX_CACHING=true
 export PRIMARY_DOMAIN="CHANGE_ME"
 export OTHER_SITES_LIST=
 EOL

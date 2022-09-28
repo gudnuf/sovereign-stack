@@ -1,144 +1,9 @@
-#!/bin/bash
-
-set -eux
-cd "$(dirname "$0")"
 
 
 
 
-ssh "$PRIMARY_WWW_FQDN" sudo rm -rf /home/ubuntu/ghost
-sleep 4
 
 
-#https://github.com/fiatjaf/expensive-relay
-# NOSTR RELAY WHICH REQUIRES PAYMENTS.
-DOCKER_YAML_PATH="$PROJECT_PATH/nginx.yml"
-cat > "$DOCKER_YAML_PATH" <<EOL
-version: "3.8"
-services:
-
-  nginx:
-    image: ${NGINX_IMAGE}
-    ports:
-      - 0.0.0.0:443:443
-      - 0.0.0.0:80:80
-    networks:
-EOL
-
-    for i in $(seq 0 $DOMAIN_COUNT); do
-        cat >> "$DOCKER_YAML_PATH" <<EOL
-        - ghostnet-$i
-EOL
-    done
-
-        cat >> "$DOCKER_YAML_PATH" <<EOL
-    volumes:
-      - ${REMOTE_HOME}/letsencrypt:/etc/letsencrypt:ro
-    configs:
-      - source: nginx-config
-        target: /etc/nginx/nginx.conf
-    deploy:
-      restart_policy:
-        condition: on-failure
-        
-configs:
-  nginx-config:
-    file: ${PROJECT_PATH}/nginx.conf
-
-EOL
-
-    cat >> "$DOCKER_YAML_PATH" <<EOL
-networks:
-EOL
-
-    for i in $(seq 0 $DOMAIN_COUNT); do
-        cat >> "$DOCKER_YAML_PATH" <<EOL
-  ghostnet-$i:
-    attachable: true
-
-EOL
-    done
-
-
-docker stack deploy -c "$DOCKER_YAML_PATH" "reverse-proxy"
-
-
-# iterate over all our domains and create the nginx config file.
-
-
-domain_number=0
-for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
-    export DOMAIN_NAME="$DOMAIN_NAME"
-    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-
-    ssh "$PRIMARY_WWW_FQDN" mkdir -p "$REMOTE_HOME/ghost/$DOMAIN_NAME/ghost" "$REMOTE_HOME/ghost/$DOMAIN_NAME/db"
-
-    # source the site path so we know what features it has.
-    source ../../reset_env.sh
-    source "$SITE_PATH/site_definition"
-    source ../../domain_env.sh
-
-    STACK_TAG="ghost-$domain_number"
-
-    # todo append domain number or port number.
-    mkdir -p "$SITE_PATH/webstack"
-    DOCKER_YAML_PATH="$SITE_PATH/webstack/$STACK_TAG.yml"
-    export DOCKER_YAML_PATH="$DOCKER_YAML_PATH"
-    # if [ "$DEPLOY_ONION_SITE" = true ]; then
-    #     if [ -z "$ONION_ADDRESS" ]; then
-    #         echo "ERROR: ONION_ADDRESS is not defined."
-    #         exit 1
-    #     fi
-    # fi
-
-    # here's the NGINX config. We support ghost and nextcloud.
-    echo "" > "$DOCKER_YAML_PATH"
-
-    cat >>"$DOCKER_YAML_PATH" <<EOL
-version: "3.8"
-services:
-
-EOL
-
-
-    # This is the ghost for HTTPS (not over Tor)
-    cat >>"$DOCKER_YAML_PATH" <<EOL
-  ghost-${domain_number}:
-    image: ${GHOST_IMAGE}
-    networks:
-      - ghostnet-${domain_number}
-      - ghostdbnet-${domain_number}
-    volumes:
-      - ${REMOTE_HOME}/ghost/${DOMAIN_NAME}/ghost:/var/lib/ghost/content
-    environment:
-      - url=https://${PRIMARY_WWW_FQDN}
-      - database__client=mysql
-      - database__connection__host=ghostdb-${domain_number}
-      - database__connection__user=ghost
-      - database__connection__password=\${GHOST_MYSQL_PASSWORD}
-      - database__connection__database=ghost
-      - database__pool__min=0
-      - privacy__useStructuredData=true
-    deploy:
-      restart_policy:
-        condition: on-failure
-
-  ghostdb-${domain_number}:
-    image: ${GHOST_DB_IMAGE}
-    networks:
-      - ghostdbnet-${domain_number}
-    volumes:
-      - ${REMOTE_HOME}/ghost/${DOMAIN_NAME}/db:/var/lib/mysql
-    environment:
-       - MYSQL_ROOT_PASSWORD=\${GHOST_MYSQL_ROOT_PASSWORD}
-       - MYSQL_DATABASE=ghost
-       - MYSQL_USER=ghost
-       - MYSQL_PASSWORD=\${GHOST_MYSQL_PASSWORD}
-    deploy:
-      restart_policy:
-        condition: on-failure
-
-EOL
 
 
 #     if [ "$DEPLOY_NEXTCLOUD" = true ]; then
@@ -302,19 +167,7 @@ EOL
 #     fi
 #     #-------------------------
 
-# networks ----------------------
-    cat >>"$DOCKER_YAML_PATH" <<EOL
-networks:
-EOL
 
-    if [ "$DEPLOY_GHOST" = true ]; then
-        cat >>"$DOCKER_YAML_PATH" <<EOL
-    ghostnet-${domain_number}:
-      name: "reverse-proxy_ghostnet-${domain_number}"
-      external: true
-    ghostdbnet-${domain_number}:
-EOL
-    fi
 
 #     if [ "$DEPLOY_NEXTCLOUD" = true ]; then
 #         cat >>"$DOCKER_YAML_PATH" <<EOL
@@ -346,9 +199,3 @@ EOL
 # EOL
 #     fi
 #     # -----------------------------
-
-
-    docker stack deploy -c "$DOCKER_YAML_PATH" "$STACK_TAG"
-
-    domain_number=$((domain_number+1))
-done

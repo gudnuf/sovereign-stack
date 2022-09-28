@@ -20,9 +20,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export CONTAINER_TLS_PATH="/etc/letsencrypt/${DOMAIN_NAME}/live/${DOMAIN_NAME}"
     
     # source the site path so we know what features it has.
-    source ../../reset_env.sh
+    source ../../../reset_env.sh
     source "$SITE_PATH/site_definition"
-    source ../../domain_env.sh
+    source ../../../domain_env.sh
 
     echo "Doing DOMAIN_NAME: $DOMAIN_NAME"
     if [ $iteration = 0 ]; then
@@ -43,7 +43,6 @@ http {
     proxy_busy_buffers_size         256k;
     client_header_buffer_size       500k;
     large_client_header_buffers     4 500k;
-    http2_max_header_size           500k;
 
     # Needed websocket support (used by Ledger hardware wallets)
     map \$http_upgrade \$connection_upgrade {
@@ -167,6 +166,15 @@ EOL
     #map \$http_user_agent \$og_prefix {
     #    ~*(googlebot|twitterbot)/  /open-graph;
     #}
+
+    # this map allows us to route the clients request to the correct Ghost instance
+    # based on the clients browser language setting.
+    map \$http_accept_language \$lang {
+        default "en";
+        ~en en;
+        ~es es;
+    }
+
 EOL
     fi
 
@@ -184,7 +192,7 @@ EOL
 
         # catch all; send request to ${WWW_FQDN}
         location / {
-            return 301 https://${WWW_FQDN}\$request_uri;
+            return 301 https://${WWW_FQDN}/\$request_uri;
         }
 
 EOL
@@ -209,16 +217,8 @@ EOL
 
     #access_log /var/log/nginx/ghost-access.log;
     #error_log /var/log/nginx/ghost-error.log;
+
 EOL
-
-
-if [ "$ENABLE_NGINX_CACHING" = true ]; then
-cat >>"$NGINX_CONF_PATH" <<EOL
-    # main TLS listener; proxies requests to ghost service. NGINX configured to cache
-    proxy_cache_path /tmp/nginx_ghost levels=1:2 keys_zone=ghostcache:600m max_size=100m inactive=24h;
-EOL
-    fi
-
 
     # SERVER block for BTCPAY Server
     if [ "$VPS_HOSTING_TARGET" = lxd ]; then
@@ -229,14 +229,13 @@ EOL
     # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
     server {
         listen 443 ssl http2;
-        ssl on;
 
         ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
         ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
 
         server_name ${BTCPAY_USER_FQDN};
-    
+
         # Route everything to the real BTCPay server
         location / {
             # URL of BTCPay Server
@@ -257,9 +256,19 @@ EOL
     fi
 
 
+    echo "    # set up cache paths for nginx caching" >>"$NGINX_CONF_PATH"
+    for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
+        STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+        cat >>"$NGINX_CONF_PATH" <<EOL
+    proxy_cache_path /tmp/${STACK_NAME} levels=1:2 keys_zone=${STACK_NAME}:600m max_size=100m inactive=24h;
+EOL
+    done
 
-# the open server block for the HTTPS listener
+
+    # the open server block for the HTTPS listener for ghost
     cat >>"$NGINX_CONF_PATH" <<EOL
+    
+    # Main HTTPS listener for https://${WWW_FQDN}
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
@@ -269,41 +278,53 @@ EOL
         ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
 
         server_name ${WWW_FQDN};
-EOL
 
-    # add the Onion-Location header if specifed.
-    if [ "$DEPLOY_ONION_SITE" = true ]; then
-        cat >>"$NGINX_CONF_PATH" <<EOL
-        add_header Onion-Location https://${ONION_ADDRESS}\$request_uri;
-        
-EOL
-    fi
-
-    if [ "$ENABLE_NGINX_CACHING" = true ]; then
-        cat >>"$NGINX_CONF_PATH" <<EOL
-
-        # No cache + keep cookies for admin and previews
-        location ~ ^/(ghost/|p/|private/) {
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header Host \$http_host;
-            proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto  \$scheme;
-            proxy_intercept_errors  on;
-            proxy_pass http://ghost-${iteration}:2368;
-        }
-        
-EOL
-fi
-
-# proxy config for ghost
-    cat >>"$NGINX_CONF_PATH" <<EOL
         # Set the crawler policy.
         location = /robots.txt { 
             add_header Content-Type text/plain;
             return 200 "User-Agent: *\\nAllow: /\\n";
         }
+        
+EOL
 
+#     # add the Onion-Location header if specifed.
+#     if [ "$DEPLOY_ONION_SITE" = true ]; then
+#         cat >>"$NGINX_CONF_PATH" <<EOL
+#         add_header Onion-Location https://${ONION_ADDRESS}\$request_uri;
+        
+# EOL
+#     fi
+
+        cat >>"$NGINX_CONF_PATH" <<EOL
+        # if the client is accesssing https://${WWW_FQDN}/ , then we check the client
+        # langauge header and send them to the correct ghost instance based on language
         location / {
+            rewrite (.*) \$1/\$lang;
+        }
+
+EOL
+
+    for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
+        STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+        
+        cat >>"$NGINX_CONF_PATH" <<EOL
+        location ~ ^/${LANGUAGE_CODE}/(ghost/|p/|private/) {
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header Host \$http_host;
+            proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto  \$scheme;
+            proxy_intercept_errors  on;
+            proxy_pass http://ghost-${STACK_NAME}:2368;
+        }
+        
+EOL
+
+    done
+
+    for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
+        cat >>"$NGINX_CONF_PATH" <<EOL
+        # Location block to back https://${WWW_FQDN}/${LANGUAGE_CODE}
+        location /${LANGUAGE_CODE} {
             #set_from_accept_language \$lang en es;
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header Host \$http_host;
@@ -311,11 +332,8 @@ fi
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto  \$scheme;
             proxy_intercept_errors  on;
-            proxy_pass http://ghost-${iteration}:2368;
-EOL
+            proxy_pass http://ghost-${DOCKER_STACK_SUFFIX}-${LANGUAGE_CODE}:2368;
 
-    if [ "$ENABLE_NGINX_CACHING" = true ]; then
-        cat >>"$NGINX_CONF_PATH" <<EOL
             # https://stanislas.blog/2019/08/ghost-nginx-cache/ for nginx caching instructions
             # Remove cookies which are useless for anonymous visitor and prevent caching
             proxy_ignore_headers Set-Cookie Cache-Control;
@@ -323,7 +341,7 @@ EOL
 
             # Add header for cache status (miss or hit)
             add_header X-Cache-Status \$upstream_cache_status;
-            proxy_cache ghostcache;
+            proxy_cache ${DOCKER_STACK_SUFFIX}-${LANGUAGE_CODE};
 
             # Default TTL: 1 day
             proxy_cache_valid 5s;
@@ -341,15 +359,11 @@ EOL
 
             # Bypass cache for errors
             proxy_cache_use_stale error timeout invalid_header updating http_500 http_502 http_503 http_504;
-   
-EOL
-    fi
-
-# this is the closing location / block for the ghost HTTPS segment
-    cat >>"$NGINX_CONF_PATH" <<EOL
         }
 
 EOL
+
+    done
 
 # TODO this MIGHT be part of the solution for Twitter Cards.
         # location /contents {
@@ -359,101 +373,15 @@ EOL
         #     proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
         #     proxy_set_header X-Forwarded-Proto  \$scheme;
         #     proxy_intercept_errors  on;
-        #     proxy_pass http://ghost-${iteration}::2368\$og_prefix\$request_uri;
+        #     proxy_pass http://ghost-${DOCKER_STACK_SUFFIX}-${SITE_LANGUAGE_CODES}::2368\$og_prefix\$request_uri;
         # }
 
-# this is the closing server block for the ghost HTTPS segment
+    # this is the closing server block for the ghost HTTPS segment
     cat >>"$NGINX_CONF_PATH" <<EOL
     
     }
 
 EOL
-
-# tor config
-    if [ "$DEPLOY_ONION_SITE" = true ]; then
-        cat >>"$NGINX_CONF_PATH" <<EOL
-    # server listener for tor v3 onion endpoint
-    server {
-        listen 443 ssl http2;
-        listen [::]:443 ssl http2;
-        server_name ${ONION_ADDRESS};
-        #access_log /var/log/nginx/tor-www.log;
-        
-        # administration not allowed over tor interface.
-        location /ghost { deny all; }
-        location / {
-            proxy_set_header X-Forwarded-For 1.1.1.1;
-            proxy_set_header X-Forwarded-Proto https;
-            proxy_set_header X-Real-IP 1.1.1.1;
-            proxy_set_header Host \$http_host;
-            proxy_pass http://tor-ghost:2368;
-        }
-    }
-EOL
-    fi
-
-    if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-        cat >>"$NGINX_CONF_PATH" <<EOL
-    # TLS listener for ${NEXTCLOUD_FQDN}
-    server {
-        listen 443 ssl http2;
-        listen [::]:443 ssl http2;
-
-        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
-        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
-        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
-
-        server_name ${NEXTCLOUD_FQDN};
-        
-        location / {
-            proxy_headers_hash_max_size 512;
-            proxy_headers_hash_bucket_size 64;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_set_header X-NginX-Proxy true;
-            
-            proxy_pass http://nextcloud:80;
-        }
-                    
-        # https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/reverse_proxy_configuration.html
-        location /.well-known/carddav {
-            return 301 \$scheme://\$host/remote.php/dav;
-        }
-
-        location /.well-known/caldav {
-            return 301 \$scheme://\$host/remote.php/dav;
-        }
-    }
-EOL
-
-    fi
-
-
-    if [ "$DEPLOY_GITEA" = true ]; then
-    cat >>"$NGINX_CONF_PATH" <<EOL
-    # TLS listener for ${GITEA_FQDN}
-    server {
-        listen 443 ssl http2;
-        listen [::]:443 ssl http2;
-    
-        server_name ${GITEA_FQDN};
-        
-        location / {
-            proxy_headers_hash_max_size 512;
-            proxy_headers_hash_bucket_size 64;
-            proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header Host \$host;
-            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto \$scheme;
-            proxy_set_header X-NginX-Proxy true;
-            
-            proxy_pass http://gitea:3000;
-        }
-    }
-EOL
-    fi
 
     iteration=$((iteration+1))
 done

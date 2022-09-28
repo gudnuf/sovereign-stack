@@ -4,7 +4,7 @@ set -exu
 cd "$(dirname "$0")"
 
 # Create the nginx config file which covers all domains.
-bash -c ./stub_nginxconf.sh
+bash -c ./stub/nginx_config.sh
 
 # redirect all docker commands to the remote host.
 export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
@@ -97,26 +97,12 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
 done
 
-### The next series of commands 
-# stop services.
-if docker stack list --format "{{.Name}}" | grep -q webstack; then
-    docker stack rm webstack
-    sleep 15
-fi
-
-if [ "$BACKUP_WWW"  = true ]; then
-    ./backup.sh
-fi
+./stop_docker_stacks.sh
 
 if [ "$RESTORE_WWW" = true ]; then
     # Generally speaking we try to restore data. But if the BACKUP directory was
     # just created, we know that we'll deploy fresh.
     ./restore.sh
-else
-
-    if [ "$RUN_CERT_RENEWAL" = true ]; then
-        ./generate_certs.sh
-    fi
 fi
 
 
@@ -145,7 +131,8 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
     # fi
 fi
 
-bash -c ./stub_docker_yml.sh
+bash -c ./stub/nginx_yml.sh
+bash -c ./stub/ghost_yml.sh
 
 # # start a browser session; point it to port 80 to ensure HTTPS redirect.
 # wait-for-it -t 320 "$PRIMARY_WWW_FQDN:80"

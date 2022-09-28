@@ -73,8 +73,7 @@ export VLAN_INTERFACE=
 export VM_NAME="sovereign-stack-base"
 export DEV_MEMORY_MB="4096"
 export DEV_CPU_COUNT="4"
-export SSHFS_PATH="/tmp/sshfs_temp"
-mkdir -p "$SSHFS_PATH"
+
 export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 
 export NEXTCLOUD_SPACE_GB=10
@@ -92,7 +91,7 @@ export NEXTCLOUD_SPACE_GB=10
 #     exit 1
 # fi
 
-ENABLE_NGINX_CACHING=false
+
 
 
 # TODO
@@ -105,16 +104,17 @@ BTC_CHAIN=regtest
 
 export BTC_CHAIN="$BTC_CHAIN"
 
-DEFAULT_DB_IMAGE="mariadb:10.8.3-jammy"
-export ENABLE_NGINX_CACHING="$ENABLE_NGINX_CACHING"
+DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
+
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.12.3"
+export GHOST_IMAGE="ghost:5.14.2"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export NGINX_IMAGE="nginx:1.23.1"
-export NEXTCLOUD_IMAGE="nextcloud:24.0.4"
+export NEXTCLOUD_IMAGE="nextcloud:24.0.5"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
+# TODO PIN the gitea version number.
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
