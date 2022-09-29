@@ -38,6 +38,12 @@ EOL
         done
     done
 
+        if [ "$DEPLOY_GITEA" = true ]; then
+            cat >> "$DOCKER_YAML_PATH" <<EOL
+        - giteanet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE
+EOL
+        fi
+
         cat >> "$DOCKER_YAML_PATH" <<EOL
     volumes:
       - ${REMOTE_HOME}/letsencrypt:/etc/letsencrypt:ro
@@ -82,6 +88,16 @@ EOL
 EOL
 
         done
+
+
+        if [ "$DEPLOY_GITEA" = true ]; then
+            cat >> "$DOCKER_YAML_PATH" <<EOL
+  giteanet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE:
+    attachable: true
+
+EOL
+        fi
+
     done
 
 docker stack deploy -c "$DOCKER_YAML_PATH" "reverse-proxy"

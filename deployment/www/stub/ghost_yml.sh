@@ -1,16 +1,16 @@
 #!/bin/bash
 
+set -exu
+cd "$(dirname "$0")"
 
-domain_number=0
 for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
-
     # source the site path so we know what features it has.
-    source ../../reset_env.sh
+    source ../../../reset_env.sh
     source "$SITE_PATH/site_definition"
-    source ../../domain_env.sh
+    source ../../../domain_env.sh
 
     # for each language specified in the site_definition, we spawn a separate ghost container
     # at https://www.domain.com/$LANGUAGE_CODE
@@ -95,11 +95,9 @@ EOL
 EOL
             fi
 
-        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOCKER_STACK_SUFFIX-ghost-$LANGUAGE_CODE"
 
         sleep 2
-
-        domain_number=$((domain_number+1))
 
     done # language code
 

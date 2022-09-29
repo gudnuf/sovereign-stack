@@ -22,7 +22,15 @@ REMOTE_BACKUP_LOCATION="$REMOTE_BACKUP_PATH/$1/$DOMAIN_NAME"
 
 # step 1: run duplicity on the remote system to backup all files to the remote system.
 # --allow-source-mismatch
-ssh "$PRIMARY_WWW_FQDN" sudo PASSPHRASE="$DUPLICITY_BACKUP_PASSPHRASE" duplicity "$REMOTE_HOME/$1/$DOMAIN_NAME" "file://$REMOTE_BACKUP_LOCATION"
+REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$1/$DOMAIN_NAME"
+
+# if the source files to backup don't exist on the remote host, we return.
+if ! ssh "$PRIMARY_WWW_FQDN" "[ -d $REMOTE_SOURCE_BACKUP_PATH"; then
+    echo "INFO: The path to backup does not exist. There's nothing to backup! That's ok, execution will continue."
+    exit 0
+fi
+
+ssh "$PRIMARY_WWW_FQDN" sudo PASSPHRASE="$DUPLICITY_BACKUP_PASSPHRASE" duplicity "$REMOTE_SOURCE_BACKUP_PATH" "file://$REMOTE_BACKUP_LOCATION"
 ssh "$PRIMARY_WWW_FQDN" sudo chown -R ubuntu:ubuntu "$REMOTE_BACKUP_LOCATION"
 
 

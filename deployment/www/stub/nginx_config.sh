@@ -362,7 +362,13 @@ EOL
 
 EOL
 
+    # this is the closing server block for the ghost HTTPS segment
+    cat >>"$NGINX_CONF_PATH" <<EOL
+    
+    }
 
+EOL
+        # this piece is for GITEA.
         cat >>"$NGINX_CONF_PATH" <<EOL
     # TLS listener for ${GITEA_FQDN}
     server {
@@ -382,7 +388,8 @@ EOL
             
             proxy_pass http://gitea:3000;
         }
-        
+    }
+
 EOL
 
     done
@@ -398,12 +405,6 @@ EOL
         #     proxy_pass http://ghost-${DOCKER_STACK_SUFFIX}-${SITE_LANGUAGE_CODES}::2368\$og_prefix\$request_uri;
         # }
 
-    # this is the closing server block for the ghost HTTPS segment
-    cat >>"$NGINX_CONF_PATH" <<EOL
-    
-    }
-
-EOL
 
     iteration=$((iteration+1))
 done

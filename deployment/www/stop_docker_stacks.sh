@@ -14,20 +14,19 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     source ../../domain_env.sh
 
     ### Stop all services.
-    for APP in ghost; do
+    for APP in ghost gitea; do
+        # backup each language for each app.
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
-            STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+            STACK_NAME="$DOCKER_STACK_SUFFIX-$APP-$LANGUAGE_CODE"
+
             if docker stack list --format "{{.Name}}" | grep -q "$STACK_NAME"; then
                 docker stack rm "$STACK_NAME"
                 sleep 2
             fi
 
-            if [ "$BACKUP_GHOST"  = true ]; then
-                ./backup_path.sh "$APP"
-            fi
+            ./backup_path.sh "$APP"
         done
     done
-
 done
 
 

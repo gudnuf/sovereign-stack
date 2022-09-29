@@ -91,9 +91,6 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/html"
     fi
 
-    if [ "$DEPLOY_GITEA" = true ]; then
-        ssh "$FQDN" "mkdir -p $REMOTE_GITEA_PATH/data $REMOTE_GITEA_PATH/db"
-    fi
 
 done
 
@@ -133,7 +130,6 @@ fi
 
 bash -c ./stub/nginx_yml.sh
 bash -c ./stub/ghost_yml.sh
-
 bash -c ./stub/gitea_yml.sh
 
 
