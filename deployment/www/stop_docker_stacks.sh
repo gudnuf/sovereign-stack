@@ -24,7 +24,26 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
                 sleep 2
             fi
 
-            ./backup_path.sh "$APP"
+            # these variable are used by both backup/restore scripts.
+            export APP="$APP"
+            export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+            export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
+  
+            # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.
+            export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP/$BACKUP_TIMESTAMP"
+
+            # ensure our local backup path exists.
+            if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
+                mkdir -p "$LOCAL_BACKUP_PATH"
+            fi
+
+            if [ "$RESTORE_WWW" = true ]; then
+                ./restore_path.sh
+
+            elif [ "$BACKUP_APPS"  = true ]; then
+                # if we're not restoring, then we may or may not back up.
+                ./backup_path.sh
+            fi
         done
     done
 done
@@ -36,6 +55,8 @@ if docker stack list --format "{{.Name}}" | grep -q reverse-proxy; then
     # wait for all docker containers to stop.
     # TODO see if there's a way to check for this.
     sleep 10
+
+    docker system prune -f
 fi
 
 # generate the certs and grab a backup
@@ -54,7 +75,15 @@ if [ "$BACKUP_CERTS" = true ]; then
         source "$SITE_PATH/site_definition"
         source ../../domain_env.sh
 
-        ./backup_path.sh "letsencrypt"
-    done
+        # these variable are used by both backup/restore scripts.
+        export APP="letsencrypt"
+        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOCKER_STACK_SUFFIX"
+        export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
 
+        # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.
+        export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP/$BACKUP_TIMESTAMP"
+        mkdir -p "$LOCAL_BACKUP_PATH"
+
+        ./backup_path.sh
+    done
 fi

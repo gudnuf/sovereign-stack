@@ -47,9 +47,17 @@ EOL
       - ${REMOTE_HOME}/ghost/${DOMAIN_NAME}/${LANGUAGE_CODE}/ghost:/var/lib/ghost/content
     environment:
 EOL
-
-            cat >>"$DOCKER_YAML_PATH" <<EOL
+            if [ "$LANGUAGE_CODE" = "en" ]; then
+                cat >>"$DOCKER_YAML_PATH" <<EOL
+      - url=https://${WWW_FQDN}
+EOL
+            else
+                cat >>"$DOCKER_YAML_PATH" <<EOL
       - url=https://${WWW_FQDN}/${LANGUAGE_CODE}
+EOL
+            fi
+            
+            cat >>"$DOCKER_YAML_PATH" <<EOL
       - database__client=mysql
       - database__connection__host=${GHOST_DB_STACK_TAG}
       - database__connection__user=ghost

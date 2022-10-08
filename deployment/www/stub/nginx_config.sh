@@ -170,8 +170,7 @@ EOL
     # this map allows us to route the clients request to the correct Ghost instance
     # based on the clients browser language setting.
     map \$http_accept_language \$lang {
-        default "en";
-        ~en en;
+        default "";
         ~es es;
     }
 
@@ -192,13 +191,13 @@ EOL
 
         # catch all; send request to ${WWW_FQDN}
         location / {
-            return 301 https://${WWW_FQDN}/\$request_uri;
+            return 301 https://${WWW_FQDN}\$request_uri;
         }
 
 EOL
 
 
-    if [ "$DEPLOY_NOSTR" = true ]; then
+    if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
         cat >>"$NGINX_CONF_PATH" <<EOL
         # We return a JSON object with name/pubkey mapping per NIP05.
         # https://www.reddit.com/r/nostr/comments/rrzk76/nip05_mapping_usernames_to_dns_domains_by_fiatjaf/sssss
@@ -294,20 +293,20 @@ EOL
 # EOL
 #     fi
 
-        cat >>"$NGINX_CONF_PATH" <<EOL
-        # if the client is accesssing https://${WWW_FQDN}/ , then we check the client
-        # langauge header and send them to the correct ghost instance based on language
-        location / {
-            rewrite (.*) \$1/\$lang;
-        }
-
-EOL
-
     for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
         STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
-        
-        cat >>"$NGINX_CONF_PATH" <<EOL
+
+        if [ "$LANGUAGE_CODE" = en ]; then
+            cat >>"$NGINX_CONF_PATH" <<EOL
+        location ~ ^/(ghost/|p/|private/) {
+EOL
+        else
+            cat >>"$NGINX_CONF_PATH" <<EOL
         location ~ ^/${LANGUAGE_CODE}/(ghost/|p/|private/) {
+EOL
+        fi
+
+        cat >>"$NGINX_CONF_PATH" <<EOL
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header Host \$http_host;
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
@@ -315,16 +314,41 @@ EOL
             proxy_intercept_errors  on;
             proxy_pass http://ghost-${STACK_NAME}:2368;
         }
-        
+
 EOL
 
     done
 
-    for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
+    ROOT_SITE_LANGUAGE_CODES="$SITE_LANGUAGE_CODES"
+    for LANGUAGE_CODE in ${ROOT_SITE_LANGUAGE_CODES//,/ }; do
+
         cat >>"$NGINX_CONF_PATH" <<EOL
-        # Location block to back https://${WWW_FQDN}/${LANGUAGE_CODE}
+        # Location block to back https://${WWW_FQDN}/${LANGUAGE_CODE} or https://${WWW_FQDN}/ if english.
+EOL
+
+        if [ "$LANGUAGE_CODE" = en ]; then
+            cat >>"$NGINX_CONF_PATH" <<EOL
+        location / {
+EOL
+            if (( "$LANGUAGE_CODE_COUNT" > 1 )); then 
+                # we only need this clause if we know there is more than once lanuage being rendered.
+                cat >>"$NGINX_CONF_PATH" <<EOL
+            # Redirect the user to the correct language using the map above.
+            if ( \$http_accept_language !~* '^en(.*)\$' ) {
+                #rewrite (.*) \$1/\$lang;
+                return 302 https://${WWW_FQDN}/\$lang;
+            }
+
+EOL
+            fi
+
+        else
+            cat >>"$NGINX_CONF_PATH" <<EOL
         location /${LANGUAGE_CODE} {
-            #set_from_accept_language \$lang en es;
+EOL
+        fi
+
+        cat >>"$NGINX_CONF_PATH" <<EOL
             proxy_set_header X-Real-IP \$remote_addr;
             proxy_set_header Host \$http_host;
 
@@ -362,18 +386,37 @@ EOL
 
 EOL
 
+    done
+
     # this is the closing server block for the ghost HTTPS segment
     cat >>"$NGINX_CONF_PATH" <<EOL
     
     }
 
 EOL
+
+# TODO this MIGHT be part of the solution for Twitter Cards.
+        # location /contents {
+        #     resolver 127.0.0.11 ipv6=off valid=5m;
+        #     proxy_set_header X-Real-IP \$remote_addr;
+        #     proxy_set_header Host \$http_host;
+        #     proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
+        #     proxy_set_header X-Forwarded-Proto  \$scheme;
+        #     proxy_intercept_errors  on;
+        #     proxy_pass http://ghost-${DOCKER_STACK_SUFFIX}-${SITE_LANGUAGE_CODES}::2368\$og_prefix\$request_uri;
+        # }
         # this piece is for GITEA.
+
+    if [ "$DEPLOY_GITEA" = true ]; then
         cat >>"$NGINX_CONF_PATH" <<EOL
     # TLS listener for ${GITEA_FQDN}
     server {
         listen 443 ssl http2;
         listen [::]:443 ssl http2;
+
+        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
     
         server_name ${GITEA_FQDN};
         
@@ -386,25 +429,12 @@ EOL
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_set_header X-NginX-Proxy true;
             
-            proxy_pass http://gitea:3000;
+            proxy_pass http://gitea-${DOCKER_STACK_SUFFIX}-en:3000;
         }
     }
 
 EOL
-
-    done
-
-# TODO this MIGHT be part of the solution for Twitter Cards.
-        # location /contents {
-        #     resolver 127.0.0.11 ipv6=off valid=5m;
-        #     proxy_set_header X-Real-IP \$remote_addr;
-        #     proxy_set_header Host \$http_host;
-        #     proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
-        #     proxy_set_header X-Forwarded-Proto  \$scheme;
-        #     proxy_intercept_errors  on;
-        #     proxy_pass http://ghost-${DOCKER_STACK_SUFFIX}-${SITE_LANGUAGE_CODES}::2368\$og_prefix\$request_uri;
-        # }
-
+    fi
 
     iteration=$((iteration+1))
 done

@@ -27,16 +27,14 @@ fi
 DOMAIN_NAME=
 RESTORE_ARCHIVE=
 VPS_HOSTING_TARGET=lxd
-RUN_CERT_RENEWAL=false
-
+RUN_CERT_RENEWAL=true
 RESTORE_WWW=false
-BACKUP_CERTS=true
-BACKUP_GHOST=true
-RESTORE_BTCPAY=false
+BACKUP_CERTS=false
+BACKUP_APPS=false
 BACKUP_BTCPAY=false
+RESTORE_BTCPAY=false
 MIGRATE_WWW=false
 MIGRATE_BTCPAY=false
-
 USER_SKIP_WWW=false
 USER_SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
@@ -53,13 +51,14 @@ for i in "$@"; do
         ;;
         --restore-www)
             RESTORE_WWW=true
-            BACKUP_GHOST=false
+            BACKUP_APPS=false
             RUN_CERT_RENEWAL=false
             shift
         ;;
         --restore-btcpay)
             RESTORE_BTCPAY=true
             BACKUP_BTCPAY=false
+            RUN_CERT_RENEWAL=false
             shift
         ;;
         --backup-certs)
@@ -87,7 +86,7 @@ for i in "$@"; do
             shift
         ;;
         --backup-ghost)
-            BACKUP_GHOST=true
+            BACKUP_APPS=true
             shift
         ;;
         --backup-btcpay)
@@ -130,7 +129,7 @@ export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
 export RESTORE_WWW="$RESTORE_WWW"
 
 export BACKUP_CERTS="$BACKUP_CERTS"
-export BACKUP_GHOST="$BACKUP_GHOST"
+export BACKUP_APPS="$BACKUP_APPS"
 export RESTORE_BTCPAY="$RESTORE_BTCPAY"
 export BACKUP_BTCPAY="$RESTORE_BTCPAY"
 export MIGRATE_WWW="$MIGRATE_WWW"
@@ -426,15 +425,13 @@ function stub_site_definition {
 export DOMAIN_NAME="${DOMAIN_NAME}"
 export SITE_LANGUAGE_CODES="en"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
-# AWS only
-#export DDNS_PASSWORD=
 #export BTCPAY_HOSTNAME_IN_CERT="store"
 export DEPLOY_GHOST=true
 export DEPLOY_NEXTCLOUD=true
-export DEPLOY_NOSTR=false
+export DEPLOY_NOSTR_RELAY=false
 export NOSTR_ACCOUNT_PUBKEY="CHANGE_ME"
 export DEPLOY_GITEA=false
-export DEPLOY_ONION_SITE=false
+#export DEPLOY_ONION_SITE=false
 export GHOST_MYSQL_PASSWORD="$(new_pass)"
 export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
 export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"

@@ -55,7 +55,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         fi
     fi
 
-    if [ "$DEPLOY_NOSTR" = true ]; then
+    if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
         if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
             echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
             exit 1
@@ -85,23 +85,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
     TOR_CONFIG_PATH=
 
-    if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/data"
-        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/logs"
-        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/html"
-    fi
-
-
 done
 
 ./stop_docker_stacks.sh
-
-if [ "$RESTORE_WWW" = true ]; then
-    # Generally speaking we try to restore data. But if the BACKUP directory was
-    # just created, we know that we'll deploy fresh.
-    ./restore.sh
-fi
-
 
 if [ "$DEPLOY_ONION_SITE" = true ]; then
     # ensure the tor image is built
@@ -129,7 +115,13 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
 fi
 
 bash -c ./stub/nginx_yml.sh
+
+sleep 3
+
 bash -c ./stub/ghost_yml.sh
+
+sleep 3
+
 bash -c ./stub/gitea_yml.sh
 
 

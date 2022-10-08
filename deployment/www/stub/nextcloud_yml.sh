@@ -1,6 +1,10 @@
 
 
-
+    if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/data"
+        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/logs"
+        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/html"
+    fi
 
 
 

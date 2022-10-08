@@ -15,17 +15,13 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     if [ "$DEPLOY_GITEA" = true ]; then
         GITEA_PATH="$REMOTE_GITEA_PATH/$DOMAIN_NAME/${LANGUAGE_CODE}"
 
-        ssh "$PRIMARY_WWW_FQDN" mkdir -p "$GITEA_PATH"
+        ssh "$PRIMARY_WWW_FQDN" mkdir -p "$GITEA_PATH/data" "$GITEA_PATH/db"
 
         STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
 
         export STACK_TAG="gitea-$STACK_NAME"
         export DB_STACK_TAG="giteadb-$STACK_NAME"
-
-        # todo append domain number or port number.
-        WEBSTACK_PATH="$SITE_PATH/webstack"
-        mkdir -p "$WEBSTACK_PATH" "$WEBSTACK_PATH/data" "$WEBSTACK_PATH/db"
-        export DOCKER_YAML_PATH="$WEBSTACK_PATH/gitea-en.yml"
+        export DOCKER_YAML_PATH="$SITE_PATH/webstack/gitea-en.yml"
 
         NET_NAME="giteanet-$DOCKER_STACK_SUFFIX"
         DBNET_NAME="giteadbnet-$DOCKER_STACK_SUFFIX"

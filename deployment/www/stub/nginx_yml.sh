@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -euox
 cd "$(dirname "$0")"
 
 #https://github.com/fiatjaf/expensive-relay
@@ -27,22 +27,28 @@ EOL
         source "$SITE_PATH/site_definition"
         source ../../../domain_env.sh
 
-        # for each language specified in the site_definition, we spawn a separate ghost container
-        # at https://www.domain.com/$LANGUAGE_CODE
-        for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
 
+        for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
+            # We create another ghost instance under /
             cat >> "$DOCKER_YAML_PATH" <<EOL
         - ghostnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE
 EOL
+        
+            if [ "$LANGUAGE_CODE" = en ]; then
+                if [ "$DEPLOY_GITEA" = "true" ]; then
+                cat >> "$DOCKER_YAML_PATH" <<EOL
+        - giteanet-$DOCKER_STACK_SUFFIX-en
+EOL
+                fi
+            fi
 
         done
+
+        
+
     done
 
-        if [ "$DEPLOY_GITEA" = true ]; then
-            cat >> "$DOCKER_YAML_PATH" <<EOL
-        - giteanet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE
-EOL
-        fi
+        
 
         cat >> "$DOCKER_YAML_PATH" <<EOL
     volumes:
@@ -92,7 +98,7 @@ EOL
 
         if [ "$DEPLOY_GITEA" = true ]; then
             cat >> "$DOCKER_YAML_PATH" <<EOL
-  giteanet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE:
+  giteanet-$DOCKER_STACK_SUFFIX-en:
     attachable: true
 
 EOL
