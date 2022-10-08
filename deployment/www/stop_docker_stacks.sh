@@ -39,7 +39,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
             if [ "$RESTORE_WWW" = true ]; then
                 ./restore_path.sh
-
+                ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
             elif [ "$BACKUP_APPS"  = true ]; then
                 # if we're not restoring, then we may or may not back up.
                 ./backup_path.sh
@@ -64,26 +64,33 @@ if [ "$RUN_CERT_RENEWAL" = true ]; then
     ./generate_certs.sh
 fi
 
-if [ "$BACKUP_CERTS" = true ]; then
-    # Back each domain's certificates under /home/ubuntu/letsencrypt/domain
-    for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
-        export DOMAIN_NAME="$DOMAIN_NAME"
-        export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+# Back each domain's certificates under /home/ubuntu/letsencrypt/domain
+for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
+    export DOMAIN_NAME="$DOMAIN_NAME"
+    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
-        # source the site path so we know what features it has.
-        source ../../reset_env.sh
-        source "$SITE_PATH/site_definition"
-        source ../../domain_env.sh
+    # source the site path so we know what features it has.
+    source ../../reset_env.sh
+    source "$SITE_PATH/site_definition"
+    source ../../domain_env.sh
 
-        # these variable are used by both backup/restore scripts.
-        export APP="letsencrypt"
-        export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOCKER_STACK_SUFFIX"
-        export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
+    # these variable are used by both backup/restore scripts.
+    export APP="letsencrypt"
+    export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOCKER_STACK_SUFFIX"
+    export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
 
-        # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.
-        export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP/$BACKUP_TIMESTAMP"
-        mkdir -p "$LOCAL_BACKUP_PATH"
+    # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.
+    export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP/$BACKUP_TIMESTAMP"
+    mkdir -p "$LOCAL_BACKUP_PATH"
 
+    if [ "$RESTORE_WWW" = true ]; then
+        sleep 5
+        echo "STARTING restore_path.sh for letsencrypt."
+        ./restore_path.sh
+        ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
+    elif [ "$BACKUP_APPS"  = true ]; then
+        # if we're not restoring, then we may or may not back up.
         ./backup_path.sh
-    done
-fi
+        
+    fi
+done
