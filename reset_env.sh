@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -eu
 
 export DOMAIN_NAME=
 export DUPLICITY_BACKUP_PASSPHRASE=

@@ -39,7 +39,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
             if [ "$RESTORE_WWW" = true ]; then
                 ./restore_path.sh
-                ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
+                #ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
             elif [ "$BACKUP_APPS"  = true ]; then
                 # if we're not restoring, then we may or may not back up.
                 ./backup_path.sh
@@ -87,7 +87,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         sleep 5
         echo "STARTING restore_path.sh for letsencrypt."
         ./restore_path.sh
-        ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
+        #ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
     elif [ "$BACKUP_APPS"  = true ]; then
         # if we're not restoring, then we may or may not back up.
         ./backup_path.sh
