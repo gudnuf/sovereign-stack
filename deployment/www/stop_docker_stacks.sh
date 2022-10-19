@@ -17,7 +17,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     for APP in ghost gitea; do
         # backup each language for each app.
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
-            STACK_NAME="$DOCKER_STACK_SUFFIX-$APP-$LANGUAGE_CODE"
+            STACK_NAME="$DOMAIN_IDENTIFIER-$APP-$LANGUAGE_CODE"
 
             if docker stack list --format "{{.Name}}" | grep -q "$STACK_NAME"; then
                 docker stack rm "$STACK_NAME"
@@ -26,7 +26,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
             # these variable are used by both backup/restore scripts.
             export APP="$APP"
-            export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+            export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOMAIN_IDENTIFIER-$LANGUAGE_CODE"
             export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
   
             # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.
@@ -76,7 +76,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
     # these variable are used by both backup/restore scripts.
     export APP="letsencrypt"
-    export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOCKER_STACK_SUFFIX"
+    export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOMAIN_IDENTIFIER"
     export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
 
     # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.

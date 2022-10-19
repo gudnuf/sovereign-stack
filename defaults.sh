@@ -7,7 +7,7 @@ export WWW_SERVER_MAC_ADDRESS=
 export DEPLOY_BTCPPAY_SERVER=false
 
 export DEPLOY_GHOST=true
-export DEPLOY_NOSTR_RELAY=false
+export DEPLOY_NOSTR_RELAY=true
 export DEPLOY_ONION_SITE=false
 export DEPLOY_NEXTCLOUD=false
 export DEPLOY_GITEA=false
@@ -108,7 +108,7 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.14.2"
+export GHOST_IMAGE="ghost:5.18.0"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export NGINX_IMAGE="nginx:1.23.1"
 export NEXTCLOUD_IMAGE="nextcloud:24.0.5"

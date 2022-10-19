@@ -122,7 +122,6 @@ done
 source ./defaults.sh
 
 export CACHES_DIR="$HOME/ss-cache"
-export SSH_HOME="$HOME/.ssh"
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
 export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
@@ -158,7 +157,7 @@ if [ ! -f "$CLUSTER_PATH/authorized_keys" ]; then
     cat "$SSH_HOME/id_rsa.pub" >> "$CLUSTER_PATH/authorized_keys"
     echo "INFO: Sovereign Stack just stubbed out '$CLUSTER_PATH/authorized_keys'. Go update it."
     echo "      Add ssh pubkeys for your various management machines, if any."
-    echo "      By default we added your main ssh pubkey: '$HOME/.ssh/id_rsa.pub'."
+    echo "      By default we added your main ssh pubkey: '$SSH_HOME/id_rsa.pub'."
     exit 1
 fi
 
@@ -246,7 +245,16 @@ function instantiate_vms {
         if [ "$VPS_HOSTING_TARGET" = lxd ]; then
             # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
             # which is set up during LXD cluster creation ss-cluster.
-            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
+            LXD_SS_CONFIG_LINE=
+            if lxc network list --format csv | grep lxdbrSS | grep ss-config; then
+                LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
+            fi
+
+            if [ -z "$LXD_SS_CONFIG_LINE" ]; then
+                echo "ERROR: the MACVLAN interface has not been specified. You may need to run ss-cluster again."
+                exit 1
+            fi
+
             CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
             DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
             DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
@@ -428,7 +436,7 @@ export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 #export BTCPAY_HOSTNAME_IN_CERT="store"
 export DEPLOY_GHOST=true
 export DEPLOY_NEXTCLOUD=true
-export DEPLOY_NOSTR_RELAY=false
+export DEPLOY_NOSTR_RELAY=true
 export NOSTR_ACCOUNT_PUBKEY="CHANGE_ME"
 export DEPLOY_GITEA=false
 #export DEPLOY_ONION_SITE=false
@@ -469,14 +477,14 @@ export DEPLOY_BTCPAY_SERVER=true
 export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 # export BTC_CHAIN=mainnet
 export PRIMARY_DOMAIN="CHANGE_ME"
-export OTHER_SITES_LIST=
+export OTHER_SITES_LIST=""
 EOL
 
         chmod 0744 "$PROJECT_DEFINITION_PATH"
         echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it yo!"
         echo "INFO: Learn more at https://www.sovereign-stack.org/project-definitions/"
+        
         exit 1
-
     fi
 
     # source project defition.

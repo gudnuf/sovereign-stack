@@ -3,7 +3,7 @@
 set -eux
 cd "$(dirname "$0")"
 
-# let's make sure we have an ssh keypair. We just use ~/.ssh/id_rsa
+# let's make sure we have an ssh keypair. We just use $SSH_HOME/id_rsa
 # TODO convert this to SSH private key held on Trezor. THus trezor-T required for 
 # login operations. This should be configurable of course.
 if [ ! -f "$SSH_HOME/id_rsa" ]; then

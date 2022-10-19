@@ -256,7 +256,7 @@ EOL
 
     echo "    # set up cache paths for nginx caching" >>"$NGINX_CONF_PATH"
     for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
-        STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+        STACK_NAME="$DOMAIN_IDENTIFIER-$LANGUAGE_CODE"
         cat >>"$NGINX_CONF_PATH" <<EOL
     proxy_cache_path /tmp/${STACK_NAME} levels=1:2 keys_zone=${STACK_NAME}:600m max_size=100m inactive=24h;
 EOL
@@ -294,7 +294,7 @@ EOL
 #     fi
 
     for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
-        STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+        STACK_NAME="$DOMAIN_IDENTIFIER-$LANGUAGE_CODE"
 
         if [ "$LANGUAGE_CODE" = en ]; then
             cat >>"$NGINX_CONF_PATH" <<EOL
@@ -355,7 +355,7 @@ EOL
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto  \$scheme;
             proxy_intercept_errors  on;
-            proxy_pass http://ghost-${DOCKER_STACK_SUFFIX}-${LANGUAGE_CODE}:2368;
+            proxy_pass http://ghost-${DOMAIN_IDENTIFIER}-${LANGUAGE_CODE}:2368;
 
             # https://stanislas.blog/2019/08/ghost-nginx-cache/ for nginx caching instructions
             # Remove cookies which are useless for anonymous visitor and prevent caching
@@ -364,7 +364,7 @@ EOL
 
             # Add header for cache status (miss or hit)
             add_header X-Cache-Status \$upstream_cache_status;
-            proxy_cache ${DOCKER_STACK_SUFFIX}-${LANGUAGE_CODE};
+            proxy_cache ${DOMAIN_IDENTIFIER}-${LANGUAGE_CODE};
 
             # Default TTL: 1 day
             proxy_cache_valid 5s;
@@ -403,7 +403,7 @@ EOL
         #     proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
         #     proxy_set_header X-Forwarded-Proto  \$scheme;
         #     proxy_intercept_errors  on;
-        #     proxy_pass http://ghost-${DOCKER_STACK_SUFFIX}-${SITE_LANGUAGE_CODES}::2368\$og_prefix\$request_uri;
+        #     proxy_pass http://ghost-${DOMAIN_IDENTIFIER}-${SITE_LANGUAGE_CODES}::2368\$og_prefix\$request_uri;
         # }
         # this piece is for GITEA.
 
@@ -429,7 +429,7 @@ EOL
             proxy_set_header X-Forwarded-Proto \$scheme;
             proxy_set_header X-NginX-Proxy true;
             
-            proxy_pass http://gitea-${DOCKER_STACK_SUFFIX}-en:3000;
+            proxy_pass http://gitea-${DOMAIN_IDENTIFIER}-en:3000;
         }
     }
 

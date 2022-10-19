@@ -31,24 +31,20 @@ EOL
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
             # We create another ghost instance under /
             cat >> "$DOCKER_YAML_PATH" <<EOL
-        - ghostnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE
+        - ghostnet-$DOMAIN_IDENTIFIER-$LANGUAGE_CODE
 EOL
         
             if [ "$LANGUAGE_CODE" = en ]; then
                 if [ "$DEPLOY_GITEA" = "true" ]; then
                 cat >> "$DOCKER_YAML_PATH" <<EOL
-        - giteanet-$DOCKER_STACK_SUFFIX-en
+        - giteanet-$DOMAIN_IDENTIFIER-en
 EOL
                 fi
             fi
 
         done
 
-        
-
     done
-
-        
 
         cat >> "$DOCKER_YAML_PATH" <<EOL
     volumes:
@@ -88,7 +84,7 @@ EOL
         # at https://www.domain.com/$LANGUAGE_CODE
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
             cat >> "$DOCKER_YAML_PATH" <<EOL
-  ghostnet-$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE:
+  ghostnet-$DOMAIN_IDENTIFIER-$LANGUAGE_CODE:
     attachable: true
 
 EOL
@@ -98,7 +94,7 @@ EOL
 
         if [ "$DEPLOY_GITEA" = true ]; then
             cat >> "$DOCKER_YAML_PATH" <<EOL
-  giteanet-$DOCKER_STACK_SUFFIX-en:
+  giteanet-$DOMAIN_IDENTIFIER-en:
     attachable: true
 
 EOL

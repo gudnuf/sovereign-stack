@@ -17,14 +17,14 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
         ssh "$PRIMARY_WWW_FQDN" mkdir -p "$GITEA_PATH/data" "$GITEA_PATH/db"
 
-        STACK_NAME="$DOCKER_STACK_SUFFIX-$LANGUAGE_CODE"
+        STACK_NAME="$DOMAIN_IDENTIFIER-$LANGUAGE_CODE"
 
         export STACK_TAG="gitea-$STACK_NAME"
         export DB_STACK_TAG="giteadb-$STACK_NAME"
         export DOCKER_YAML_PATH="$SITE_PATH/webstack/gitea-en.yml"
 
-        NET_NAME="giteanet-$DOCKER_STACK_SUFFIX"
-        DBNET_NAME="giteadbnet-$DOCKER_STACK_SUFFIX"
+        NET_NAME="giteanet-$DOMAIN_IDENTIFIER"
+        DBNET_NAME="giteadbnet-$DOMAIN_IDENTIFIER"
 
         # here's the NGINX config. We support ghost and nextcloud.
         echo "" > "$DOCKER_YAML_PATH"
@@ -80,7 +80,7 @@ EOL
     ${DBNET_NAME}:
 EOL
 
-        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOCKER_STACK_SUFFIX-gitea-$LANGUAGE_CODE"
+        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-gitea-$LANGUAGE_CODE"
         sleep 1
     
     fi
