@@ -36,9 +36,16 @@ EOL
         
             if [ "$LANGUAGE_CODE" = en ]; then
                 if [ "$DEPLOY_GITEA" = "true" ]; then
-                cat >> "$DOCKER_YAML_PATH" <<EOL
+                    cat >> "$DOCKER_YAML_PATH" <<EOL
         - giteanet-$DOMAIN_IDENTIFIER-en
 EOL
+                fi
+
+                if [ "$DEPLOY_NEXTCLOUD" = "true" ]; then
+                    cat >> "$DOCKER_YAML_PATH" <<EOL
+        - nextcloudnet-$DOMAIN_IDENTIFIER-en
+EOL
+
                 fi
             fi
 
@@ -95,6 +102,14 @@ EOL
         if [ "$DEPLOY_GITEA" = true ]; then
             cat >> "$DOCKER_YAML_PATH" <<EOL
   giteanet-$DOMAIN_IDENTIFIER-en:
+    attachable: true
+
+EOL
+        fi
+
+        if [ "$DEPLOY_NEXTCLOUD" = "true" ]; then
+            cat >> "$DOCKER_YAML_PATH" <<EOL
+  nextcloudnet-$DOMAIN_IDENTIFIER-en:
     attachable: true
 
 EOL

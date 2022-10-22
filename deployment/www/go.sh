@@ -64,7 +64,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
             echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
             exit 1
-        fi    
+        fi
     fi
 
     if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
@@ -114,15 +114,13 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
     # fi
 fi
 
-bash -c ./stub/nginx_yml.sh
+./stub/nginx_yml.sh
 
-sleep 3
+./stub/ghost_yml.sh
 
-bash -c ./stub/ghost_yml.sh
+./stub/nextcloud_yml.sh
 
-sleep 3
-
-bash -c ./stub/gitea_yml.sh
+./stub/gitea_yml.sh
 
 
 # # start a browser session; point it to port 80 to ensure HTTPS redirect.

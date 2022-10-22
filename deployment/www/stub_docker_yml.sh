@@ -10,7 +10,7 @@
 #         cat >>"$DOCKER_YAML_PATH" <<EOL
 #   nextcloud-db:
 #     image: ${NEXTCLOUD_DB_IMAGE}
-#     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --innodb_read_only_compressed=OFF
+#     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --log-bin --innodb_read_only_compressed=OFF
 #     networks:
 #       - nextclouddb-net
 #     volumes:

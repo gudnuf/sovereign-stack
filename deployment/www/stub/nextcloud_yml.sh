@@ -1,48 +1,82 @@
+#!/bin/bash
+
+set -exu
+cd "$(dirname "$0")"
 
 
+
+for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
+    export DOMAIN_NAME="$DOMAIN_NAME"
+    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+
+    # source the site path so we know what features it has.
+    source ../../../reset_env.sh
+    source "$SITE_PATH/site_definition"
+    source ../../../domain_env.sh
+
+    # ensure remote directories exist
     if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/data"
-        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/db/logs"
-        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/html"
+
+        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/$DOMAIN_NAME/en/db"
+        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_NEXTCLOUD_PATH/$DOMAIN_NAME/en/html"
+
+        sleep 2
+
+        WEBSTACK_PATH="$SITE_PATH/webstack"
+        mkdir -p "$WEBSTACK_PATH"
+        export DOCKER_YAML_PATH="$WEBSTACK_PATH/nextcloud-en.yml"
+
+        # here's the NGINX config. We support ghost and nextcloud.
+        cat > "$DOCKER_YAML_PATH" <<EOL
+version: "3.8"
+services:
+
+  ${NEXTCLOUD_STACK_TAG}:
+    image: ${NEXTCLOUD_IMAGE}
+    networks:
+      - nextcloud-${DOMAIN_IDENTIFIER}-en
+      - nextclouddb-${DOMAIN_IDENTIFIER}-en
+    volumes:
+      - ${REMOTE_HOME}/nextcloud/${DOMAIN_NAME}/en/html:/var/www/html
+    environment:
+      - MYSQL_PASSWORD=\${NEXTCLOUD_MYSQL_PASSWORD}
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_HOST=${NEXTCLOUD_DB_STACK_TAG}
+      - NEXTCLOUD_TRUSTED_DOMAINS=${DOMAIN_NAME}
+      - OVERWRITEHOST=${NEXTCLOUD_FQDN}
+      - OVERWRITEPROTOCOL=https
+      - SERVERNAME=${NEXTCLOUD_FQDN}
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+  ${NEXTCLOUD_DB_STACK_TAG}:
+    image: ${NEXTCLOUD_DB_IMAGE}
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --innodb_read_only_compressed=OFF
+    networks:
+      - nextclouddb-${DOMAIN_IDENTIFIER}-en
+    volumes:
+      - ${REMOTE_HOME}/nextcloud/${DOMAIN_NAME}/en/db:/var/lib/mysql
+    environment:
+       - MARIADB_ROOT_PASSWORD=\${NEXTCLOUD_MYSQL_ROOT_PASSWORD}
+       - MYSQL_PASSWORD=\${NEXTCLOUD_MYSQL_PASSWORD}
+       - MYSQL_DATABASE=nextcloud
+       - MYSQL_USER=nextcloud
+    deploy:
+      restart_policy:
+        condition: on-failure
+
+networks:
+    nextcloud-${DOMAIN_IDENTIFIER}-en:
+      name: "reverse-proxy_nextcloudnet-$DOMAIN_IDENTIFIER-$LANGUAGE_CODE"
+      external: true
+
+    nextclouddb-${DOMAIN_IDENTIFIER}-en:
+
+EOL
+
+        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-nextcloud-en"
+
     fi
-
-
-
-#     if [ "$DEPLOY_NEXTCLOUD" = true ]; then
-#         cat >>"$NGINX_CONF_PATH" <<EOL
-#     # TLS listener for ${NEXTCLOUD_FQDN}
-#     server {
-#         listen 443 ssl http2;
-#         listen [::]:443 ssl http2;
-
-#         ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
-#         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
-#         ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
-
-#         server_name ${NEXTCLOUD_FQDN};
-        
-#         location / {
-#             proxy_headers_hash_max_size 512;
-#             proxy_headers_hash_bucket_size 64;
-#             proxy_set_header X-Real-IP \$remote_addr;
-#             proxy_set_header Host \$host;
-#             proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-#             proxy_set_header X-Forwarded-Proto \$scheme;
-#             proxy_set_header X-NginX-Proxy true;
-            
-#             proxy_pass http://nextcloud:80;
-#         }
-                    
-#         # https://docs.nextcloud.com/server/latest/admin_manual/configuration_server/reverse_proxy_configuration.html
-#         location /.well-known/carddav {
-#             return 301 \$scheme://\$host/remote.php/dav;
-#         }
-
-#         location /.well-known/caldav {
-#             return 301 \$scheme://\$host/remote.php/dav;
-#         }
-#     }
-# EOL
-
-#     fi
-
+done

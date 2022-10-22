@@ -23,13 +23,12 @@ if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
     exit 1
 fi
 
-
 DOMAIN_NAME=
 RESTORE_ARCHIVE=
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=false
 RESTORE_WWW=false
-BACKUP_CERTS=true
+BACKUP_CERTS=false
 BACKUP_APPS=true
 BACKUP_BTCPAY=false
 RESTORE_BTCPAY=false
@@ -41,6 +40,7 @@ UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
 DEPLOY_BTCPAY_SERVER=false
 CLUSTER_NAME="$(lxc remote get-default)"
+STOP_SERVICES=false
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -63,6 +63,10 @@ for i in "$@"; do
         ;;
         --backup-certs)
             BACKUP_CERTS=true
+            shift
+        ;;
+        --stop)
+            STOP_SERVICES=true
             shift
         ;;
         --archive=*)
@@ -126,7 +130,7 @@ export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
 export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
 export RESTORE_WWW="$RESTORE_WWW"
-
+export STOP_SERVICES="$STOP_SERVICES"
 export BACKUP_CERTS="$BACKUP_CERTS"
 export BACKUP_APPS="$BACKUP_APPS"
 export RESTORE_BTCPAY="$RESTORE_BTCPAY"
@@ -435,9 +439,9 @@ export SITE_LANGUAGE_CODES="en"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 #export BTCPAY_HOSTNAME_IN_CERT="store"
 export DEPLOY_GHOST=true
-export DEPLOY_NEXTCLOUD=true
+export DEPLOY_NEXTCLOUD=false
 export DEPLOY_NOSTR_RELAY=true
-export NOSTR_ACCOUNT_PUBKEY="CHANGE_ME"
+export NOSTR_ACCOUNT_PUBKEY="NOSTR_IDENTITY_PUBKEY_GOES_HERE"
 export DEPLOY_GITEA=false
 #export DEPLOY_ONION_SITE=false
 export GHOST_MYSQL_PASSWORD="$(new_pass)"

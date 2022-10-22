@@ -14,7 +14,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     source ../../domain_env.sh
 
     ### Stop all services.
-    for APP in ghost gitea; do
+    for APP in ghost nextcloud gitea; do
         # backup each language for each app.
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
             STACK_NAME="$DOMAIN_IDENTIFIER-$APP-$LANGUAGE_CODE"
@@ -51,6 +51,11 @@ done
 
 if docker stack list --format "{{.Name}}" | grep -q reverse-proxy; then
     docker stack rm reverse-proxy
+
+    if [ "$STOP_SERVICES" = true ]; then
+        echo "STOPPING as indicated by the --stop flag."
+        exit 1
+    fi
 
     # wait for all docker containers to stop.
     # TODO see if there's a way to check for this.

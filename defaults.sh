@@ -111,7 +111,9 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 export GHOST_IMAGE="ghost:5.18.0"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export NGINX_IMAGE="nginx:1.23.1"
-export NEXTCLOUD_IMAGE="nextcloud:24.0.5"
+
+# version of backup is 24.0.3
+export NEXTCLOUD_IMAGE="nextcloud:25.0.0"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 # TODO PIN the gitea version number.
