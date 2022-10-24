@@ -37,10 +37,11 @@ export NBITCOIN_NETWORK="${BTC_CHAIN}"
 export LIGHTNING_ALIAS="${DOMAIN_NAME}"
 export BTCPAYGEN_LIGHTNING="clightning"
 export BTCPAYGEN_CRYPTO1="btc"
-export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage;opt-add-btctransmuter;opt-add-nostr-relay;"
+export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage-s;opt-add-btctransmuter;opt-add-nostr-relay;"
 export BTCPAYGEN_REVERSEPROXY="nginx"
 export BTCPAY_ENABLE_SSH=false
 export BTCPAY_BASE_DIRECTORY=${REMOTE_HOME}
+
 EOL
 
 # can add opt-add-tor-relay; in BTCPAYGEN_ADDITIONAL_FRAGMENTS

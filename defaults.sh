@@ -18,6 +18,8 @@ export BTCPAY_HOSTNAME_IN_CERT="tip"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
+
+
 export NOSTR_ACCOUNT_PUBKEY=
 
 # used by 'aws' deployments only; planned deprecation
@@ -109,7 +111,12 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
 # run the docker stack.
 export GHOST_IMAGE="ghost:5.18.0"
+
+# TODO switch to mysql. May require intricate export work. THIS MUST BE COMPLETED BEFORE v1 RELEASE
+#https://forum.ghost.org/t/how-to-migrate-from-mariadb-10-to-mysql-8/29575
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
+
+
 export NGINX_IMAGE="nginx:1.23.1"
 
 # version of backup is 24.0.3

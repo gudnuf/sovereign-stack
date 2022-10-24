@@ -28,7 +28,7 @@ RESTORE_ARCHIVE=
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=false
 RESTORE_WWW=false
-BACKUP_CERTS=false
+BACKUP_CERTS=true
 BACKUP_APPS=true
 BACKUP_BTCPAY=false
 RESTORE_BTCPAY=false
@@ -38,7 +38,7 @@ USER_SKIP_WWW=false
 USER_SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
-DEPLOY_BTCPAY_SERVER=false
+DEPLOY_BTCPAY_SERVER=true
 CLUSTER_NAME="$(lxc remote get-default)"
 STOP_SERVICES=false
 
@@ -325,12 +325,7 @@ function instantiate_vms {
         export LXD_VM_NAME="${FQDN//./-}"
         export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
         export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
-        
         export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
-
-
-        
-
 
         # This next section of if statements is our sanity checking area.
         if [ "$VPS_HOSTING_TARGET" = aws ]; then

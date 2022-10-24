@@ -5,8 +5,8 @@ cd "$(dirname "$0")"
 
 export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"
 
-OPEN_URL=false
-RUN_SERVICES=false
+OPEN_URL=true
+RUN_SERVICES=true
 
 # we will re-run the btcpayserver provisioning scripts if directed to do so.
 # if an update does occur, we grab another backup.
@@ -18,7 +18,7 @@ if [ "$UPDATE_BTCPAY" = true ]; then
     ssh "$FQDN" "sudo bash -c $BTCPAY_SERVER_APPPATH/btcpay-update.sh"
 
     sleep 20
-    
+
 elif [ "$RESTORE_BTCPAY" = true ]; then
     # run the update.
     ssh "$FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
