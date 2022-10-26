@@ -167,7 +167,7 @@ ssh -t "ubuntu@$FQDN" "
 
 # install lxd as a snap if it's not installed. We only really use the LXC part of this package.
 if ! snap list | grep -q lxd; then
-    sudo -A snap install lxd
+    sudo snap install lxd --candidate
     sleep 4
 fi
 "
@@ -196,7 +196,7 @@ networks:
     dns.mode: "none"
   #managed: true
   description: ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-},${DISK_TO_USE:-}
-  # lxdbrSS is an isolated bridge; no Internet access.
+  # lxdbrSS is an isolated inter-vm network segment with no outbount Internet access.
 
 cluster:
   server_name: ${CLUSTER_NAME}

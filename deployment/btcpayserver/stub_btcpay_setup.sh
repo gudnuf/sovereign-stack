@@ -41,23 +41,8 @@ export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage-s;opt-add-btctransmuter;
 export BTCPAYGEN_REVERSEPROXY="nginx"
 export BTCPAY_ENABLE_SSH=false
 export BTCPAY_BASE_DIRECTORY=${REMOTE_HOME}
-
-EOL
-
-# can add opt-add-tor-relay; in BTCPAYGEN_ADDITIONAL_FRAGMENTS
-if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-cat >> "$SITE_PATH/btcpay.sh" <<EOL
 export BTCPAYGEN_EXCLUDE_FRAGMENTS="nginx-https"
 export REVERSEPROXY_DEFAULT_HOST="$BTCPAY_USER_FQDN"
-EOL
-elif [ "$VPS_HOSTING_TARGET" = aws ]; then
-cat >> "$SITE_PATH/btcpay.sh" <<EOL
-export BTCPAY_ADDITIONAL_HOSTS="${BTCPAY_ADDITIONAL_HOSTNAMES}"
-export LETSENCRYPT_EMAIL="${CERTIFICATE_EMAIL_ADDRESS}"
-EOL
-fi
-
-cat >> "$SITE_PATH/btcpay.sh" <<EOL
 
 if [ "\$NBITCOIN_NETWORK" != regtest ]; then
     # run fast_sync if it's not been done before.
@@ -73,6 +58,11 @@ fi
 . ./btcpay-setup.sh -i
 
 EOL
+
+# send an updated ~/.bashrc so we have quicker access to cli tools
+scp ./bashrc.txt "ubuntu@$FQDN:$REMOTE_HOME/.bashrc"
+ssh "$BTCPAY_FQDN" "chown ubuntu:ubuntu $REMOTE_HOME/.bashrc"
+ssh "$BTCPAY_FQDN" "chmod 0664 $REMOTE_HOME/.bashrc"
 
 # send the setup script to the remote machine.
 scp "$SITE_PATH/btcpay.sh" "ubuntu@$FQDN:$REMOTE_HOME/btcpay_setup.sh"

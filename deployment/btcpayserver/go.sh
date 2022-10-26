@@ -46,7 +46,7 @@ fi
 # if the script gets this far, then we grab a regular backup.
 if [ "$BACKUP_BTCPAY"  = true ]; then
     # we just grab a regular backup
-    ./backup.sh "$UNIX_BACKUP_TIMESTAMP"
+    ./backup_btcpay.sh
 fi
 
 if [ "$RUN_SERVICES" = true ]; then

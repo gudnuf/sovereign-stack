@@ -29,16 +29,15 @@ VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=false
 RESTORE_WWW=false
 BACKUP_CERTS=true
-BACKUP_APPS=true
+BACKUP_APPS=false
 BACKUP_BTCPAY=false
 RESTORE_BTCPAY=false
 MIGRATE_WWW=false
 MIGRATE_BTCPAY=false
-USER_SKIP_WWW=false
-USER_SKIP_BTCPAY=false
+SKIP_WWW=false
+SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
-DEPLOY_BTCPAY_SERVER=true
 CLUSTER_NAME="$(lxc remote get-default)"
 STOP_SERVICES=false
 
@@ -82,11 +81,11 @@ for i in "$@"; do
             shift
         ;;
         --skip-www)
-            USER_SKIP_WWW=true
+            SKIP_WWW=true
             shift
         ;;
         --skip-btcpay)
-            USER_SKIP_BTCPAY=true
+            SKIP_BTCPAY=true
             shift
         ;;
         --backup-ghost)
@@ -122,6 +121,7 @@ for i in "$@"; do
     esac
 done
 
+
 # set up our default paths.
 source ./defaults.sh
 
@@ -134,7 +134,7 @@ export STOP_SERVICES="$STOP_SERVICES"
 export BACKUP_CERTS="$BACKUP_CERTS"
 export BACKUP_APPS="$BACKUP_APPS"
 export RESTORE_BTCPAY="$RESTORE_BTCPAY"
-export BACKUP_BTCPAY="$RESTORE_BTCPAY"
+export BACKUP_BTCPAY="$BACKUP_BTCPAY"
 export MIGRATE_WWW="$MIGRATE_WWW"
 export MIGRATE_BTCPAY="$MIGRATE_BTCPAY"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
@@ -283,10 +283,13 @@ function instantiate_vms {
         DDNS_HOST=
         MIGRATE_VPS=false
         if [ "$VIRTUAL_MACHINE" = www ]; then
-            if [ "$DEPLOY_WWW_SERVER" = false ] || [ "$USER_SKIP_WWW" = true ]; then
+            echo "GOT HERE!!!"
+            if [ "$SKIP_WWW" = true ]; then
                 continue
             fi
 
+            echo "AND HERE"
+            exit 1
             VPS_HOSTNAME="$WWW_HOSTNAME"
             MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
             DDNS_HOST="$WWW_HOSTNAME"
@@ -294,11 +297,7 @@ function instantiate_vms {
             if [ "$MIGRATE_WWW" = true ]; then
                 MIGRATE_VPS=true
             fi
-        elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$USER_SKIP_BTCPAY" = true ]; then
-            if [ "$DEPLOY_BTCPAY_SERVER" = false ]; then
-                continue
-            fi
-
+        elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$SKIP_BTCPAY" = true ]; then
             DDNS_HOST="$BTCPAY_HOSTNAME"
             VPS_HOSTNAME="$BTCPAY_HOSTNAME"
             MAC_ADDRESS_TO_PROVISION="$BTCPAYSERVER_MAC_ADDRESS"
@@ -470,9 +469,7 @@ function stub_project_definition {
 
 # see https://www.sovereign-stack.org/project-definition for more info.
 
-export DEPLOY_WWW_SERVER=true
 export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-export DEPLOY_BTCPAY_SERVER=true
 export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 # export BTC_CHAIN=mainnet
 export PRIMARY_DOMAIN="CHANGE_ME"

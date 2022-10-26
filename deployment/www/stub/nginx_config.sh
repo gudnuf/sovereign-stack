@@ -115,12 +115,8 @@ EOL
 EOL
     fi
 
-    # REDIRECT FOR BTCPAY_USER_FQDN
-    if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-        # gitea http to https redirect.
-        if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
-        
-        cat >>"$NGINX_CONF_PATH" <<EOL
+    # BTCPAY server http->https redirect
+    cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
     server {
         listen 80;
@@ -131,10 +127,6 @@ EOL
 
 EOL
 
-        fi
-    fi
-    
-    
     if [ "$iteration" = 0 ]; then
         # TLS config for ghost.
         cat >>"$NGINX_CONF_PATH" <<EOL
@@ -219,12 +211,8 @@ EOL
 
 EOL
 
-    # SERVER block for BTCPAY Server
-    if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-        if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
-        
-            cat >>"$NGINX_CONF_PATH" <<EOL
-    # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
+    cat >>"$NGINX_CONF_PATH" <<EOL
+    # https server block for https://${BTCPAY_USER_FQDN}
     server {
         listen 443 ssl http2;
 
@@ -249,10 +237,6 @@ EOL
     }
 
 EOL
-
-        fi
-    fi
-
 
     echo "    # set up cache paths for nginx caching" >>"$NGINX_CONF_PATH"
     for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do

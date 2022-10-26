@@ -2,9 +2,8 @@
 
 set -eu
 
-export DEPLOY_WWW_SERVER=false
 export WWW_SERVER_MAC_ADDRESS=
-export DEPLOY_BTCPPAY_SERVER=false
+
 
 export DEPLOY_GHOST=true
 export DEPLOY_NOSTR_RELAY=true
@@ -13,8 +12,8 @@ export DEPLOY_NEXTCLOUD=false
 export DEPLOY_GITEA=false
 
 export WWW_HOSTNAME="www"
-export BTCPAY_HOSTNAME="btcpay"
-export BTCPAY_HOSTNAME_IN_CERT="tip"
+export BTCPAY_HOSTNAME="btcpayserver"
+export BTCPAY_HOSTNAME_IN_CERT="btcpay"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
@@ -58,8 +57,6 @@ BTCPAY_INSTANCE_TYPE="t2.medium"
 export WWW_INSTANCE_TYPE="$WWW_INSTANCE_TYPE"
 export BTCPAY_INSTANCE_TYPE="$BTCPAY_INSTANCE_TYPE"
 
-# TODO REMOVE SMTP_PASSWORD ONCE VERIFIED NO LONGER NEEDED
-#export SMTP_PASSWORD=
 export GHOST_MYSQL_PASSWORD=
 export GHOST_MYSQL_ROOT_PASSWORD=
 export NEXTCLOUD_MYSQL_PASSWORD=
@@ -110,7 +107,7 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.18.0"
+export GHOST_IMAGE="ghost:5.20.0"
 
 # TODO switch to mysql. May require intricate export work. THIS MUST BE COMPLETED BEFORE v1 RELEASE
 #https://forum.ghost.org/t/how-to-migrate-from-mariadb-10-to-mysql-8/29575

@@ -33,7 +33,7 @@ fi
 # install lxd as a snap if it's not installed. We only really use the client part of this package
 # on the management machine.
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd
+    sudo snap install lxd --candidate
 fi
 
 # TODO WORK ON GETTING RID OF THIS DEPENDENCY
