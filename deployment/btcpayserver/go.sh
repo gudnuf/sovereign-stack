@@ -22,7 +22,7 @@ if [ "$UPDATE_BTCPAY" = true ]; then
 elif [ "$RESTORE_BTCPAY" = true ]; then
     # run the update.
     ssh "$FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
-    sleep 10 
+    sleep 15
     
     ./restore.sh
 

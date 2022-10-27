@@ -24,14 +24,17 @@ if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
 fi
 
 DOMAIN_NAME=
-RESTORE_ARCHIVE=
+
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=false
 RESTORE_WWW=false
 BACKUP_CERTS=true
 BACKUP_APPS=false
 BACKUP_BTCPAY=false
+
 RESTORE_BTCPAY=false
+BTCPAY_RESTORE_ARCHIVE_PATH=
+
 MIGRATE_WWW=false
 MIGRATE_BTCPAY=false
 SKIP_WWW=false
@@ -68,10 +71,6 @@ for i in "$@"; do
             STOP_SERVICES=true
             shift
         ;;
-        --archive=*)
-            RESTORE_ARCHIVE="${i#*=}"
-            shift
-        ;;
         --domain=*)
             DOMAIN_NAME="${i#*=}"
             shift
@@ -94,6 +93,10 @@ for i in "$@"; do
         ;;
         --backup-btcpay)
             BACKUP_BTCPAY=true
+            shift
+        ;;
+        --restore-archive=*)
+            BTCPAY_RESTORE_ARCHIVE_PATH="${i#*=}"
             shift
         ;;
         --migrate-www)
@@ -128,7 +131,7 @@ source ./defaults.sh
 export CACHES_DIR="$HOME/ss-cache"
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
-export RESTORE_ARCHIVE="$RESTORE_ARCHIVE"
+export BTCPAY_RESTORE_ARCHIVE_PATH="$BTCPAY_RESTORE_ARCHIVE_PATH"
 export RESTORE_WWW="$RESTORE_WWW"
 export STOP_SERVICES="$STOP_SERVICES"
 export BACKUP_CERTS="$BACKUP_CERTS"
@@ -283,13 +286,11 @@ function instantiate_vms {
         DDNS_HOST=
         MIGRATE_VPS=false
         if [ "$VIRTUAL_MACHINE" = www ]; then
-            echo "GOT HERE!!!"
             if [ "$SKIP_WWW" = true ]; then
+                echo "INFO: Skipping WWW due to command line argument."
                 continue
             fi
 
-            echo "AND HERE"
-            exit 1
             VPS_HOSTNAME="$WWW_HOSTNAME"
             MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
             DDNS_HOST="$WWW_HOSTNAME"
@@ -346,12 +347,9 @@ function instantiate_vms {
 
         if [ "$MACHINE_EXISTS"  = true ]; then
             # we delete the machine if the user has directed us to
+            # but before we do, we get a backup of applcation data of the running instance/vm
+            # that backup becomes the basis for restoring to the newer version of the host host (Type-1 VM)
             if [ "$MIGRATE_VPS" = true ]; then
-                
-                # if the RESTORE_ARCHIVE is not set, then 
-                if [ -z "$RESTORE_ARCHIVE" ]; then
-                    RESTORE_ARCHIVE="$LOCAL_BACKUP_PATH/$UNIX_BACKUP_TIMESTAMP.tar.gz"
-                fi
 
                 # get a backup of the machine. This is what we restore to the new VPS.
                 echo "INFO: Machine exists.  Since we're going to delete it, let's grab a backup. "
@@ -539,8 +537,13 @@ if [ "$VPS_HOSTING_TARGET" = lxd ]; then
     done
 
     # now let's run the www and btcpay-specific provisioning scripts.
-    bash -c "./deployment/www/go.sh"
-    bash -c "./deployment/btcpayserver/go.sh"
+    if [ "$SKIP_WWW" = false ]; then
+        bash -c "./deployment/www/go.sh"
+    fi
+
+    if [ "$SKIP_BTCPAY" = false ]; then
+        bash -c "./deployment/btcpayserver/go.sh"
+    fi
 
 elif [ "$VPS_HOSTING_TARGET" = aws ]; then
     stub_site_definition
