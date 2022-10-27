@@ -24,20 +24,18 @@ if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
 fi
 
 DOMAIN_NAME=
-
 VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=false
+SKIP_WWW=false
 RESTORE_WWW=false
 BACKUP_CERTS=true
-BACKUP_APPS=false
-BACKUP_BTCPAY=false
-
+BACKUP_APPS=true
+BACKUP_BTCPAY=true
 RESTORE_BTCPAY=false
 BTCPAY_RESTORE_ARCHIVE_PATH=
-
+BTCPAY_LOCAL_BACKUP_PATH=
 MIGRATE_WWW=false
 MIGRATE_BTCPAY=false
-SKIP_WWW=false
 SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
@@ -106,6 +104,7 @@ for i in "$@"; do
         ;;
         --migrate-btcpay)
             MIGRATE_BTCPAY=true
+            BACKUP_BTCPAY=true
             RUN_CERT_RENEWAL=false
             shift
         ;;
@@ -124,6 +123,12 @@ for i in "$@"; do
     esac
 done
 
+
+# do some CLI checking.
+if [ "$RESTORE_BTCPAY" = true ] && [ ! -f "$BTCPAY_RESTORE_ARCHIVE_PATH" ]; then
+    echo "ERROR: The restoration archive is not specified. Ensure --restore-archive= is set on the command line."
+    exit 1
+fi
 
 # set up our default paths.
 source ./defaults.sh
@@ -326,7 +331,9 @@ function instantiate_vms {
         export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
         export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
         export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
-
+        export BTCPAY_LOCAL_BACKUP_PATH="$SITE_PATH/backups/btcpayserver/$BACKUP_TIMESTAMP"
+        export BTCPAY_LOCAL_BACKUP_ARCHIVE_PATH="$BTCPAY_LOCAL_BACKUP_PATH/$UNIX_BACKUP_TIMESTAMP.tar.gz"
+        
         # This next section of if statements is our sanity checking area.
         if [ "$VPS_HOSTING_TARGET" = aws ]; then
             # we require DDNS on AWS to set the public DNS to the right host.
@@ -381,12 +388,12 @@ function instantiate_vms {
             fi
         else
             if [ "$MIGRATE_VPS" = true ]; then
-                echo "INFO: User has indicated to delete the machine, but it doesn't exist."
-                echo "      Going to create it anyway."
+                echo "INFO: User has indicated a migration, but it doesn't exist. Try removing some command line arguments."
+                exit 1
             fi
 
             # The machine does not exist. Let's bring it into existence, restoring from latest backup.
-            echo "Machine does not exist." 
+            echo "Machine does not exist. Creating." 
             ./deployment/deploy_vms.sh
         fi
 

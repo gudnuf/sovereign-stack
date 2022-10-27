@@ -67,9 +67,6 @@ fi
 cd "$btcpay_dir"
 . helpers.sh
 
-#echo "INFO: Stopping BTCPay Server."
-#btcpay_down
-
 cd "$restore_dir"
 
 {
