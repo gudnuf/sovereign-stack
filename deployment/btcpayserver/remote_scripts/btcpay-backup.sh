@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-set -o pipefail -o errexit -x
+set -o pipefail -o errexit
 
 # Please be aware of these important issues:
 #

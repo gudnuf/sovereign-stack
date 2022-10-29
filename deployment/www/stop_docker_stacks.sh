@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 # bring down ghost instances.
@@ -59,9 +59,11 @@ if docker stack list --format "{{.Name}}" | grep -q reverse-proxy; then
 
     # wait for all docker containers to stop.
     # TODO see if there's a way to check for this.
-    sleep 10
+    sleep 7
 
     docker system prune -f
+
+    sleep 2
 fi
 
 # generate the certs and grab a backup

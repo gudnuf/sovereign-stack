@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 cd "$(dirname "$0")"
 
 ./stub_lxc_profile.sh "$LXD_VM_NAME"

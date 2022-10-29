@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 cd "$(dirname "$0")"
 
 # let's make sure we have an ssh keypair. We just use $SSH_HOME/id_rsa

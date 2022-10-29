@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 cd "$(dirname "$0")"
 
 FILE_COUNT="$(find "$LOCAL_BACKUP_PATH" -type f | wc -l)"

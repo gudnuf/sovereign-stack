@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 cd "$(dirname "$0")"
 
 export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"

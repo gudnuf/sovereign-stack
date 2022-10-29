@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 cd "$(dirname "$0")"
 
 if [ ! -f "$HOME/.aws/credentials" ]; then

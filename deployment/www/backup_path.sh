@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 cd "$(dirname "$0")"
 
 # TODO: We are using extra space on the remote VPS at the moment for the duplicity backup files.

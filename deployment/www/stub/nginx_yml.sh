@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euox
+set -eu
 cd "$(dirname "$0")"
 
 #https://github.com/fiatjaf/expensive-relay

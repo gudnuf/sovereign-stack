@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
-
-
 
 for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"

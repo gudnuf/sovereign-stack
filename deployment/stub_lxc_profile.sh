@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eux
+set -eu
 
 LXD_HOSTNAME="$1"
 

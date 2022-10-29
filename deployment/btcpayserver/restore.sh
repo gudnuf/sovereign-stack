@@ -1,9 +1,7 @@
 #!/bin/bash
 
-set -ex
+set -e
 cd "$(dirname "$0")"
-
-echo "ENTERING RESTORE SCRIPT."
 
 if [ -f "$BTCPAY_RESTORE_ARCHIVE_PATH" ]; then
     # push the restoration archive to the remote server
@@ -29,5 +27,3 @@ else
     echo "ERROR: File does not exist."
     exit 1
 fi
-
-echo "EXITING RESTORE script."

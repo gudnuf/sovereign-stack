@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -x
+set -e
 
 SSH_ENDPOINT_HOSTNAME="atlantis"
 SSH_ENDPOINT_DOMAIN_NAME="ancapistan.io"

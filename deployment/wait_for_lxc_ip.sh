@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 LXC_INSTANCE_NAME="$1"
 IP_V4_ADDRESS=

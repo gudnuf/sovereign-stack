@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 # TODO, ensure VPS_HOSTING_TARGET is in range.
 export NEXTCLOUD_FQDN="$NEXTCLOUD_HOSTNAME.$DOMAIN_NAME"

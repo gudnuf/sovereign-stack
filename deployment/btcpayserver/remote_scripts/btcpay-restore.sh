@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-set -o pipefail -o errexit -x
+set -o pipefail -o errexit
 
 if [ "$(id -u)" != "0" ]; then
   echo "ERROR: This script must be run as root."
