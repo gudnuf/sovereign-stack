@@ -3,8 +3,8 @@
 set -eu
 
 export WWW_SERVER_MAC_ADDRESS=
-
-
+export DEPLOY_WWW_SERVER=false
+export DEPLOY_BTCPAY_SERVER=false
 export DEPLOY_GHOST=true
 export DEPLOY_NOSTR_RELAY=true
 export DEPLOY_ONION_SITE=false
@@ -18,7 +18,7 @@ export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
 
-
+export SITE_LANGUAGE_CODES="en"
 export NOSTR_ACCOUNT_PUBKEY=
 
 # used by 'aws' deployments only; planned deprecation
@@ -137,7 +137,7 @@ export SITES_PATH="$HOME/ss-sites"
 export BASE_LXC_IMAGE="ubuntu/22.04/cloud"
 
 # Deploy a registry cache on your management machine.
-export DEPLOY_MGMT_REGISTRY=true
+export DEPLOY_MGMT_REGISTRY=false
 export OTHER_SITES_LIST=
 
 export REMOTE_HOME="/home/ubuntu"

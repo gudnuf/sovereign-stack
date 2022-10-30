@@ -17,7 +17,6 @@ export NEXTCLOUD_MYSQL_PASSWORD=
 export NEXTCLOUD_MYSQL_ROOT_PASSWORD=
 export GITEA_MYSQL_PASSWORD=
 export GITEA_MYSQL_ROOT_PASSWORD=
-export SITE_LANGUAGE_CODES="en"
 export LANGUAGE_CODE="en"
 
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"

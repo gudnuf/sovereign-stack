@@ -25,7 +25,7 @@ fi
 
 DOMAIN_NAME=
 VPS_HOSTING_TARGET=lxd
-RUN_CERT_RENEWAL=false
+RUN_CERT_RENEWAL=true
 SKIP_WWW=false
 RESTORE_WWW=false
 BACKUP_CERTS=true
@@ -476,9 +476,10 @@ function stub_project_definition {
 
 export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-# export BTC_CHAIN=mainnet
-export PRIMARY_DOMAIN="CHANGE_ME"
-export OTHER_SITES_LIST=""
+export BTC_CHAIN="regtest|testnet|mainnet"
+export PRIMARY_DOMAIN="domain0.tld"
+export OTHER_SITES_LIST="domain1.tld,domain2.tld,domain3.tld"
+
 EOL
 
         chmod 0744 "$PROJECT_DEFINITION_PATH"
@@ -526,6 +527,11 @@ if [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
     # let's provision our primary domain first.
     export DOMAIN_NAME="$PRIMARY_DOMAIN"
+
+    # we deploy the WWW and btcpay server under the PRIMARY_DOMAIN.
+    export DEPLOY_WWW_SERVER=true
+    export DEPLOY_BTCPAY_SERVER=true
+    
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
     export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
     

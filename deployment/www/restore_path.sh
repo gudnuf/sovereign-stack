@@ -12,7 +12,7 @@ fi
 
 RESPONSE=
 read -r -p "Are you sure you want to restore the local path '$LOCAL_BACKUP_PATH' to the remote server at '$PRIMARY_WWW_FQDN' (y/n)": RESPONSE
-if [ "$RESPONSE" != y ]; then
+if [ "$RESPONSE" != "y" ]; then
     echo "STOPPING."
     exit 0
 fi

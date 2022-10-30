@@ -114,12 +114,12 @@ if [ "$DEPLOY_ONION_SITE" = true ]; then
     # fi
 fi
 
+# nginx gets deployed first since it "owns" the docker networks of downstream services.
 ./stub/nginx_yml.sh
 
+# next run our application stub logic. These deploy the apps too if configured to do so.
 ./stub/ghost_yml.sh
-
 ./stub/nextcloud_yml.sh
-
 ./stub/gitea_yml.sh
 
 

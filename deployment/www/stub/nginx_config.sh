@@ -24,7 +24,6 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     source "$SITE_PATH/site_definition"
     source ../../../domain_env.sh
 
-    echo "Doing DOMAIN_NAME: $DOMAIN_NAME"
     if [ $iteration = 0 ]; then
         cat >>"$NGINX_CONF_PATH" <<EOL
 events {
