@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 # to use LXD.
 
 DATA_PLANE_MACVLAN_INTERFACE=
-DISK_TO_USE=loop
+DISK_TO_USE=
 
 # override the cluster name.
 CLUSTER_NAME="${1:-}"
@@ -82,29 +82,29 @@ if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
         esac
     done
 
-    # if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
-    #     echo "INFO: It looks like you didn't provide input on the command line for the data plane macvlan interface."
-    #     echo "      We need to know which interface that is! Enter it here now."
-    #     echo ""
+    if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
+        echo "INFO: It looks like you didn't provide input on the command line for the data plane macvlan interface."
+        echo "      We need to know which interface that is! Enter it here now."
+        echo ""
 
-    #     ssh "ubuntu@$FQDN" ip link
+        ssh "ubuntu@$FQDN" ip link
 
-    #     echo "Please enter the network interface that's dedicated to the Sovereign Stack data plane: "
-    #     read -r DATA_PLANE_MACVLAN_INTERFACE
+        echo "Please enter the network interface that's dedicated to the Sovereign Stack data plane: "
+        read -r DATA_PLANE_MACVLAN_INTERFACE
 
-    # fi
+    fi
 
-    # if [ -z "$DISK_TO_USE" ]; then
-    #     echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
-    #     echo ""
+    if [ -z "$DISK_TO_USE" ]; then
+        echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
+        echo ""
 
-    #     ssh "ubuntu@$FQDN" lsblk
+        ssh "ubuntu@$FQDN" lsblk
 
-    #     USER_DISK=
-    #     echo "Please enter the disk or partition that Sovereign Stack will use to store data (default: loop):  "
-    #     read -r USER_DISK
-
-    # fi
+        echo "Please enter the disk or partition that Sovereign Stack will use to store data (default: loop):  "
+        read -r DISK_TO_USE
+    else
+        DISK_TO_USE=loop
+    fi
 
 else
     echo "ERROR: the cluster already exists! You need to go delete your lxd remote if you want to re-create your cluster."
@@ -112,23 +112,15 @@ else
     exit 1
 fi
 
-# ensure we actually have that interface on the system.
-echo "DATA_PLANE_MACVLAN_INTERFACE: $DATA_PLANE_MACVLAN_INTERFACE"
-if ! ssh "ubuntu@$FQDN" ip link | grep "$DATA_PLANE_MACVLAN_INTERFACE" | grep -q ",UP"; then
-    echo "ERROR: We could not find your interface in our list of available interfaces. Please run this command again."
-    echo "NOTE: You can always specify on the command line by adding the '--data-plane-interface=eth0', for example."
-    exit 1
-fi
-
-# if the disk is loop-based, then we assume the / path exists.
-if [ "$DISK_TO_USE" != loop ]; then
-    # ensure we actually have that disk/partition on the system.
-    if ssh "ubuntu@$FQDN" lsblk | grep -q "$DISK_TO_USE"; then
-        echo "ERROR: We could not the disk you specified. Please run this command again and supply a different disk."
-        echo "NOTE: You can always specify on the command line by adding the '--disk=/dev/sdd', for example."
-        exit 1
-    fi
-fi
+# # if the disk is loop-based, then we assume the / path exists.
+# if [ "$DISK_TO_USE" != loop ]; then
+#     # ensure we actually have that disk/partition on the system.
+#     if ssh "ubuntu@$FQDN" lsblk | grep -q "$DISK_TO_USE"; then
+#         echo "ERROR: We could not the disk you specified. Please run this command again and supply a different disk."
+#         echo "NOTE: You can always specify on the command line by adding the '--disk=/dev/sdd', for example."
+#         exit 1
+#     fi
+# fi
 
 # The MGMT Plane IP is the IP address that the LXD API binds to, which happens
 # to be the same as whichever SSH connection you're coming in on.

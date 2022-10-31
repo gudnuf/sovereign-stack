@@ -59,7 +59,7 @@ if docker stack list --format "{{.Name}}" | grep -q reverse-proxy; then
 
     # wait for all docker containers to stop.
     # TODO see if there's a way to check for this.
-    sleep 7
+    sleep 10
 fi
 
 # generate the certs and grab a backup

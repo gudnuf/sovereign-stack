@@ -124,12 +124,13 @@ fi
 
 
 # # start a browser session; point it to port 80 to ensure HTTPS redirect.
-# wait-for-it -t 320 "$PRIMARY_WWW_FQDN:80"
-# wait-for-it -t 320 "$PRIMARY_WWW_FQDN:443"
+# # WWW_FQDN is in our certificate, so we resolve to that.
+# wait-for-it -t 320 "$WWW_FQDN:80"
+# wait-for-it -t 320 "$WWW_FQDN:443"
 
 # # open bowser tabs.
 # if [ "$DEPLOY_GHOST" = true ]; then
-#     xdg-open "http://$PRIMARY_WWW_FQDN" > /dev/null 2>&1
+#     xdg-open "http://$WWW_FQDN" > /dev/null 2>&1
 # fi
 
 # if [ "$DEPLOY_NEXTCLOUD" = true ]; then
@@ -139,4 +140,7 @@ fi
 # if [ "$DEPLOY_GITEA" = true ]; then
 #     xdg-open "http://$GITEA_FQDN" > /dev/null 2>&1
 # fi
-# #fi
+
+# if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+#     xdg-open "http://$BTCPAY_USER_FQDN" > /dev/null 2>&1
+# fi
