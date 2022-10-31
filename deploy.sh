@@ -13,9 +13,7 @@ check_dependencies () {
 }
 
 # Check system's dependencies
-check_dependencies wait-for-it dig rsync sshfs lxc docker-machine
-
-# TODO remove dependency on Docker-machine. That's what we use to provision VM on 3rd party vendors. Looking for LXD endpoint.
+check_dependencies wait-for-it dig rsync sshfs lxc
 
 # let's check to ensure the management machine is on the Baseline ubuntu 21.04
 if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
@@ -24,7 +22,6 @@ if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
 fi
 
 DOMAIN_NAME=
-VPS_HOSTING_TARGET=lxd
 RUN_CERT_RENEWAL=true
 SKIP_WWW=false
 RESTORE_WWW=false
@@ -45,10 +42,6 @@ STOP_SERVICES=false
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
-        --aws)
-            VPS_HOSTING_TARGET=aws
-            shift
-        ;;
         --restore-www)
             RESTORE_WWW=true
             BACKUP_APPS=false
@@ -146,17 +139,6 @@ export BACKUP_BTCPAY="$BACKUP_BTCPAY"
 export MIGRATE_WWW="$MIGRATE_WWW"
 export MIGRATE_BTCPAY="$MIGRATE_BTCPAY"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
-
-if [ "$VPS_HOSTING_TARGET" = aws ]; then
-
-    if [ -z "$DOMAIN_NAME" ]; then
-        echo "ERROR: Please specify a domain name with --domain= when using --aws."
-        exit 1
-    fi
-
-    CLUSTER_NAME="docker-machine"
-fi
-
 export CLUSTER_NAME="$CLUSTER_NAME"
 export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
 
@@ -173,27 +155,27 @@ if [ ! -f "$CLUSTER_PATH/authorized_keys" ]; then
     exit 1
 fi
 
-if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
-    export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
-    #########################################
-    if [ ! -f "$CLUSTER_DEFINITION" ]; then
-        echo "ERROR: The cluster defintion could not be found. You may need to re-run 'ss-cluster create'."
-        exit 1
-    fi
-        
-    source "$CLUSTER_DEFINITION"
+CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
+export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
-    ###########################3
-    # # This section is done to the management machine. We deploy a registry pull through cache on port 5000
-    # if ! docker volume list | grep -q registry_data; then
-    #     docker volume create registry_data
-    # fi
+#########################################
+if [ ! -f "$CLUSTER_DEFINITION" ]; then
+    echo "ERROR: The cluster defintion could not be found. You may need to re-run 'ss-cluster create'."
+    exit 1
+fi
+    
+source "$CLUSTER_DEFINITION"
 
-    # if the registry URL isn't defined, then we just use the upstream dockerhub.
-    # recommended to run a registry cache on your management machine though.
-    if [ -n "$REGISTRY_URL" ]; then
+###########################3
+# # This section is done to the management machine. We deploy a registry pull through cache on port 5000
+# if ! docker volume list | grep -q registry_data; then
+#     docker volume create registry_data
+# fi
+
+# if the registry URL isn't defined, then we just use the upstream dockerhub.
+# recommended to run a registry cache on your management machine though.
+if [ -n "$REGISTRY_URL" ]; then
 
 cat > "$CLUSTER_PATH/registry.yml" <<EOL
 version: 0.1
@@ -207,21 +189,21 @@ proxy:
     password: ${REGISTRY_PASSWORD}
 EOL
 
-        # enable docker swarm mode so we can support docker stacks.
-        if docker info | grep -q "Swarm: inactive"; then
-            docker swarm init
-        fi
+    # enable docker swarm mode so we can support docker stacks.
+    if docker info | grep -q "Swarm: inactive"; then
+        docker swarm init
+    fi
 
-        mkdir -p "${CACHES_DIR}/registry_images"
+    mkdir -p "${CACHES_DIR}/registry_images"
 
-        # run a docker registry pull through cache on the management machine.
-        if [ "$DEPLOY_MGMT_REGISTRY" = true ]; then
-            if ! docker stack list | grep -q registry; then
-                docker stack deploy -c management/registry_mirror.yml registry
-            fi
+    # run a docker registry pull through cache on the management machine.
+    if [ "$DEPLOY_MGMT_REGISTRY" = true ]; then
+        if ! docker stack list | grep -q registry; then
+            docker stack deploy -c management/registry_mirror.yml registry
         fi
     fi
 fi
+
 
 # this is our password generation mechanism. Relying on GPG for secure password generation
 function new_pass {
@@ -231,7 +213,6 @@ function new_pass {
 
 function instantiate_vms {
 
-    export VPS_HOSTING_TARGET="$VPS_HOSTING_TARGET"
     export BTC_CHAIN="$BTC_CHAIN"
     export UPDATE_BTCPAY="$UPDATE_BTCPAY"
     export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
@@ -254,29 +235,29 @@ function instantiate_vms {
             exit 1
         fi
 
-        if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-            # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
-            # which is set up during LXD cluster creation ss-cluster.
-            LXD_SS_CONFIG_LINE=
-            if lxc network list --format csv | grep lxdbrSS | grep ss-config; then
-                LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
-            fi
 
-            if [ -z "$LXD_SS_CONFIG_LINE" ]; then
-                echo "ERROR: the MACVLAN interface has not been specified. You may need to run ss-cluster again."
-                exit 1
-            fi
-
-            CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
-            DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
-            DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
-
-            export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
-            export DISK_TO_USE="$DISK_TO_USE"
-
-            ./deployment/create_lxc_base.sh
-
+        # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
+        # which is set up during LXD cluster creation ss-cluster.
+        LXD_SS_CONFIG_LINE=
+        if lxc network list --format csv | grep lxdbrSS | grep ss-config; then
+            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
         fi
+
+        if [ -z "$LXD_SS_CONFIG_LINE" ]; then
+            echo "ERROR: the MACVLAN interface has not been specified. You may need to run ss-cluster again."
+            exit 1
+        fi
+
+        CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
+        DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
+        DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
+
+        export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
+        export DISK_TO_USE="$DISK_TO_USE"
+
+        ./deployment/create_lxc_base.sh
+
+
 
         export MAC_ADDRESS_TO_PROVISION=
         export VPS_HOSTNAME="$VPS_HOSTNAME"
@@ -333,22 +314,9 @@ function instantiate_vms {
         export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
         export BTCPAY_LOCAL_BACKUP_PATH="$SITE_PATH/backups/btcpayserver/$BACKUP_TIMESTAMP"
         export BTCPAY_LOCAL_BACKUP_ARCHIVE_PATH="$BTCPAY_LOCAL_BACKUP_PATH/$UNIX_BACKUP_TIMESTAMP.tar.gz"
-        
-        # This next section of if statements is our sanity checking area.
-        if [ "$VPS_HOSTING_TARGET" = aws ]; then
-            # we require DDNS on AWS to set the public DNS to the right host.
-            if [ -z "$DDNS_PASSWORD" ]; then
-                echo "ERROR: Ensure DDNS_PASSWORD is configured in your site_definition."
-                exit 1
-            fi
-        fi
 
         MACHINE_EXISTS=false
-        if [ "$VPS_HOSTING_TARGET" = aws ] && docker-machine ls -q | grep -q "$FQDN"; then
-            MACHINE_EXISTS=true
-        fi
-
-        if [ "$VPS_HOSTING_TARGET" = lxd ] && lxc list --format csv | grep -q "$FQDN"; then
+        if lxc list --format csv | grep -q "$FQDN"; then
             MACHINE_EXISTS=true
         fi
 
@@ -364,18 +332,7 @@ function instantiate_vms {
                 ./deployment/deploy_vms.sh
 
                 # delete the remote VPS.
-                if [ "$VPS_HOSTING_TARGET" = aws ]; then
-                    RESPONSE=
-                    read -r -p "Do you want to continue with deleting '$FQDN' (y/n)": RESPONSE
-                    if [ "$RESPONSE" = y ]; then
-                        docker-machine rm -f "$FQDN"
-                    else
-                        echo "STOPPING the migration. User entered something other than 'y'."
-                        exit 1
-                    fi
-                elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
-                    lxc delete --force "$LXD_VM_NAME"
-                fi
+                lxc delete --force "$LXD_VM_NAME"
 
                 # Then we run the script again to re-instantiate a new VPS, restoring all user data 
                 # if restore directory doesn't exist, then we end up with a new site.
@@ -493,74 +450,65 @@ EOL
     source "$PROJECT_DEFINITION_PATH"
 }
 
-# let's iterate over the user-supplied domain list and provision each domain.
-if [ "$VPS_HOSTING_TARGET" = lxd ]; then
 
-    CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
-    PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
-    mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
-    export PROJECT_PATH="$PROJECT_PATH"
-    
-    # create a symlink from ./clusterpath/projects/project
-    if [ ! -d "$CLUSTER_PATH/projects/$PROJECT_NAME" ]; then
-        ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$PROJECT_NAME"
+CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
+PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
+mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
+export PROJECT_PATH="$PROJECT_PATH"
+
+# create a symlink from ./clusterpath/projects/project
+if [ ! -d "$CLUSTER_PATH/projects/$PROJECT_NAME" ]; then
+    ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$PROJECT_NAME"
+fi
+
+# check if we need to provision a new lxc project.
+if [ "$PROJECT_NAME" != "$CURRENT_PROJECT" ]; then
+    if ! lxc project list | grep -q "$PROJECT_NAME"; then
+        echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
+        lxc project create "$PROJECT_NAME"
     fi
-
-    # check if we need to provision a new lxc project.
-    if [ "$PROJECT_NAME" != "$CURRENT_PROJECT" ]; then
-        if ! lxc project list | grep -q "$PROJECT_NAME"; then
-            echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
-            lxc project create "$PROJECT_NAME"
-        fi
-        
-        echo "INFO: switch to lxd project '$PROJECT_NAME'."
-        lxc project switch "$PROJECT_NAME"
-
-    fi
-
-    # stub out the project definition if needed.
-    stub_project_definition
     
-    # the DOMAIN_LIST is a complete list of all our domains. We often iterate over this list.
-    export DOMAIN_LIST="${PRIMARY_DOMAIN},${OTHER_SITES_LIST}"
-    export DOMAIN_COUNT=$(("$(echo $DOMAIN_LIST | tr -cd , | wc -c)"+1))
+    echo "INFO: switch to lxd project '$PROJECT_NAME'."
+    lxc project switch "$PROJECT_NAME"
 
-    # let's provision our primary domain first.
-    export DOMAIN_NAME="$PRIMARY_DOMAIN"
+fi
 
-    # we deploy the WWW and btcpay server under the PRIMARY_DOMAIN.
-    export DEPLOY_WWW_SERVER=true
-    export DEPLOY_BTCPAY_SERVER=true
-    
+# stub out the project definition if needed.
+stub_project_definition
+
+# the DOMAIN_LIST is a complete list of all our domains. We often iterate over this list.
+export DOMAIN_LIST="${PRIMARY_DOMAIN},${OTHER_SITES_LIST}"
+export DOMAIN_COUNT=$(("$(echo $DOMAIN_LIST | tr -cd , | wc -c)"+1))
+
+# let's provision our primary domain first.
+export DOMAIN_NAME="$PRIMARY_DOMAIN"
+
+# we deploy the WWW and btcpay server under the PRIMARY_DOMAIN.
+export DEPLOY_WWW_SERVER=true
+export DEPLOY_BTCPAY_SERVER=true
+
+export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
+
+stub_site_definition
+
+# bring the vms up under the primary domain name.
+instantiate_vms
+
+# let's stub out the rest of our site definitions, if any.
+for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
+    export DOMAIN_NAME="$DOMAIN_NAME"
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-    export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
-    
+
+    # stub out the site_defition if it's doesn't exist.
     stub_site_definition
-    
-    # bring the vms up under the primary domain name.
-    instantiate_vms
+done
 
-    # let's stub out the rest of our site definitions, if any.
-    for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
-        export DOMAIN_NAME="$DOMAIN_NAME"
-        export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+# now let's run the www and btcpay-specific provisioning scripts.
+if [ "$SKIP_WWW" = false ]; then
+    bash -c "./deployment/www/go.sh"
+fi
 
-        # stub out the site_defition if it's doesn't exist.
-        stub_site_definition
-    done
-
-    # now let's run the www and btcpay-specific provisioning scripts.
-    if [ "$SKIP_WWW" = false ]; then
-        bash -c "./deployment/www/go.sh"
-    fi
-
-    if [ "$SKIP_BTCPAY" = false ]; then
-        bash -c "./deployment/btcpayserver/go.sh"
-    fi
-
-elif [ "$VPS_HOSTING_TARGET" = aws ]; then
-    stub_site_definition
-
-    # if we're on AWS, we can just provision each system separately.
-    run_domain
+if [ "$SKIP_BTCPAY" = false ]; then
+    bash -c "./deployment/btcpayserver/go.sh"
 fi

@@ -59,14 +59,7 @@ if [ "$RUN_SERVICES" = true ]; then
 fi
 
 if [ "$OPEN_URL" = true ]; then
-
-    if [ "$VPS_HOSTING_TARGET" = lxd ]; then
-        if wait-for-it -t 5 "$PRIMARY_WWW_FQDN:80"; then
-            xdg-open "http://$PRIMARY_WWW_FQDN" > /dev/null 2>&1
-        fi
-    else
-        if wait-for-it -t 5 "$FQDN:443"; then
-            xdg-open "https://$FQDN" > /dev/null 2>&1
-        fi
+    if wait-for-it -t 5 "$PRIMARY_WWW_FQDN:80"; then
+        xdg-open "http://$PRIMARY_WWW_FQDN" > /dev/null 2>&1
     fi
 fi

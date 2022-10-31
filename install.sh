@@ -36,14 +36,6 @@ if ! snap list | grep -q lxd; then
     sudo snap install lxd --candidate
 fi
 
-# TODO WORK ON GETTING RID OF THIS DEPENDENCY
-if [ ! -f /usr/local/bin/docker-machine ]; then
-    # let's ensure docker-machine is available. This is only temporary though.
-    curl -L "https://github.com/docker/machine/releases/download/v0.16.2/docker-machine-$(uname -s)-$(uname -m)" >/tmp/docker-machine &&
-        chmod +x /tmp/docker-machine &&
-        sudo cp /tmp/docker-machine /usr/local/bin/docker-machine
-fi
-
 # make ss-deploy available to the user
 if ! groups | grep -q docker; then
     sudo groupadd docker

@@ -13,15 +13,6 @@ fi
 
 # wait for DNS to get setup. Pass in the IP address of the actual VPS.
 MACHINE_IP="$(docker-machine ip "$FQDN")"
-if [ "$VPS_HOSTING_TARGET" = aws ]; then
-
-    # wire DNS entries using namecheap DDNS API (via HTTPS rather than ddclient)
-    curl "https://dynamicdns.park-your-domain.com/update?host=$DDNS_STRING&domain=$DOMAIN_NAME&password=$DDNS_PASSWORD&ip=$MACHINE_IP"
-
-    #install dependencies.
-    docker-machine ssh "$FQDN" sudo apt-get -qq install -y wait-for-it git rsync duplicity sshfs
-fi
-
 DDNS_SLEEP_SECONDS=60
 while true; do
     # we test the www CNAME here so we can be assured the underlying has corrected.

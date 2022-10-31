@@ -21,41 +21,9 @@ export NOSTR_HOSTNAME="relay"
 export SITE_LANGUAGE_CODES="en"
 export NOSTR_ACCOUNT_PUBKEY=
 
-# used by 'aws' deployments only; planned deprecation
-export DDNS_PASSWORD=
-
 # this is where the html is sourced from.
 export SITE_HTML_PATH=
 export BTCPAY_ADDITIONAL_HOSTNAMES=
-
-# enter your AWS Access Key and Secret Access Key here.
-export AWS_ACCESS_KEY=
-export AWS_SECRET_ACCESS_KEY=
-
-# if overridden, the app will be deployed to proxy $BTCPAY_HOSTNAME.$DOMAIN_NAME requests to the URL specified.
-# this is useful when you want to oursource your BTCPAY fullnode/lightning node.
-#export BTCPAY_HANDLER_URL=
-
-
-export SMTP_SERVER="smtp.mailgun.org"
-export SMTP_PORT="587"
-
-# default AWS region and AMI (free-tier AMI ubuntu 20.10)
-export AWS_REGION="us-east-1"
-
-# AMI NAME:
-# ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-20220420
-export AWS_AMI_ID="ami-09d56f8956ab235b3"
-WWW_INSTANCE_TYPE="t2.small"
-BTCPAY_INSTANCE_TYPE="t2.medium"
-
-# goal will be to keep any particular instance to run AT OR BELOW t2.medium. 
-# other options are t2.small, micro, nano; micro is the free-tier eligible.
-# [1=vCPUs, 1=Mem(GiB)]
-# nano [1,0.5], micro [1,1] (free-tier eligible), small [1,2], medium [2,4], large [2,8], xlarge [4,16], 2xlarge [8,32]
-
-export WWW_INSTANCE_TYPE="$WWW_INSTANCE_TYPE"
-export BTCPAY_INSTANCE_TYPE="$BTCPAY_INSTANCE_TYPE"
 
 export GHOST_MYSQL_PASSWORD=
 export GHOST_MYSQL_ROOT_PASSWORD=
@@ -89,15 +57,6 @@ export NEXTCLOUD_SPACE_GB=10
 #     echo "ERROR: You have uncommited changes! Better stash your work with 'git stash'."
 #     exit 1
 # fi
-
-
-
-
-# TODO
-# 1 add check for ~/.aws/credentials and stub one out
-# 2 ensure install.sh has been run by checking for tor, docker-machine, lxd, wait-for-it, etc.
-# 3 pretty much just run the install script if anything is awry
-# 4 maybe check to ensure all the CNAME and A+ records are there first so we can quit before machine creation.
 
 BTC_CHAIN=regtest
 

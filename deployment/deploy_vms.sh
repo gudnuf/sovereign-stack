@@ -43,31 +43,19 @@ function prepare_host {
 
 }
 
-# when set to true, this flag indicates that a new VPS was created during THIS script run.
-if [ "$VPS_HOSTING_TARGET" = aws ]; then
-    # let's create the remote VPS if needed.
-    if ! docker-machine ls -q --filter name="$FQDN" | grep -q "$FQDN"; then
+ssh-keygen -f "$SSH_HOME/known_hosts" -R "$FQDN"
 
-        ./provision_vps.sh
+# if the machine doesn't exist, we create it.
+if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
 
-        prepare_host
-    fi
-elif [ "$VPS_HOSTING_TARGET" = lxd ]; then
-    ssh-keygen -f "$SSH_HOME/known_hosts" -R "$FQDN"
-
-    # if the machine doesn't exist, we create it.
-    if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
-
-        # create a base image if needed and instantiate a VM.
-        if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
-            echo "ERROR: You MUST define a MAC Address for all your machines by setting WWW_SERVER_MAC_ADDRESS, BTCPAYSERVER_MAC_ADDRESS in your site defintion."
-            echo "INFO: IMPORTANT! You MUST have DHCP Reservations for these MAC addresses. You also need records established the DNS."
-            exit 1
-        fi
-
-        ./provision_lxc.sh
+    # create a base image if needed and instantiate a VM.
+    if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
+        echo "ERROR: You MUST define a MAC Address for all your machines by setting WWW_SERVER_MAC_ADDRESS, BTCPAYSERVER_MAC_ADDRESS in your site defintion."
+        echo "INFO: IMPORTANT! You MUST have DHCP Reservations for these MAC addresses. You also need records established the DNS."
+        exit 1
     fi
 
-    prepare_host
-
+    ./provision_lxc.sh
 fi
+
+prepare_host
