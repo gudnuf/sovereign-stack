@@ -391,9 +391,9 @@ function stub_site_definition {
 #!/bin/bash
 
 export DOMAIN_NAME="${DOMAIN_NAME}"
+#export BTCPAY_ALT_NAMES="tip,store,pay,send"
 export SITE_LANGUAGE_CODES="en"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
-#export BTCPAY_HOSTNAME_IN_CERT="store"
 export DEPLOY_GHOST=true
 export DEPLOY_NEXTCLOUD=false
 export DEPLOY_NOSTR_RELAY=true
@@ -505,10 +505,10 @@ for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
 done
 
 # now let's run the www and btcpay-specific provisioning scripts.
-if [ "$SKIP_WWW" = false ]; then
+if [ "$SKIP_WWW" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
     bash -c "./deployment/www/go.sh"
 fi
 
-if [ "$SKIP_BTCPAY" = false ]; then
+if [ "$SKIP_BTCPAY" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
     bash -c "./deployment/btcpayserver/go.sh"
 fi

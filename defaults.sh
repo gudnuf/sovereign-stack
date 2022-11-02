@@ -98,6 +98,7 @@ export BASE_LXC_IMAGE="ubuntu/22.04/cloud"
 # Deploy a registry cache on your management machine.
 export DEPLOY_MGMT_REGISTRY=false
 export OTHER_SITES_LIST=
+export BTCPAY_ALT_NAMES=
 
 export REMOTE_HOME="/home/ubuntu"
 

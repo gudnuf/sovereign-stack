@@ -34,7 +34,7 @@ cd btcpayserver-docker
 
 export BTCPAY_HOST="${BTCPAY_USER_FQDN}"
 export NBITCOIN_NETWORK="${BTC_CHAIN}"
-export LIGHTNING_ALIAS="${DOMAIN_NAME}"
+export LIGHTNING_ALIAS="${PRIMARY_DOMAIN}"
 export BTCPAYGEN_LIGHTNING="clightning"
 export BTCPAYGEN_CRYPTO1="btc"
 export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage-s;opt-add-btctransmuter;opt-add-nostr-relay;"
@@ -67,5 +67,5 @@ ssh "$BTCPAY_FQDN" "chmod 0664 $REMOTE_HOME/.bashrc"
 # send the setup script to the remote machine.
 scp "$SITE_PATH/btcpay.sh" "ubuntu@$FQDN:$REMOTE_HOME/btcpay_setup.sh"
 ssh "$BTCPAY_FQDN" "chmod 0744 $REMOTE_HOME/btcpay_setup.sh"
-ssh "$BTCPAY_FQDN" "sudo bash -c ./btcpay_setup.sh"
+ssh "$BTCPAY_FQDN" "sudo bash -c $REMOTE_HOME/btcpay_setup.sh"
 ssh "$BTCPAY_FQDN" "touch $REMOTE_HOME/btcpay.complete"
