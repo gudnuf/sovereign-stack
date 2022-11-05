@@ -35,9 +35,7 @@ if [ ! -f "$CLUSTER_DEFINITION" ]; then
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
 export SOVEREIGN_STACK_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 export PROJECT_NAME="public"
-export REGISTRY_URL="http://$(hostname).$(resolvectl status | grep 'DNS Domain:' | awk '{ print $3 }'):5000"
-export REGISTRY_USERNAME="CHANGE_ME"
-export REGISTRY_PASSWORD="CHANGE_ME"
+#export REGISTRY_URL="https://index.docker.io/v1/"
 
 EOL
 

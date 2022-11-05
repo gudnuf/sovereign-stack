@@ -107,3 +107,4 @@ export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
 
 # this space is for OS, docker images, etc. DOES NOT INCLUDE USER DATA.
 export ROOT_DISK_SIZE_GB=20
+export REGISTRY_URL="https://index.docker.io/v1/"

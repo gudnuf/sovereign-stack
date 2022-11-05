@@ -164,7 +164,7 @@ if [ ! -f "$CLUSTER_DEFINITION" ]; then
     echo "ERROR: The cluster defintion could not be found. You may need to re-run 'ss-cluster create'."
     exit 1
 fi
-    
+
 source "$CLUSTER_DEFINITION"
 
 ###########################3
@@ -175,34 +175,34 @@ source "$CLUSTER_DEFINITION"
 
 # if the registry URL isn't defined, then we just use the upstream dockerhub.
 # recommended to run a registry cache on your management machine though.
-if [ -n "$REGISTRY_URL" ]; then
+# if [ -n "$REGISTRY_URL" ]; then
 
-cat > "$CLUSTER_PATH/registry.yml" <<EOL
-version: 0.1
-http:
-  addr: 0.0.0.0:5000
-  host: ${REGISTRY_URL}
+# cat > "$CLUSTER_PATH/registry.yml" <<EOL
+# version: 0.1
+# http:
+#   addr: 0.0.0.0:5000
+#   host: ${REGISTRY_URL}
 
-proxy:
-    remoteurl: ${REGISTRY_URL}
-    username: ${REGISTRY_USERNAME}
-    password: ${REGISTRY_PASSWORD}
-EOL
+# proxy:
+#     remoteurl: ${REGISTRY_URL}
+#     username: ${REGISTRY_USERNAME}
+#     password: ${REGISTRY_PASSWORD}
+# EOL
 
-    # enable docker swarm mode so we can support docker stacks.
-    if docker info | grep -q "Swarm: inactive"; then
-        docker swarm init
-    fi
+#     # enable docker swarm mode so we can support docker stacks.
+#     if docker info | grep -q "Swarm: inactive"; then
+#         docker swarm init
+#     fi
 
-    mkdir -p "${CACHES_DIR}/registry_images"
+#     mkdir -p "${CACHES_DIR}/registry_images"
 
-    # run a docker registry pull through cache on the management machine.
-    if [ "$DEPLOY_MGMT_REGISTRY" = true ]; then
-        if ! docker stack list | grep -q registry; then
-            docker stack deploy -c management/registry_mirror.yml registry
-        fi
-    fi
-fi
+#     # run a docker registry pull through cache on the management machine.
+#     if [ "$DEPLOY_MGMT_REGISTRY" = true ]; then
+#         if ! docker stack list | grep -q registry; then
+#             docker stack deploy -c management/registry_mirror.yml registry
+#         fi
+#     fi
+# fi
 
 
 # this is our password generation mechanism. Relying on GPG for secure password generation
@@ -262,7 +262,7 @@ function instantiate_vms {
         export MAC_ADDRESS_TO_PROVISION=
         export VPS_HOSTNAME="$VPS_HOSTNAME"
         export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
-       
+
         # ensure the admin has set the MAC address for the base image.
         if [ -z "$SOVEREIGN_STACK_MAC_ADDRESS" ]; then
             echo "ERROR: SOVEREIGN_STACK_MAC_ADDRESS is undefined. Check your project definition."
@@ -334,7 +334,7 @@ function instantiate_vms {
                 # delete the remote VPS.
                 lxc delete --force "$LXD_VM_NAME"
 
-                # Then we run the script again to re-instantiate a new VPS, restoring all user data 
+                # Then we run the script again to re-instantiate a new VPS, restoring all user data
                 # if restore directory doesn't exist, then we end up with a new site.
                 echo "INFO: Recreating the remote VPS then restoring user data."
                 sleep 2
@@ -350,7 +350,7 @@ function instantiate_vms {
             fi
 
             # The machine does not exist. Let's bring it into existence, restoring from latest backup.
-            echo "Machine does not exist. Creating." 
+            echo "Machine does not exist. Creating."
             ./deployment/deploy_vms.sh
         fi
 
@@ -442,7 +442,7 @@ EOL
         chmod 0744 "$PROJECT_DEFINITION_PATH"
         echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it yo!"
         echo "INFO: Learn more at https://www.sovereign-stack.org/project-definitions/"
-        
+
         exit 1
     fi
 
@@ -467,7 +467,7 @@ if [ "$PROJECT_NAME" != "$CURRENT_PROJECT" ]; then
         echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
         lxc project create "$PROJECT_NAME"
     fi
-    
+
     echo "INFO: switch to lxd project '$PROJECT_NAME'."
     lxc project switch "$PROJECT_NAME"
 
@@ -492,7 +492,7 @@ export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
 
 stub_site_definition
 
-# bring the vms up under the primary domain name.
+# bring the VMs up under the primary domain name.
 instantiate_vms
 
 # let's stub out the rest of our site definitions, if any.
