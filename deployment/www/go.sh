@@ -60,11 +60,6 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
             echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
             exit 1
         fi
-
-        if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
-            echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
-            exit 1
-        fi
     fi
 
     if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
@@ -89,30 +84,30 @@ done
 
 ./stop_docker_stacks.sh
 
-if [ "$DEPLOY_ONION_SITE" = true ]; then
-    # ensure the tor image is built
-    docker build -t tor:latest ./tor
+# if [ "$DEPLOY_ONION_SITE" = true ]; then
+#     # ensure the tor image is built
+#     docker build -t tor:latest ./tor
 
-    # if the tor folder doesn't exist, we provision a new one. Otherwise you need to restore.
-    # this is how we generate a new torv3 endpoint.
-    if ! ssh "$PRIMARY_WWW_FQDN" "[ -d $REMOTE_HOME/tor/www ]"; then
-        ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_HOME/tor"
-        TOR_CONFIG_PATH="$(pwd)/tor/torrc-init"
-        export TOR_CONFIG_PATH="$TOR_CONFIG_PATH"
-        docker stack deploy -c ./tor.yml torstack
-        sleep 20
-        docker stack rm torstack
-        sleep 20
-    fi
+#     # if the tor folder doesn't exist, we provision a new one. Otherwise you need to restore.
+#     # this is how we generate a new torv3 endpoint.
+#     if ! ssh "$PRIMARY_WWW_FQDN" "[ -d $REMOTE_HOME/tor/www ]"; then
+#         ssh "$PRIMARY_WWW_FQDN" "mkdir -p $REMOTE_HOME/tor"
+#         TOR_CONFIG_PATH="$(pwd)/tor/torrc-init"
+#         export TOR_CONFIG_PATH="$TOR_CONFIG_PATH"
+#         docker stack deploy -c ./tor.yml torstack
+#         sleep 20
+#         docker stack rm torstack
+#         sleep 20
+#     fi
 
-    ONION_ADDRESS="$(ssh "$PRIMARY_WWW_FQDN" sudo cat "${REMOTE_HOME}"/tor/www/hostname)"
-    export ONION_ADDRESS="$ONION_ADDRESS"
+#     ONION_ADDRESS="$(ssh "$PRIMARY_WWW_FQDN" sudo cat "${REMOTE_HOME}"/tor/www/hostname)"
+#     export ONION_ADDRESS="$ONION_ADDRESS"
 
-    # # Since we run a separate ghost process, we create a new directory and symlink it to the original
-    # if ! ssh "$PRIMARY_WWW_FQDN" "[ -L $REMOTE_HOME/tor_ghost ]"; then
-    #     ssh "$PRIMARY_WWW_FQDN" ln -s "$REMOTE_HOME/ghost_site/themes $REMOTE_HOME/tor_ghost/themes"
-    # fi
-fi
+#     # # Since we run a separate ghost process, we create a new directory and symlink it to the original
+#     # if ! ssh "$PRIMARY_WWW_FQDN" "[ -L $REMOTE_HOME/tor_ghost ]"; then
+#     #     ssh "$PRIMARY_WWW_FQDN" ln -s "$REMOTE_HOME/ghost_site/themes $REMOTE_HOME/tor_ghost/themes"
+#     # fi
+# fi
 
 # nginx gets deployed first since it "owns" the docker networks of downstream services.
 ./stub/nginx_yml.sh

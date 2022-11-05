@@ -50,6 +50,8 @@ done
 
 
 if docker stack list --format "{{.Name}}" | grep -q reverse-proxy; then
+    sleep 2
+
     docker stack rm reverse-proxy
 
     if [ "$STOP_SERVICES" = true ]; then

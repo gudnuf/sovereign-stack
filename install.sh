@@ -16,6 +16,10 @@ fi
 
 sudo apt-get update
 
+# TODO REVIEW management machine software requirements
+# is docker-ce actually needed here? prefer to move docker registry
+# to a host on SERVERS LAN so that it can operate
+# TODO document which dependencies are required by what software, e.g., trezor, docker, etc.
 sudo apt-get install -y wait-for-it dnsutils rsync sshfs curl gnupg \
                         apt-transport-https ca-certificates lsb-release \
                         docker-ce-cli docker-ce containerd.io docker-compose-plugin \
