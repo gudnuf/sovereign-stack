@@ -26,23 +26,6 @@ EOF
 
 fi
 
-function prepare_host {
-    # scan the remote machine and install it's identity in our SSH known_hosts file.
-    ssh-keyscan -H -t ecdsa "$FQDN" >> "$SSH_HOME/known_hosts"
-
-    # create a directory to store backup archives. This is on all new vms.
-    ssh "$FQDN" mkdir -p "$REMOTE_HOME/backups"
-
-    # if this execution is for btcpayserver, then we run the stub/btcpay setup script
-    # but only if it hasn't been executed before.
-    if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
-        if [ "$(ssh "$BTCPAY_FQDN" [[ ! -f "$REMOTE_HOME/btcpay.complete" ]]; echo $?)" -eq 0 ]; then
-            ./btcpayserver/stub_btcpay_setup.sh
-        fi
-    fi
-
-}
-
 ssh-keygen -f "$SSH_HOME/known_hosts" -R "$FQDN"
 
 # if the machine doesn't exist, we create it.
@@ -55,7 +38,33 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
         exit 1
     fi
 
-    ./provision_lxc.sh
+    ./stub_lxc_profile.sh "$LXD_VM_NAME"
+
+    # now let's create a new VM to work with.
+    lxc init --profile="$LXD_VM_NAME" "$VM_NAME" "$LXD_VM_NAME" --vm
+
+    # let's PIN the HW address for now so we don't exhaust IP
+    # and so we can set DNS internally.
+    lxc config set "$LXD_VM_NAME" "volatile.enp5s0.hwaddr=$MAC_ADDRESS_TO_PROVISION"
+    lxc config device override "$LXD_VM_NAME" root size="${ROOT_DISK_SIZE_GB}GB"
+
+    lxc start "$LXD_VM_NAME"
+
+    ./wait_for_lxc_ip.sh "$LXD_VM_NAME"
+
 fi
 
-prepare_host
+# scan the remote machine and install it's identity in our SSH known_hosts file.
+ssh-keyscan -H -t ecdsa "$FQDN" >> "$SSH_HOME/known_hosts"
+
+# create a directory to store backup archives. This is on all new vms.
+ssh "$FQDN" mkdir -p "$REMOTE_HOME/backups"
+
+# if this execution is for btcpayserver, then we run the stub/btcpay setup script
+# but only if it hasn't been executed before.
+if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
+    if [ "$(ssh "$BTCPAY_FQDN" [[ ! -f "$REMOTE_HOME/btcpay.complete" ]]; echo $?)" -eq 0 ]; then
+        ./btcpayserver/stub_btcpay_setup.sh
+    fi
+fi
+
