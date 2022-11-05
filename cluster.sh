@@ -110,15 +110,15 @@ else
     exit 1
 fi
 
-# # if the disk is loop-based, then we assume the / path exists.
-# if [ "$DISK_TO_USE" != loop ]; then
-#     # ensure we actually have that disk/partition on the system.
-#     if ssh "ubuntu@$FQDN" lsblk | grep -q "$DISK_TO_USE"; then
-#         echo "ERROR: We could not the disk you specified. Please run this command again and supply a different disk."
-#         echo "NOTE: You can always specify on the command line by adding the '--disk=/dev/sdd', for example."
-#         exit 1
-#     fi
-# fi
+# if the disk is loop-based, then we assume the / path exists.
+if [ "$DISK_TO_USE" != loop ]; then
+    # ensure we actually have that disk/partition on the system.
+    if ssh "ubuntu@$FQDN" lsblk | grep -q "$DISK_TO_USE"; then
+        echo "ERROR: We could not the disk you specified. Please run this command again and supply a different disk."
+        echo "NOTE: You can always specify on the command line by adding the '--disk=/dev/sdd', for example."
+        exit 1
+    fi
+fi
 
 # The MGMT Plane IP is the IP address that the LXD API binds to, which happens
 # to be the same as whichever SSH connection you're coming in on.
@@ -146,21 +146,27 @@ if ! command -v lxc >/dev/null 2>&1; then
 fi
 
 ssh -t "ubuntu@$FQDN" "
-# set host firewall policy. 
-# allow LXD API from management network.
-# sudo ufw allow from ${IP_OF_MGMT_MACHINE}/32 proto tcp to $MGMT_PLANE_IP port 8443
+set -ex
 
-# enable it.
-# if sudo ufw status | grep -q 'Status: inactive'; then
-#     sudo ufw enable
-# fi
+# install ufw and allow SSH. 
+sudo apt update
+sudo apt upgrade -y
+sudo apt install ufw htop dnsutils nano -y
+sudo ufw allow ssh
+sudo ufw allow 8443/tcp comment 'allow LXD management'
 
-# install lxd as a snap if it's not installed. We only really use the LXC part of this package.
+# enable the host firewall
+if sudo ufw status | grep -q 'Status: inactive'; then
+    sudo ufw enable
+fi
+
+# install lxd as a snap if it's not installed.
 if ! snap list | grep -q lxd; then
     sudo snap install lxd --candidate
     sleep 4
 fi
 "
+
 # if the DATA_PLANE_MACVLAN_INTERFACE is not specified, then we 'll
 # just attach VMs to the network interface used for for the default route.
 if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then

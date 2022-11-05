@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -eu
 cd "$(dirname "$0")"
 
 # let's check to ensure the management machine is on the Baseline ubuntu 21.04
