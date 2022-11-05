@@ -114,13 +114,22 @@ EOL
 EOL
     fi
 
+    # let's iterate over BTCPAY_ALT_NAMES and generate our SERVER_NAMES for btcpay server.
+    BTCPAY_SERVER_NAMES="$BTCPAY_USER_FQDN"
+    if [ -n "$BTCPAY_ALT_NAMES" ]; then
+        # let's stub out the rest of our site definitions, if any.
+        for ALT_NAME in ${BTCPAY_ALT_NAMES//,/ }; do
+            BTCPAY_SERVER_NAMES="$BTCPAY_SERVER_NAMES $ALT_NAME.$DOMAIN_NAME"
+        done
+    fi
+
     # BTCPAY server http->https redirect
     cat >>"$NGINX_CONF_PATH" <<EOL
     # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
     server {
         listen 80;
         listen [::]:80;
-        server_name ${BTCPAY_USER_FQDN};
+        server_name ${BTCPAY_SERVER_NAMES};
         return 301 https://${BTCPAY_USER_FQDN}\$request_uri;
     }
 
@@ -179,14 +188,8 @@ EOL
         ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
         
         server_name ${DOMAIN_NAME};
-
-        # catch all; send request to ${WWW_FQDN}
-        location / {
-            return 301 https://${WWW_FQDN}\$request_uri;
-        }
-
+        
 EOL
-
 
     if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
         cat >>"$NGINX_CONF_PATH" <<EOL
@@ -203,6 +206,11 @@ EOL
     fi
 
     cat >>"$NGINX_CONF_PATH" <<EOL
+        
+        # catch all; send request to ${WWW_FQDN}
+        location / {
+            return 301 https://${WWW_FQDN}\$request_uri;
+        }
     }
 
     #access_log /var/log/nginx/ghost-access.log;
@@ -211,7 +219,7 @@ EOL
 EOL
 
     cat >>"$NGINX_CONF_PATH" <<EOL
-    # https server block for https://${BTCPAY_USER_FQDN}
+    # https server block for https://${BTCPAY_SERVER_NAMES}
     server {
         listen 443 ssl http2;
 
@@ -219,7 +227,7 @@ EOL
         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
         ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
 
-        server_name ${BTCPAY_USER_FQDN};
+        server_name ${BTCPAY_SERVER_NAMES};
 
         # Route everything to the real BTCPay server
         location / {
