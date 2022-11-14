@@ -8,6 +8,7 @@ cd "$(dirname "$0")"
 
 # This is the config for a basic proxy to the listening port 127.0.0.1:2368
 # It also supports modern TLS, so SSL certs must be available.
+#opt-add-nostr-relay;
 cat > "$SITE_PATH/btcpay.sh" <<EOL
 #!/bin/bash
 
@@ -37,7 +38,7 @@ export NBITCOIN_NETWORK="${BTC_CHAIN}"
 export LIGHTNING_ALIAS="${PRIMARY_DOMAIN}"
 export BTCPAYGEN_LIGHTNING="clightning"
 export BTCPAYGEN_CRYPTO1="btc"
-export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage-s;opt-add-btctransmuter;opt-add-nostr-relay;"
+export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage-s;opt-add-btctransmuter;"
 export BTCPAYGEN_REVERSEPROXY="nginx"
 export BTCPAY_ENABLE_SSH=false
 export BTCPAY_BASE_DIRECTORY=${REMOTE_HOME}

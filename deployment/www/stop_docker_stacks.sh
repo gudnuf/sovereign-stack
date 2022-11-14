@@ -14,7 +14,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     source ../../domain_env.sh
 
     ### Stop all services.
-    for APP in ghost nextcloud gitea; do
+    for APP in ghost nextcloud gitea nostr; do
         # backup each language for each app.
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
             STACK_NAME="$DOMAIN_IDENTIFIER-$APP-$LANGUAGE_CODE"

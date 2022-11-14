@@ -45,7 +45,12 @@ EOL
                     cat >> "$DOCKER_YAML_PATH" <<EOL
         - nextcloudnet-$DOMAIN_IDENTIFIER-en
 EOL
+                fi
 
+                if [ "$DEPLOY_NOSTR_RELAY" = "true" ]; then
+                    cat >> "$DOCKER_YAML_PATH" <<EOL
+        - nostrnet-$DOMAIN_IDENTIFIER
+EOL
                 fi
             fi
 
@@ -110,6 +115,15 @@ EOL
         if [ "$DEPLOY_NEXTCLOUD" = "true" ]; then
             cat >> "$DOCKER_YAML_PATH" <<EOL
   nextcloudnet-$DOMAIN_IDENTIFIER-en:
+    attachable: true
+
+EOL
+        fi
+
+
+        if [ "$DEPLOY_NOSTR_RELAY" = "true" ]; then
+            cat >> "$DOCKER_YAML_PATH" <<EOL
+  nostrnet-$DOMAIN_IDENTIFIER:
     attachable: true
 
 EOL

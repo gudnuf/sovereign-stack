@@ -218,6 +218,35 @@ EOL
 
 EOL
 
+    if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
+        cat >>"$NGINX_CONF_PATH" <<EOL
+    # wss://$NOSTR_FQDN server block
+    server {
+        listen 443 ssl;
+        
+        server_name ${NOSTR_FQDN};
+
+        ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+        ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+        ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+
+        keepalive_timeout 70;
+
+        location / {
+            # redirect all HTTP traffic to btcpay server
+            proxy_pass http://nostr-${DOMAIN_IDENTIFIER}:8080;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade \$http_upgrade;
+            proxy_set_header Connection "Upgrade";
+            proxy_set_header Host \$host;
+        }
+    }
+
+EOL
+    fi
+
+
+
     cat >>"$NGINX_CONF_PATH" <<EOL
     # https server block for https://${BTCPAY_SERVER_NAMES}
     server {

@@ -6,7 +6,7 @@ export WWW_SERVER_MAC_ADDRESS=
 export DEPLOY_WWW_SERVER=false
 export DEPLOY_BTCPAY_SERVER=false
 export DEPLOY_GHOST=true
-export DEPLOY_NOSTR_RELAY=true
+export DEPLOY_NOSTR_RELAY=false
 export DEPLOY_ONION_SITE=false
 export DEPLOY_NEXTCLOUD=false
 export DEPLOY_GITEA=false
@@ -82,6 +82,8 @@ export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 # TODO PIN the gitea version number.
 export GITEA_IMAGE="gitea/gitea:latest"
 export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
+
+export NOSTR_RELAY_IMAGE="scsibug/nostr-rs-relay"
 
 export SOVEREIGN_STACK_MAC_ADDRESS=
 export WWW_SERVER_MAC_ADDRESS=
