@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
 
 # Create the nginx config file which covers all domains.

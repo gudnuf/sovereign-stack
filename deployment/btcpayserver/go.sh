@@ -29,11 +29,6 @@ elif [ "$RESTORE_BTCPAY" = true ]; then
     RUN_SERVICES=true
     OPEN_URL=true
 
-    # if this is a new VM from a migration procedure, then we can now run setup.
-    if [ "$MIGRATE_BTCPAY" = true ]; then
-        ./stub_btcpay_setup.sh
-    fi
-
 elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
     # the administrator may have indicated a reconfig;
     # if so, we re-run setup script.
