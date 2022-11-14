@@ -9,9 +9,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
     # source the site path so we know what features it has.
-    source ../../reset_env.sh
+    source "$RESPOSITORY_PATH/reset_env.sh"
     source "$SITE_PATH/site_definition"
-    source ../../domain_env.sh
+    source "$RESPOSITORY_PATH/domain_env.sh"
 
     ### Stop all services.
     for APP in ghost nextcloud gitea nostr; do
@@ -48,20 +48,23 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     done
 done
 
-
+# remove the nginx stack
 if docker stack list --format "{{.Name}}" | grep -q reverse-proxy; then
     sleep 2
 
     docker stack rm reverse-proxy
 
-    if [ "$STOP_SERVICES" = true ]; then
-        echo "STOPPING as indicated by the --stop flag."
-        exit 1
-    fi
-
     # wait for all docker containers to stop.
     # TODO see if there's a way to check for this.
     sleep 15
+fi
+
+# 
+if [ "$STOP_SERVICES" = true ]; then
+    echo "STOPPING as indicated by the --stop flag."
+    
+    
+    exit 1
 fi
 
 # generate the certs and grab a backup
@@ -72,12 +75,8 @@ fi
 # Back each domain's certificates under /home/ubuntu/letsencrypt/domain
 for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"
-    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
-    # source the site path so we know what features it has.
-    source ../../reset_env.sh
-    source "$SITE_PATH/site_definition"
-    source ../../domain_env.sh
+    source "$RESPOSITORY_PATH/domain_env.sh"
 
     # these variable are used by both backup/restore scripts.
     export APP="letsencrypt"

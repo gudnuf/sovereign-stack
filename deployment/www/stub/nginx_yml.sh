@@ -23,9 +23,9 @@ EOL
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
         # source the site path so we know what features it has.
-        source ../../../reset_env.sh
+        source "$RESPOSITORY_PATH/reset_env.sh"
         source "$SITE_PATH/site_definition"
-        source ../../../domain_env.sh
+        source "$RESPOSITORY_PATH/domain_env.sh"
 
 
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
@@ -85,12 +85,7 @@ EOL
 
     for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         export DOMAIN_NAME="$DOMAIN_NAME"
-        export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-
-        # source the site path so we know what features it has.
-        source ../../../reset_env.sh
-        source "$SITE_PATH/site_definition"
-        source ../../../domain_env.sh
+        source "$RESPOSITORY_PATH/domain_env.sh"
 
         # for each language specified in the site_definition, we spawn a separate ghost container
         # at https://www.domain.com/$LANGUAGE_CODE

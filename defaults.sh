@@ -5,7 +5,7 @@ set -eu
 export WWW_SERVER_MAC_ADDRESS=
 export DEPLOY_WWW_SERVER=false
 export DEPLOY_BTCPAY_SERVER=false
-export DEPLOY_GHOST=true
+export DEPLOY_GHOST=false
 export DEPLOY_NOSTR_RELAY=false
 export DEPLOY_ONION_SITE=false
 export DEPLOY_NEXTCLOUD=false
@@ -19,6 +19,7 @@ export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
 
 export SITE_LANGUAGE_CODES="en"
+export LANGUAGE_CODE="en"
 export NOSTR_ACCOUNT_PUBKEY=
 
 # this is where the html is sourced from.
@@ -38,8 +39,8 @@ export DUPLICITY_BACKUP_PASSPHRASE=
 export SSH_HOME="$HOME/.ssh"
 export VLAN_INTERFACE=
 export VM_NAME="sovereign-stack-base"
-export DEV_MEMORY_MB="4096"
-export DEV_CPU_COUNT="4"
+export DEV_MEMORY_MB="8096"
+export DEV_CPU_COUNT="6"
 
 export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 

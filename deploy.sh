@@ -1,7 +1,10 @@
 #!/bin/bash
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
+
+RESPOSITORY_PATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+export RESPOSITORY_PATH="$RESPOSITORY_PATH"
 
 check_dependencies () {
   for cmd in "$@"; do
@@ -25,14 +28,12 @@ DOMAIN_NAME=
 RUN_CERT_RENEWAL=true
 SKIP_WWW=false
 RESTORE_WWW=false
-BACKUP_CERTS=true
-BACKUP_APPS=true
-BACKUP_BTCPAY=true
+BACKUP_CERTS=false
+BACKUP_APPS=false
+BACKUP_BTCPAY=false
 RESTORE_BTCPAY=false
 BTCPAY_RESTORE_ARCHIVE_PATH=
 BTCPAY_LOCAL_BACKUP_PATH=
-MIGRATE_WWW=false
-MIGRATE_BTCPAY=false
 SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
@@ -90,17 +91,6 @@ for i in "$@"; do
             BTCPAY_RESTORE_ARCHIVE_PATH="${i#*=}"
             shift
         ;;
-        --migrate-www)
-            MIGRATE_WWW=true
-            RUN_CERT_RENEWAL=false
-            shift
-        ;;
-        --migrate-btcpay)
-            MIGRATE_BTCPAY=true
-            BACKUP_BTCPAY=true
-            RUN_CERT_RENEWAL=false
-            shift
-        ;;
         --renew-certs)
             RUN_CERT_RENEWAL=true
             shift
@@ -136,8 +126,6 @@ export BACKUP_CERTS="$BACKUP_CERTS"
 export BACKUP_APPS="$BACKUP_APPS"
 export RESTORE_BTCPAY="$RESTORE_BTCPAY"
 export BACKUP_BTCPAY="$BACKUP_BTCPAY"
-export MIGRATE_WWW="$MIGRATE_WWW"
-export MIGRATE_BTCPAY="$MIGRATE_BTCPAY"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
 export CLUSTER_NAME="$CLUSTER_NAME"
 export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
@@ -167,49 +155,10 @@ fi
 
 source "$CLUSTER_DEFINITION"
 
-###########################3
-# # This section is done to the management machine. We deploy a registry pull through cache on port 5000
-# if ! docker volume list | grep -q registry_data; then
-#     docker volume create registry_data
-# fi
-
-# if the registry URL isn't defined, then we just use the upstream dockerhub.
-# recommended to run a registry cache on your management machine though.
-# if [ -n "$REGISTRY_URL" ]; then
-
-# cat > "$CLUSTER_PATH/registry.yml" <<EOL
-# version: 0.1
-# http:
-#   addr: 0.0.0.0:5000
-#   host: ${REGISTRY_URL}
-
-# proxy:
-#     remoteurl: ${REGISTRY_URL}
-#     username: ${REGISTRY_USERNAME}
-#     password: ${REGISTRY_PASSWORD}
-# EOL
-
-#     # enable docker swarm mode so we can support docker stacks.
-#     if docker info | grep -q "Swarm: inactive"; then
-#         docker swarm init
-#     fi
-
-#     mkdir -p "${CACHES_DIR}/registry_images"
-
-#     # run a docker registry pull through cache on the management machine.
-#     if [ "$DEPLOY_MGMT_REGISTRY" = true ]; then
-#         if ! docker stack list | grep -q registry; then
-#             docker stack deploy -c management/registry_mirror.yml registry
-#         fi
-#     fi
-# fi
-
-
 # this is our password generation mechanism. Relying on GPG for secure password generation
 function new_pass {
     gpg --gen-random --armor 1 25
 }
-
 
 function instantiate_vms {
 
@@ -227,7 +176,7 @@ function instantiate_vms {
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
         source "$SITE_PATH/site_definition"
-        source ./domain_env.sh
+        source "$RESPOSITORY_PATH/domain_env.sh"
 
         # VALIDATE THE INPUT from the ENVFILE
         if [ -z "$DOMAIN_NAME" ]; then
@@ -239,7 +188,7 @@ function instantiate_vms {
         # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
         # which is set up during LXD cluster creation ss-cluster.
         LXD_SS_CONFIG_LINE=
-        if lxc network list --format csv | grep lxdbrSS | grep ss-config; then
+        if lxc network list --format csv | grep lxdbrSS | grep -q ss-config; then
             LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
         fi
 
@@ -257,8 +206,6 @@ function instantiate_vms {
 
         ./deployment/create_lxc_base.sh
 
-
-
         export MAC_ADDRESS_TO_PROVISION=
         export VPS_HOSTNAME="$VPS_HOSTNAME"
         export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
@@ -270,7 +217,7 @@ function instantiate_vms {
         fi
 
         DDNS_HOST=
-        MIGRATE_VPS=false
+
         if [ "$VIRTUAL_MACHINE" = www ]; then
             if [ "$SKIP_WWW" = true ]; then
                 echo "INFO: Skipping WWW due to command line argument."
@@ -281,9 +228,6 @@ function instantiate_vms {
             MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
             DDNS_HOST="$WWW_HOSTNAME"
             ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
-            if [ "$MIGRATE_WWW" = true ]; then
-                MIGRATE_VPS=true
-            fi
         elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$SKIP_BTCPAY" = true ]; then
             DDNS_HOST="$BTCPAY_HOSTNAME"
             VPS_HOSTNAME="$BTCPAY_HOSTNAME"
@@ -292,10 +236,6 @@ function instantiate_vms {
                 ROOT_DISK_SIZE_GB=150
             elif [ "$BTC_CHAIN" = testnet ]; then
                 ROOT_DISK_SIZE_GB=70
-            fi
-
-            if [ "$MIGRATE_BTCPAY" = true ]; then
-                MIGRATE_VPS=true
             fi
 
         elif [ "$VIRTUAL_MACHINE" = "sovereign-stack" ]; then
@@ -315,44 +255,7 @@ function instantiate_vms {
         export BTCPAY_LOCAL_BACKUP_PATH="$SITE_PATH/backups/btcpayserver/$BACKUP_TIMESTAMP"
         export BTCPAY_LOCAL_BACKUP_ARCHIVE_PATH="$BTCPAY_LOCAL_BACKUP_PATH/$UNIX_BACKUP_TIMESTAMP.tar.gz"
 
-        MACHINE_EXISTS=false
-        if lxc list --format csv | grep -q "$FQDN"; then
-            MACHINE_EXISTS=true
-        fi
-
-        if [ "$MACHINE_EXISTS"  = true ]; then
-            # we delete the machine if the user has directed us to
-            # but before we do, we get a backup of applcation data of the running instance/vm
-            # that backup becomes the basis for restoring to the newer version of the host host (Type-1 VM)
-            if [ "$MIGRATE_VPS" = true ]; then
-
-                # get a backup of the machine. This is what we restore to the new VPS.
-                echo "INFO: Machine exists.  Since we're going to delete it, let's grab a backup. "
-                echo "      We don't need to restore services since we're deleting it."
-                ./deployment/deploy_vms.sh
-
-                # delete the remote VPS.
-                lxc delete --force "$LXD_VM_NAME"
-
-                # Then we run the script again to re-instantiate a new VPS, restoring all user data
-                # if restore directory doesn't exist, then we end up with a new site.
-                echo "INFO: Recreating the remote VPS then restoring user data."
-                sleep 2
-
-                ./deployment/deploy_vms.sh
-            else
-                ./deployment/deploy_vms.sh
-            fi
-        else
-            if [ "$MIGRATE_VPS" = true ]; then
-                echo "INFO: User has indicated a migration, but it doesn't exist. Try removing some command line arguments."
-                exit 1
-            fi
-
-            # The machine does not exist. Let's bring it into existence, restoring from latest backup.
-            echo "Machine does not exist. Creating."
-            ./deployment/deploy_vms.sh
-        fi
+        ./deployment/deploy_vms.sh
 
         # if the local docker client isn't logged in, do so;
         # this helps prevent docker pull errors since they throttle.
@@ -418,39 +321,6 @@ EOL
 
 }
 
-
-function stub_project_definition {
-
-    # check to see if the enf file exists. exist if not.
-    PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
-    if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
-
-        # stub out a site_definition with new passwords.
-        cat >"$PROJECT_DEFINITION_PATH" <<EOL
-#!/bin/bash
-
-# see https://www.sovereign-stack.org/project-definition for more info.
-
-export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-export BTC_CHAIN="regtest|testnet|mainnet"
-export PRIMARY_DOMAIN="domain0.tld"
-export OTHER_SITES_LIST="domain1.tld,domain2.tld,domain3.tld"
-
-EOL
-
-        chmod 0744 "$PROJECT_DEFINITION_PATH"
-        echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it yo!"
-        echo "INFO: Learn more at https://www.sovereign-stack.org/project-definitions/"
-
-        exit 1
-    fi
-
-    # source project defition.
-    source "$PROJECT_DEFINITION_PATH"
-}
-
-
 CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
 PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
 mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
@@ -473,12 +343,38 @@ if [ "$PROJECT_NAME" != "$CURRENT_PROJECT" ]; then
 
 fi
 
-# stub out the project definition if needed.
-stub_project_definition
+
+# check to see if the enf file exists. exist if not.
+PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
+if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
+
+    # stub out a site_definition with new passwords.
+    cat >"$PROJECT_DEFINITION_PATH" <<EOL
+#!/bin/bash
+
+# see https://www.sovereign-stack.org/project-definition for more info.
+
+export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
+export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
+export BTC_CHAIN="regtest|testnet|mainnet"
+export PRIMARY_DOMAIN="domain0.tld"
+export OTHER_SITES_LIST="domain1.tld,domain2.tld,domain3.tld"
+
+EOL
+
+    chmod 0744 "$PROJECT_DEFINITION_PATH"
+    echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it yo!"
+    echo "INFO: Learn more at https://www.sovereign-stack.org/project-definitions/"
+
+    exit 1
+fi
+
+# source project defition.
+source "$PROJECT_DEFINITION_PATH"
 
 # the DOMAIN_LIST is a complete list of all our domains. We often iterate over this list.
 export DOMAIN_LIST="${PRIMARY_DOMAIN},${OTHER_SITES_LIST}"
-export DOMAIN_COUNT=$(("$(echo $DOMAIN_LIST | tr -cd , | wc -c)"+1))
+export DOMAIN_COUNT=$(("$(echo "$DOMAIN_LIST" | tr -cd , | wc -c)"+1))
 
 # let's provision our primary domain first.
 export DOMAIN_NAME="$PRIMARY_DOMAIN"

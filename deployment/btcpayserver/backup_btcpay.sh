@@ -11,6 +11,10 @@ echo "INFO: Starting BTCPAY Backup script for host '$BTCPAY_FQDN'."
 
 ssh "$BTCPAY_FQDN" "mkdir -p $REMOTE_HOME/backups; cd $REMOTE_HOME/; sudo BTCPAY_BASE_DIRECTORY=$REMOTE_HOME bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
 
+# TODO; not sure if this is necessary, but we want to give the VM additional time to take down all services
+# that way processes can run shutdown procedures and leave files in the correct state.
+sleep 10
+
 # TODO enable encrypted archives
 # TODO switch to btcpay-backup.sh when on LXD fully.
 scp ./remote_scripts/btcpay-backup.sh "$BTCPAY_FQDN:$REMOTE_HOME/btcpay-backup.sh"

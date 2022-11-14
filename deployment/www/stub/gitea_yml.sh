@@ -8,9 +8,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
     # source the site path so we know what features it has.
-    source ../../../reset_env.sh
+    source "$RESPOSITORY_PATH/reset_env.sh"
     source "$SITE_PATH/site_definition"
-    source ../../../domain_env.sh
+    source "$RESPOSITORY_PATH/domain_env.sh"
 
     if [ "$DEPLOY_GITEA" = true ]; then
         GITEA_PATH="$REMOTE_GITEA_PATH/$DOMAIN_NAME/${LANGUAGE_CODE}"
