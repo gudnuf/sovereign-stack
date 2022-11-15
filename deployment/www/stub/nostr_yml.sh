@@ -3,6 +3,8 @@
 set -exu
 cd "$(dirname "$0")"
 
+docker pull "$NOSTR_RELAY_IMAGE"
+
 for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
@@ -15,6 +17,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
         REMOTE_NOSTR_PATH="$REMOTE_HOME/nostr"
         NOSTR_PATH="$REMOTE_NOSTR_PATH/$DOMAIN_NAME"
+        NOSTR_CONFIG_PATH="$SITE_PATH/webstack/nostr.config"
 
         ssh "$PRIMARY_WWW_FQDN" mkdir -p "$NOSTR_PATH/data" "$NOSTR_PATH/db"
 
@@ -38,19 +41,41 @@ services:
     #   - USER_UID=1000
     networks:
       - ${NET_NAME}
+    configs:
+      - source: nostr-config
+        target: /usr/src/app/config.toml
     deploy:
       restart_policy:
         condition: on-failure
 
 networks:
-    ${NET_NAME}:
-      name: "reverse-proxy_${NET_NAME}"
-      external: true
+  ${NET_NAME}:
+    name: "reverse-proxy_${NET_NAME}-en"
+    external: true
 
+configs:
+  nostr-config:
+    file: ${NOSTR_CONFIG_PATH}
 EOL
 
-        docker pull "$NOSTR_RELAY_IMAGE"
-        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-nostr"
+        # documentation: https://git.sr.ht/~gheartsfield/nostr-rs-relay/tree/0.7.0/item/config.toml
+        cat >>"$NOSTR_CONFIG_PATH" <<EOL
+[info]
+relay_url = "wss://${NOSTR_FQDN}/"
+name = "${DOMAIN_NAME}"
+
+# administrative contact pubkey TODO
+#pubkey = ""
+
+[options]
+reject_future_seconds = 1800
+
+[limits]
+messages_per_sec = 3
+#max_event_bytes = 131072
+EOL
+
+        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-nostr-$LANGUAGE_CODE"
         sleep 1
     
     fi

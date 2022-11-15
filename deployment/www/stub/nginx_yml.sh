@@ -96,34 +96,32 @@ EOL
 
 EOL
 
-        done
-
-
-        if [ "$DEPLOY_GITEA" = true ]; then
-            cat >> "$DOCKER_YAML_PATH" <<EOL
+            if [ "$LANGUAGE_CODE" = en ]; then
+                if [ "$DEPLOY_GITEA" = true ]; then
+                    cat >> "$DOCKER_YAML_PATH" <<EOL
   giteanet-$DOMAIN_IDENTIFIER-en:
     attachable: true
 
 EOL
-        fi
+                fi
 
-        if [ "$DEPLOY_NEXTCLOUD" = "true" ]; then
-            cat >> "$DOCKER_YAML_PATH" <<EOL
+                if [ "$DEPLOY_NEXTCLOUD" = true ]; then
+                    cat >> "$DOCKER_YAML_PATH" <<EOL
   nextcloudnet-$DOMAIN_IDENTIFIER-en:
     attachable: true
 
 EOL
-        fi
+                fi
 
-
-        if [ "$DEPLOY_NOSTR_RELAY" = "true" ]; then
-            cat >> "$DOCKER_YAML_PATH" <<EOL
-  nostrnet-$DOMAIN_IDENTIFIER:
+                if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
+                    cat >> "$DOCKER_YAML_PATH" <<EOL
+  nostrnet-$DOMAIN_IDENTIFIER-en:
     attachable: true
 
 EOL
-        fi
-
+                fi
+            fi
+        done
     done
 
 docker stack deploy -c "$DOCKER_YAML_PATH" "reverse-proxy"
