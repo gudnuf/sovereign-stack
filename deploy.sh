@@ -25,7 +25,7 @@ if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
 fi
 
 DOMAIN_NAME=
-RUN_CERT_RENEWAL=true
+RUN_CERT_RENEWAL=false
 SKIP_WWW=false
 RESTORE_WWW=false
 BACKUP_CERTS=false
@@ -348,7 +348,7 @@ fi
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
 if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
 
-    # stub out a site_definition with new passwords.
+    # stub out a project_definition
     cat >"$PROJECT_DEFINITION_PATH" <<EOL
 #!/bin/bash
 

@@ -74,7 +74,7 @@ export GHOST_IMAGE="ghost:5.20.0"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 
-export NGINX_IMAGE="nginx:1.23.1"
+export NGINX_IMAGE="nginx:1.23.2"
 
 # version of backup is 24.0.3
 export NEXTCLOUD_IMAGE="nextcloud:25.0.0"

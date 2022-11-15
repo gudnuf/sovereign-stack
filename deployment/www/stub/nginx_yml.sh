@@ -49,7 +49,7 @@ EOL
 
                 if [ "$DEPLOY_NOSTR_RELAY" = "true" ]; then
                     cat >> "$DOCKER_YAML_PATH" <<EOL
-        - nostrnet-$DOMAIN_IDENTIFIER
+        - nostrnet-$DOMAIN_IDENTIFIER-en
 EOL
                 fi
             fi
@@ -84,7 +84,12 @@ EOL
 
 
     for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
-        export DOMAIN_NAME="$DOMAIN_NAME"
+                export DOMAIN_NAME="$DOMAIN_NAME"
+        export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+
+        # source the site path so we know what features it has.
+        source "$RESPOSITORY_PATH/reset_env.sh"
+        source "$SITE_PATH/site_definition"
         source "$RESPOSITORY_PATH/domain_env.sh"
 
         # for each language specified in the site_definition, we spawn a separate ghost container
