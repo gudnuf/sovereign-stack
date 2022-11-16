@@ -8,7 +8,7 @@ if [ "$(id -u)" != "0" ]; then
   exit 1
 fi
 
-backup_path=$1
+backup_path="$1"
 if [ -z "$backup_path" ]; then
   echo "ERROR: Usage: btcpay-restore.sh /path/to/backup.tar.gz"
   exit 1
@@ -37,20 +37,20 @@ rm -rf "$restore_dir"
 mkdir -p "$restore_dir"
 
 if [[ "$backup_path" == *.gpg ]]; then
-  echo "🔐 Decrypting backup file …"
+  echo "INFO: Decrypting backup file."
   {
     gpg -o "${backup_path%.*}" --batch --yes --passphrase "$BTCPAY_BACKUP_PASSPHRASE" -d "$backup_path"
     backup_path="${backup_path%.*}"
     echo "SUCESS: Decryption done."
   } || {
-    echo "🚨 Decryption failed. Please check the error message above."
+    echo "INFO: Decryption failed. Please check the error message above."
     exit 1
   }
 fi
 
 cd "$restore_dir"
 
-echo "ℹ️ Extracting files in $(pwd) …"
+echo "INFO: Extracting files in $(pwd)."
 tar -h -xvf "$backup_path" -C "$restore_dir"
 
 # basic control checks
@@ -79,9 +79,9 @@ cd "$restore_dir"
   cp -r volumes/* "$docker_dir/volumes/"
   # ensure datadirs excluded in backup exist
   mkdir -p "$docker_dir/volumes/generated_postgres_datadir/_data"
-  echo "✅ Volume restore done."
+  echo "INFO: Volume restore done."
 } || {
-  echo "🚨  Restoring volumes failed. Please check the error message above."
+  echo "INFO: Restoring volumes failed. Please check the error message above."
   exit 1
 }
 
