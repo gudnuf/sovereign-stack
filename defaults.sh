@@ -69,7 +69,8 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 # run the docker stack.
 export GHOST_IMAGE="ghost:5.20.0"
 
-# TODO switch to mysql. May require intricate export work. THIS MUST BE COMPLETED BEFORE v1 RELEASE
+# TODO switch to mysql. May require intricate export work for existing sites. 
+# THIS MUST BE COMPLETED BEFORE v1 RELEASE
 #https://forum.ghost.org/t/how-to-migrate-from-mariadb-10-to-mysql-8/29575
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 

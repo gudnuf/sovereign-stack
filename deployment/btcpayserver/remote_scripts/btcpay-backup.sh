@@ -11,8 +11,8 @@ set -o pipefail -o errexit
 #   revocation key!
 
 if [ "$(id -u)" != "0" ]; then
-  printf "\n🚨 This script must be run as root.\n"
-  printf "➡️  Use the command 'sudo su -' (include the trailing hypen) and try again.\n\n"
+  echo "INFO: This script must be run as root."
+  echo "      Use the command 'sudo su -' (include the trailing hypen) and try again."
   exit 1
 fi
 
@@ -35,34 +35,34 @@ cd "$btcpay_dir"
 dbcontainer=$(docker ps -a -q -f "name=postgres_1")
 if [ -z "$dbcontainer" ]; then
   printf "\n"
-  echo "ℹ️ Database container is not up and running. Starting BTCPay Server …"
+  echo "INFO: Database container is not up and running. Starting BTCPay Server."
   docker volume create generated_postgres_datadir
   docker-compose -f "$BTCPAY_DOCKER_COMPOSE" up -d postgres
 
   printf "\n"
   dbcontainer=$(docker ps -a -q -f "name=postgres_1")
   if [ -z "$dbcontainer" ]; then
-    echo "🚨 Database container could not be started or found."
+    echo "INFO: Database container could not be started or found."
     exit 1
   fi
 fi
 
 printf "\n"
-echo "ℹ️ Dumping database …"
+echo "INFO: Dumping database."
 {
   docker exec "$dbcontainer" pg_dumpall -c -U postgres | gzip > "$dbdump_path"
-  echo "✅ Database dump done."
+  echo "INFO: Database dump done."
 } || {
-  echo "🚨 Dumping failed. Please check the error message above."
+  echo "ERROR: Dumping failed. Please check the error message above."
   exit 1
 }
 
-printf "\nℹ️ Stopping BTCPay Server …\n\n"
+echo "Stopping BTCPay Server..."
 btcpay_down
 
 printf "\n"
-cd $docker_dir
-echo "ℹ️ Archiving files in $(pwd)…"
+cd "$docker_dir"
+echo "Archiving files in $(pwd)."
 
 {
   tar \
@@ -81,37 +81,36 @@ echo "ℹ️ Archiving files in $(pwd)…"
     --exclude="volumes/generated_clightning_bitcoin_datadir/_data/lightning-rpc" \
     --exclude="**/logs/*" \
     -cvzf "$backup_path" "$dbdump_name" volumes/generated_*
-  echo "✅ Archive done."
+  echo "INFO: Archive done."
 
-  if [ ! -z "$BTCPAY_BACKUP_PASSPHRASE" ]; then
+  if [ -n "$BTCPAY_BACKUP_PASSPHRASE" ]; then
     printf "\n"
-    echo "🔐 BTCPAY_BACKUP_PASSPHRASE is set, the backup will be encrypted."
+    echo "INFO: BTCPAY_BACKUP_PASSPHRASE is set, the backup will be encrypted."
     {
-      gpg -o "$backup_path.gpg" --batch --yes -c --passphrase "$BTCPAY_BACKUP_PASSPHRASE" $backup_path
+      gpg -o "$backup_path.gpg" --batch --yes -c --passphrase "$BTCPAY_BACKUP_PASSPHRASE" "$backup_path"
       rm "$backup_path"
       backup_path="$backup_path.gpg"
-      echo "✅ Encryption done."
+      echo "INFO: Encryption done."
     } || {
-      echo "🚨  Encrypting failed. Please check the error message above."
-      printf "\nℹ️  Restarting BTCPay Server …\n\n"
+      echo "INFO: Encrypting failed. Please check the error message above."
+      echo "INFO: Restarting BTCPay Server."
       cd "$btcpay_dir"
-      #btcpay_up
+
       exit 1
     }
   fi
 } || {
-  echo "🚨 Archiving failed. Please check the error message above."
-  printf "\nℹ️ Restarting BTCPay Server …\n\n"
-  cd $btcpay_dir
-  #btcpay_up
+  echo "INFO: Archiving failed. Please check the error message above."
+  echo "Restarting BTCPay Server"
+  cd "$btcpay_dir"
+
   exit 1
 }
 
-printf "\nℹ️ Restarting BTCPay Server …\n\n"
-cd $btcpay_dir
-#btcpay_up
+printf "Restarting BTCPay Server."
+cd "$btcpay_dir"
 
-printf "\nℹ️ Cleaning up …\n\n"
-rm $dbdump_path
+echo "Cleaning up."
+rm "$dbdump_path"
 
-printf "✅ Backup done => $backup_path\n\n"
+echo "INFO: Backup done => $backup_path."
