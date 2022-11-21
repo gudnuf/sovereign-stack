@@ -116,7 +116,6 @@ fi
 # set up our default paths.
 source ./defaults.sh
 
-export CACHES_DIR="$HOME/ss-cache"
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
 export BTCPAY_RESTORE_ARCHIVE_PATH="$BTCPAY_RESTORE_ARCHIVE_PATH"
@@ -149,7 +148,7 @@ export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
 #########################################
 if [ ! -f "$CLUSTER_DEFINITION" ]; then
-    echo "ERROR: The cluster defintion could not be found. You may need to re-run 'ss-cluster create'."
+    echo "ERROR: The cluster definition could not be found. You may need to re-run 'ss-cluster create'."
     exit 1
 fi
 
@@ -259,9 +258,9 @@ function instantiate_vms {
 
         # if the local docker client isn't logged in, do so;
         # this helps prevent docker pull errors since they throttle.
-        if [ ! -f "$HOME/.docker/config.json" ]; then
-            echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
-        fi
+        # if [ ! -f "$HOME/.docker/config.json" ]; then
+        #     echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
+        # fi
 
         # this tells our local docker client to target the remote endpoint via SSH
         export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
@@ -313,7 +312,7 @@ export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 EOL
 
             chmod 0744 "$SITE_DEFINITION_PATH"
-            echo "INFO: we stubbed a new site_defintion for you at '$SITE_DEFINITION_PATH'. Go update it yo!"
+            echo "INFO: we stubbed a new site_definition for you at '$SITE_DEFINITION_PATH'. Go update it yo!"
             exit 1
 
         fi

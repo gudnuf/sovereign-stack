@@ -37,6 +37,7 @@ export DUPLICITY_BACKUP_PASSPHRASE=
 
 
 export SSH_HOME="$HOME/.ssh"
+export PASS_HOME="$HOME/.password-store"
 export VLAN_INTERFACE=
 export VM_NAME="sovereign-stack-base"
 export DEV_MEMORY_MB="8096"
