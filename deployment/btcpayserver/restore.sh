@@ -3,14 +3,18 @@
 set -e
 cd "$(dirname "$0")"
 
-if [ -f "$BTCPAY_RESTORE_ARCHIVE_PATH" ]; then
+if [ "$RESTORE_BTCPAY"  = false ]; then 
+    exit 0
+fi
+
+if [ -f "$BACKUP_BTCPAY_ARCHIVE_PATH" ]; then
     # push the restoration archive to the remote server
-    echo "INFO: Restoring BTCPAY Server: $BTCPAY_RESTORE_ARCHIVE_PATH"
+    echo "INFO: Restoring BTCPAY Server: $BACKUP_BTCPAY_ARCHIVE_PATH"
 
     REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/btcpayserver"
     ssh "$FQDN" mkdir -p "$REMOTE_BACKUP_PATH"
     REMOTE_BTCPAY_ARCHIVE_PATH="$REMOTE_BACKUP_PATH/btcpay.tar.gz"
-    scp "$BTCPAY_RESTORE_ARCHIVE_PATH" "$FQDN:$REMOTE_BTCPAY_ARCHIVE_PATH"
+    scp "$BACKUP_BTCPAY_ARCHIVE_PATH" "$FQDN:$REMOTE_BTCPAY_ARCHIVE_PATH"
 
     # we clean up any old containers first before restoring.
     ssh "$FQDN" docker system prune -f

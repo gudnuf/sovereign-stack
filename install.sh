@@ -1,12 +1,10 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
-source ./defaults.sh
-
 # let's check to ensure the management machine is on the Baseline ubuntu 21.04
-if ! lsb_release -d | grep "Ubuntu 22.04" | grep -q "LTS"; then
+if ! lsb_release -d | grep -q "Ubuntu 22.04 LTS"; then
     echo "ERROR: Your machine is not running the Ubuntu 22.04 LTS baseline OS on your management machine."
     exit 1
 fi

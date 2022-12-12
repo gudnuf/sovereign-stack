@@ -103,9 +103,10 @@ EOL
 EOL
             fi
 
-        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-ghost-$LANGUAGE_CODE"
-
-        sleep 2
+        if [ "$STOP_SERVICES" = false ]; then
+            docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-ghost-$LANGUAGE_CODE"
+            sleep 2
+        fi
 
     done # language code
 

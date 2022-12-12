@@ -34,7 +34,7 @@ if [ ! -f "$CLUSTER_DEFINITION" ]; then
 
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
 export SOVEREIGN_STACK_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-export PROJECT_NAME="public"
+export PROJECT_NAME="regtest"
 #export REGISTRY_URL="https://index.docker.io/v1/"
 
 EOL
@@ -146,7 +146,7 @@ if ! command -v lxc >/dev/null 2>&1; then
 fi
 
 ssh -t "ubuntu@$FQDN" "
-set -ex
+set -e
 
 # install ufw and allow SSH. 
 sudo apt update

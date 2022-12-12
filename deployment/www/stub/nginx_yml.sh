@@ -129,5 +129,9 @@ EOL
         done
     done
 
-docker stack deploy -c "$DOCKER_YAML_PATH" "reverse-proxy"
-# iterate over all our domains and create the nginx config file.
+
+if [ "$STOP_SERVICES" = false ]; then
+    docker stack deploy -c "$DOCKER_YAML_PATH" "reverse-proxy"
+    # iterate over all our domains and create the nginx config file.
+    sleep 1
+fi

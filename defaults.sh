@@ -38,10 +38,12 @@ export DUPLICITY_BACKUP_PASSPHRASE=
 
 export SSH_HOME="$HOME/.ssh"
 export PASS_HOME="$HOME/.password-store"
-export VLAN_INTERFACE=
 export VM_NAME="sovereign-stack-base"
-export DEV_MEMORY_MB="8096"
-export DEV_CPU_COUNT="6"
+
+export BTCPAY_SERVER_CPU_COUNT="4"
+export BTCPAY_SERVER_MEMORY_MB="4096"
+export WWW_SERVER_CPU_COUNT="4"
+export WWW_SERVER_MEMORY_MB="4096"
 
 export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 
@@ -68,7 +70,7 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.20.0"
+export GHOST_IMAGE="ghost:5.23.0"
 
 # TODO switch to mysql. May require intricate export work for existing sites. 
 # THIS MUST BE COMPLETED BEFORE v1 RELEASE
@@ -79,7 +81,7 @@ export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export NGINX_IMAGE="nginx:1.23.2"
 
 # version of backup is 24.0.3
-export NEXTCLOUD_IMAGE="nextcloud:25.0.0"
+export NEXTCLOUD_IMAGE="nextcloud:25.0.1"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 # TODO PIN the gitea version number.

@@ -28,6 +28,7 @@ elif [ "$RESTORE_BTCPAY" = true ]; then
 
     RUN_SERVICES=true
     OPEN_URL=true
+    BACKUP_BTCPAY=false
 
 elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
     # the administrator may have indicated a reconfig;
@@ -39,12 +40,12 @@ elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
 fi
 
 # if the script gets this far, then we grab a regular backup.
-if [ "$BACKUP_BTCPAY"  = true ]; then
+if [ "$BACKUP_BTCPAY" = true ]; then
     # we just grab a regular backup
     ./backup_btcpay.sh
 fi
 
-if [ "$RUN_SERVICES" = true ]; then
+if [ "$RUN_SERVICES" = true ] && [ "$STOP_SERVICES" = false ]; then
     # The default is to resume services, though admin may want to keep services off (eg., for a migration)
     # we bring the services back up by default.
     ssh "$FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-up.sh"

@@ -1,44 +1,28 @@
 #!/bin/bash
 
-set -exu
+set -e
 cd "$(dirname "$0")"
 
 RESPOSITORY_PATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 export RESPOSITORY_PATH="$RESPOSITORY_PATH"
 
-check_dependencies () {
-  for cmd in "$@"; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-      echo "This script requires \"${cmd}\" to be installed. Please run 'install.sh'."
-      exit 1
-    fi
-  done
-}
-
-# Check system's dependencies
-check_dependencies wait-for-it dig rsync sshfs lxc
-
-# let's check to ensure the management machine is on the Baseline ubuntu 21.04
-if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
-    echo "ERROR: Your machine is not running the Ubuntu 22.04 LTS baseline OS on your management machine."
-    exit 1
-fi
+./check_dependencies.sh
 
 DOMAIN_NAME=
-RUN_CERT_RENEWAL=false
+RUN_CERT_RENEWAL=true
 SKIP_WWW=false
 RESTORE_WWW=false
-BACKUP_CERTS=false
-BACKUP_APPS=false
-BACKUP_BTCPAY=false
+BACKUP_CERTS=true
+BACKUP_APPS=true
+BACKUP_BTCPAY=true
+BACKUP_BTCPAY_ARCHIVE_PATH=
 RESTORE_BTCPAY=false
-BTCPAY_RESTORE_ARCHIVE_PATH=
-BTCPAY_LOCAL_BACKUP_PATH=
 SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 RECONFIGURE_BTCPAY_SERVER=false
 CLUSTER_NAME="$(lxc remote get-default)"
 STOP_SERVICES=false
+USER_SAYS_YES=false
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -59,12 +43,21 @@ for i in "$@"; do
             BACKUP_CERTS=true
             shift
         ;;
+        --no-backup-www)
+            BACKUP_CERTS=false
+            BACKUP_APPS=false
+            shift
+        ;;
         --stop)
             STOP_SERVICES=true
             shift
         ;;
         --domain=*)
             DOMAIN_NAME="${i#*=}"
+            shift
+        ;;
+        --backup-archive-path=*)
+            BACKUP_BTCPAY_ARCHIVE_PATH="${i#*=}"
             shift
         ;;
         --update-btcpay)
@@ -83,20 +76,16 @@ for i in "$@"; do
             BACKUP_APPS=true
             shift
         ;;
-        --backup-btcpay)
-            BACKUP_BTCPAY=true
-            shift
-        ;;
-        --restore-archive=*)
-            BTCPAY_RESTORE_ARCHIVE_PATH="${i#*=}"
-            shift
-        ;;
-        --renew-certs)
-            RUN_CERT_RENEWAL=true
+        --no-cert-renew)
+            RUN_CERT_RENEWAL=false
             shift
         ;;
         --reconfigure-btcpay)
             RECONFIGURE_BTCPAY_SERVER=true
+            shift
+        ;;
+        -y)
+            USER_SAYS_YES=true
             shift
         ;;
         *)
@@ -106,10 +95,8 @@ for i in "$@"; do
     esac
 done
 
-
-# do some CLI checking.
-if [ "$RESTORE_BTCPAY" = true ] && [ ! -f "$BTCPAY_RESTORE_ARCHIVE_PATH" ]; then
-    echo "ERROR: The restoration archive is not specified. Ensure --restore-archive= is set on the command line."
+if [ "$RESTORE_BTCPAY" = true ] && [ -z "$BACKUP_BTCPAY_ARCHIVE_PATH" ]; then
+    echo "ERROR: BACKUP_BTCPAY_ARCHIVE_PATH was not set event when the RESTORE_BTCPAY = true. "
     exit 1
 fi
 
@@ -118,7 +105,6 @@ source ./defaults.sh
 
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
-export BTCPAY_RESTORE_ARCHIVE_PATH="$BTCPAY_RESTORE_ARCHIVE_PATH"
 export RESTORE_WWW="$RESTORE_WWW"
 export STOP_SERVICES="$STOP_SERVICES"
 export BACKUP_CERTS="$BACKUP_CERTS"
@@ -128,6 +114,9 @@ export BACKUP_BTCPAY="$BACKUP_BTCPAY"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
 export CLUSTER_NAME="$CLUSTER_NAME"
 export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
+export USER_SAYS_YES="$USER_SAYS_YES"
+export BACKUP_BTCPAY_ARCHIVE_PATH="$BACKUP_BTCPAY_ARCHIVE_PATH"
+
 
 # ensure our cluster path is created.
 mkdir -p "$CLUSTER_PATH"
@@ -170,6 +159,7 @@ function instantiate_vms {
     VPS_HOSTNAME=
 
     for VIRTUAL_MACHINE in www btcpayserver; do
+        export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
         FQDN=
 
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
@@ -251,9 +241,6 @@ function instantiate_vms {
         export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
         export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
         export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
-        export BTCPAY_LOCAL_BACKUP_PATH="$SITE_PATH/backups/btcpayserver/$BACKUP_TIMESTAMP"
-        export BTCPAY_LOCAL_BACKUP_ARCHIVE_PATH="$BTCPAY_LOCAL_BACKUP_PATH/$UNIX_BACKUP_TIMESTAMP.tar.gz"
-
         ./deployment/deploy_vms.sh
 
         # if the local docker client isn't logged in, do so;
@@ -358,6 +345,10 @@ export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
 export BTC_CHAIN="regtest|testnet|mainnet"
 export PRIMARY_DOMAIN="domain0.tld"
 export OTHER_SITES_LIST="domain1.tld,domain2.tld,domain3.tld"
+export BTCPAY_SERVER_CPU_COUNT="4"
+export BTCPAY_SERVER_MEMORY_MB="4096"
+export WWW_SERVER_CPU_COUNT="6"
+export WWW_SERVER_MEMORY_MB="4096"
 
 EOL
 
@@ -372,7 +363,12 @@ fi
 source "$PROJECT_DEFINITION_PATH"
 
 # the DOMAIN_LIST is a complete list of all our domains. We often iterate over this list.
-export DOMAIN_LIST="${PRIMARY_DOMAIN},${OTHER_SITES_LIST}"
+DOMAIN_LIST="${PRIMARY_DOMAIN}"
+if [ -n "$OTHER_SITES_LIST" ]; then
+    DOMAIN_LIST="${DOMAIN_LIST},${OTHER_SITES_LIST}"
+fi
+
+export DOMAIN_LIST="$DOMAIN_LIST"
 export DOMAIN_COUNT=$(("$(echo "$DOMAIN_LIST" | tr -cd , | wc -c)"+1))
 
 # let's provision our primary domain first.
@@ -404,6 +400,8 @@ if [ "$SKIP_WWW" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
     bash -c "./deployment/www/go.sh"
 fi
 
+export DOMAIN_NAME="$PRIMARY_DOMAIN"
+export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 if [ "$SKIP_BTCPAY" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
     bash -c "./deployment/btcpayserver/go.sh"
 fi

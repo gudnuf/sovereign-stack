@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 # Create the nginx config file which covers all domains.
@@ -83,6 +83,18 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 done
 
 ./stop_docker_stacks.sh
+
+
+
+
+
+
+
+
+
+
+
+
 
 # if [ "$DEPLOY_ONION_SITE" = true ]; then
 #     # ensure the tor image is built

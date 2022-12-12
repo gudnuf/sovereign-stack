@@ -80,9 +80,10 @@ EOL
     ${DBNET_NAME}:
 EOL
 
-        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-gitea-$LANGUAGE_CODE"
-        sleep 1
-    
+        if [ "$STOP_SERVICES" = false ]; then
+            docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-gitea-$LANGUAGE_CODE"
+            sleep 1
+        fi
     fi
 
 done

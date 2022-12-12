@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 docker pull "$NOSTR_RELAY_IMAGE"
@@ -75,8 +75,10 @@ messages_per_sec = 3
 #max_event_bytes = 131072
 EOL
 
-        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-nostr-$LANGUAGE_CODE"
-        sleep 1
+        if [ "$STOP_SERVICES" = false ]; then
+            docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-nostr-$LANGUAGE_CODE"
+            sleep 1
+        fi
     
     fi
 

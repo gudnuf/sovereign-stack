@@ -17,10 +17,24 @@ YAML_PATH="$PROJECT_PATH/cloud-init/$FILENAME"
 # If we are deploying the www, we attach the vm to the underlay via macvlan.
 cat > "$YAML_PATH" <<EOF
 config:
-  limits.cpu: "${DEV_CPU_COUNT}"
-  limits.memory: "${DEV_MEMORY_MB}MB"
+EOF
+
+
+if [ "$VIRTUAL_MACHINE" = www ]; then
+    cat >> "$YAML_PATH" <<EOF
+  limits.cpu: "${WWW_SERVER_CPU_COUNT}"
+  limits.memory: "${WWW_SERVER_MEMORY_MB}MB"
 
 EOF
+
+else [ "$VIRTUAL_MACHINE" = btcpayserver ];
+    cat >> "$YAML_PATH" <<EOF
+  limits.cpu: "${BTCPAY_SERVER_CPU_COUNT}"
+  limits.memory: "${BTCPAY_SERVER_MEMORY_MB}MB"
+
+EOF
+
+fi
 
 # if VIRTUAL_MACHINE=sovereign-stack then we are building the base image.
 if [ "$LXD_HOSTNAME" = "sovereign-stack" ]; then
@@ -161,7 +175,7 @@ if [ "$LXD_HOSTNAME" = "sovereign-stack" ]; then
       - sudo apt-get update
       - sudo apt-get install -y docker-ce docker-ce-cli containerd.io
       - echo "alias ll='ls -lah'" >> /home/ubuntu/.bash_profile
-      - sudo curl -s -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+      - sudo curl -s -L "https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       - sudo chmod +x /usr/local/bin/docker-compose
       - sudo apt-get install -y openssh-server
       
@@ -259,7 +273,8 @@ fi
 # let's create a profile for the BCM TYPE-1 VMs. This is per VM.
 if ! lxc profile list --format csv | grep -q "$LXD_HOSTNAME"; then
     lxc profile create "$LXD_HOSTNAME"
-fi
 
-# configure the profile with our generated cloud-init.yml file.
-cat "$YAML_PATH" | lxc profile edit "$LXD_HOSTNAME" 
+    # configure the profile with our generated cloud-init.yml file.
+    cat "$YAML_PATH" | lxc profile edit "$LXD_HOSTNAME" 
+
+fi

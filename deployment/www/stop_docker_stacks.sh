@@ -30,7 +30,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
             export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
   
             # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.
-            export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP/$BACKUP_TIMESTAMP"
+            export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP"
 
             # ensure our local backup path exists.
             if [ ! -d "$LOCAL_BACKUP_PATH" ]; then
@@ -40,7 +40,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
             if [ "$RESTORE_WWW" = true ]; then
                 ./restore_path.sh
                 #ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
-            elif [ "$BACKUP_APPS"  = true ]; then
+            else
                 # if we're not restoring, then we may or may not back up.
                 ./backup_path.sh
             fi
@@ -57,14 +57,13 @@ if docker stack list --format "{{.Name}}" | grep -q reverse-proxy; then
     # wait for all docker containers to stop.
     # TODO see if there's a way to check for this.
     sleep 15
+    
 fi
 
 # 
 if [ "$STOP_SERVICES" = true ]; then
     echo "STOPPING as indicated by the --stop flag."
-    
-    
-    exit 1
+    exit 0
 fi
 
 # generate the certs and grab a backup
@@ -72,19 +71,23 @@ if [ "$RUN_CERT_RENEWAL" = true ]; then
     ./generate_certs.sh
 fi
 
-# Back each domain's certificates under /home/ubuntu/letsencrypt/domain
+# let's backup all our letsencrypt certs
+export APP="letsencrypt"
 for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"
+    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
+    # source the site path so we know what features it has.
+    source "$RESPOSITORY_PATH/reset_env.sh"
+    source "$SITE_PATH/site_definition"
     source "$RESPOSITORY_PATH/domain_env.sh"
 
     # these variable are used by both backup/restore scripts.
-    export APP="letsencrypt"
     export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOMAIN_IDENTIFIER"
     export REMOTE_SOURCE_BACKUP_PATH="$REMOTE_HOME/$APP/$DOMAIN_NAME"
 
     # ensure our local backup path exists so we can pull down the duplicity archive to the management machine.
-    export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP/$BACKUP_TIMESTAMP"
+    export LOCAL_BACKUP_PATH="$SITE_PATH/backups/www/$APP"
     mkdir -p "$LOCAL_BACKUP_PATH"
 
     if [ "$RESTORE_WWW" = true ]; then
@@ -95,6 +98,5 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     elif [ "$BACKUP_APPS"  = true ]; then
         # if we're not restoring, then we may or may not back up.
         ./backup_path.sh
-        
     fi
 done

@@ -74,7 +74,9 @@ networks:
 
 EOL
 
-        docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-nextcloud-en"
-
+        if [ "$STOP_SERVICES" = false ]; then
+            docker stack deploy -c "$DOCKER_YAML_PATH" "$DOMAIN_IDENTIFIER-nextcloud-en"
+            sleep 1
+        fi
     fi
 done
