@@ -53,6 +53,10 @@ for i in "$@"; do
             STOP_SERVICES=true
             shift
         ;;
+        --restart-front-end)
+            RESTART_FRONT_END=true
+            shift
+        ;;
         --domain=*)
             DOMAIN_NAME="${i#*=}"
             shift
@@ -117,6 +121,7 @@ export CLUSTER_NAME="$CLUSTER_NAME"
 export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
 export USER_SAYS_YES="$USER_SAYS_YES"
 export BACKUP_BTCPAY_ARCHIVE_PATH="$BACKUP_BTCPAY_ARCHIVE_PATH"
+export RESTART_FRONT_END="$RESTART_FRONT_END"
 
 
 # ensure our cluster path is created.
