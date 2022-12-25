@@ -34,15 +34,16 @@ fi
 cd btcpayserver-docker
 
 export BTCPAY_HOST="${BTCPAY_USER_FQDN}"
+export BTCPAY_ANNOUNCEABLE_HOST="${DOMAIN_NAME}"
 export NBITCOIN_NETWORK="${BTC_CHAIN}"
 export LIGHTNING_ALIAS="${PRIMARY_DOMAIN}"
 export BTCPAYGEN_LIGHTNING="clightning"
 export BTCPAYGEN_CRYPTO1="btc"
-export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage-s;opt-add-btctransmuter;"
+export BTCPAYGEN_ADDITIONAL_FRAGMENTS="opt-save-storage-s;opt-add-btctransmuter;bitcoin-clightning.custom;"
 export BTCPAYGEN_REVERSEPROXY="nginx"
 export BTCPAY_ENABLE_SSH=false
 export BTCPAY_BASE_DIRECTORY=${REMOTE_HOME}
-export BTCPAYGEN_EXCLUDE_FRAGMENTS="nginx-https"
+export BTCPAYGEN_EXCLUDE_FRAGMENTS="nginx-https;"
 export REVERSEPROXY_DEFAULT_HOST="$BTCPAY_USER_FQDN"
 
 if [ "\$NBITCOIN_NETWORK" != regtest ]; then
@@ -55,8 +56,24 @@ if [ "\$NBITCOIN_NETWORK" != regtest ]; then
     fi
 fi
 
+
+# next we create fragments to customize various aspects of the system
+# this block customizes clightning to ensure the correct endpoints are being advertised
+# We want to advertise the correct ipv4 endpoint for remote hosts to get in touch.
+cat > ${REMOTE_HOME}/btcpayserver-docker/docker-compose-generator/docker-fragments/bitcoin-clightning.custom.yml <<EOF
+
+services:
+  clightning_bitcoin:
+    environment:
+      LIGHTNINGD_OPT: |
+        announce-addr-dns=true
+
+EOF
+
 # run the setup script.
 . ./btcpay-setup.sh -i
+
+touch ${REMOTE_HOME}/btcpay.complete
 
 EOL
 

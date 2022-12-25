@@ -180,7 +180,7 @@ if [ "$LXD_HOSTNAME" = "sovereign-stack" ]; then
       - sudo curl -s -L "https://github.com/docker/compose/releases/download/1.21.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
       - sudo chmod +x /usr/local/bin/docker-compose
       - sudo apt-get install -y openssh-server
-      
+
 
 EOF
 
