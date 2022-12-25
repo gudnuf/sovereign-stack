@@ -70,7 +70,7 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.23.0"
+export GHOST_IMAGE="ghost:5.26.2"
 
 # TODO switch to mysql. May require intricate export work for existing sites. 
 # THIS MUST BE COMPLETED BEFORE v1 RELEASE
