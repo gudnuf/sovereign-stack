@@ -6,8 +6,17 @@ cd "$(dirname "$0")"
 CURRENT_CLUSTER="$(lxc remote get-default)"
 
 if echo "$CURRENT_CLUSTER" | grep -q "production"; then
-    echo "ERROR: YOU MUST COMMENT THIS OUT BEFORE YOU CAN RUN MIGRATE ON PROUDCTION/."
-    exit 1
+    echo "WARNING: You are running a migration procedure on a production system."
+    echo ""
+
+
+    RESPONSE=
+    read -r -p "         Are you sure you want to continue (y)  ": RESPONSE
+    if [ "$RESPONSE" != "y" ]; then
+        echo "STOPPING."
+        exit 1
+    fi
+
 fi
 
 source ./defaults.sh

@@ -34,4 +34,5 @@ scp -r "$LOCAL_BACKUP_PATH" "$PRIMARY_WWW_FQDN:$REMOTE_BACKUP_PATH"
 # now we run duplicity to restore the archive.
 ssh "$PRIMARY_WWW_FQDN" sudo PASSPHRASE="$DUPLICITY_BACKUP_PASSPHRASE" duplicity --force restore "file://$REMOTE_BACKUP_PATH/$APP" "$REMOTE_SOURCE_BACKUP_PATH/"
 
-ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_BACKUP_PATH"
+# reset folder owner to ubuntu
+ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"

@@ -23,6 +23,7 @@ RECONFIGURE_BTCPAY_SERVER=false
 CLUSTER_NAME="$(lxc remote get-default)"
 STOP_SERVICES=false
 USER_SAYS_YES=false
+RESTART_FRONT_END=false
 
 # grab any modifications from the command line.
 for i in "$@"; do
