@@ -81,7 +81,7 @@ export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 export NGINX_IMAGE="nginx:1.23.2"
 
 # version of backup is 24.0.3
-export NEXTCLOUD_IMAGE="nextcloud:25.0.1"
+export NEXTCLOUD_IMAGE="nextcloud:25.0.2"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 # TODO PIN the gitea version number.
