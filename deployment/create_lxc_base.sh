@@ -36,7 +36,7 @@ if ! lxc image list --format csv "$VM_NAME" | grep -q "$VM_NAME"; then
         # if the image doesn't exist, download it from Ubuntu's image server
         # TODO see if we can fetch this file from a more censorship-resistant source, e.g., ipfs
         # we don't really need to cache this locally since it gets continually updated upstream.
-        lxc image copy "images:$BASE_LXC_IMAGE" "$CLUSTER_NAME": --alias "ubuntu-base" --public --vm
+        lxc image copy "images:$BASE_LXC_IMAGE" "$CLUSTER_NAME": --alias "ubuntu-base" --public --vm --auto-update
     fi
 
     # this vm is used temperarily with 

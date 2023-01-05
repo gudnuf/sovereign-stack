@@ -62,10 +62,10 @@ echo "INFO: The BTCPAY_RESTORE_ARCHIVE_PATH for this migration will be: $BTCPAY_
 # the --stop flag ensures that services do NOT come back online.
 # by default, we grab a backup. 
 
-bash -c "./deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
+bash -c "./deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 
 RESPONSE=
-read -r -p "Are you sure you want to continue the migration? We have a backup TODO.": RESPONSE
+read -r -p "Are you sure you want to continue the migration?  ": RESPONSE
 if [ "$RESPONSE" != "y" ]; then
     echo "STOPPING."
     exit 0
@@ -90,8 +90,12 @@ if lxc profile list | grep -q sovereign-stack; then
     lxc profile delete sovereign-stack
 fi
 
-if lxc image list | grep -q "sovereign-stack-base"; then
+if lxc image list | grep -q sovereign-stack-base; then
     lxc image rm sovereign-stack-base
+fi
+
+if lxc image list | grep -q ubuntu-base; then
+    lxc image rm ubuntu-base
 fi
 
 # Then we can run a restore operation and specify the backup archive at the CLI.
