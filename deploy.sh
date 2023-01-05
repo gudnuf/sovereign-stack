@@ -23,7 +23,7 @@ RECONFIGURE_BTCPAY_SERVER=false
 CLUSTER_NAME="$(lxc remote get-default)"
 STOP_SERVICES=false
 USER_SAYS_YES=false
-RESTART_FRONT_END=false
+RESTART_FRONT_END=true
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -32,6 +32,7 @@ for i in "$@"; do
             RESTORE_WWW=true
             BACKUP_APPS=false
             RUN_CERT_RENEWAL=false
+            RESTART_FRONT_END=true
             shift
         ;;
         --restore-btcpay)
@@ -51,6 +52,7 @@ for i in "$@"; do
         ;;
         --stop)
             STOP_SERVICES=true
+            RESTART_FRONT_END=true
             shift
         ;;
         --restart-front-end)
