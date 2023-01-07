@@ -40,7 +40,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
             if [ "$RESTORE_WWW" = true ]; then
                 ./restore_path.sh
                 #ssh "$PRIMARY_WWW_FQDN" sudo chown ubuntu:ubuntu "$REMOTE_HOME/$APP"
-            else
+            elif [ "$BACKUP_APPS"  = true ]; then
                 # if we're not restoring, then we may or may not back up.
                 ./backup_path.sh
             fi
