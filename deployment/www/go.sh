@@ -55,11 +55,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         fi
     fi
 
-    if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
-        if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
-            echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
-            exit 1
-        fi
+    if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
+        echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
+        exit 1
     fi
 
     if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then

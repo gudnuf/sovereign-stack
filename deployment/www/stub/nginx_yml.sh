@@ -47,7 +47,7 @@ EOL
 EOL
                 fi
 
-                if [ "$DEPLOY_NOSTR_RELAY" = "true" ]; then
+                if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then
                     cat >> "$DOCKER_YAML_PATH" <<EOL
         - nostrnet-$DOMAIN_IDENTIFIER-en
 EOL
@@ -118,7 +118,7 @@ EOL
 EOL
                 fi
 
-                if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
+                if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then
                     cat >> "$DOCKER_YAML_PATH" <<EOL
   nostrnet-$DOMAIN_IDENTIFIER-en:
     attachable: true

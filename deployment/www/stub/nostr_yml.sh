@@ -14,7 +14,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     source "$SITE_PATH/site_definition"
     source "$RESPOSITORY_PATH/domain_env.sh"
 
-    if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
+    if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then
         REMOTE_NOSTR_PATH="$REMOTE_HOME/nostr"
         NOSTR_PATH="$REMOTE_NOSTR_PATH/$DOMAIN_NAME"
         NOSTR_CONFIG_PATH="$SITE_PATH/webstack/nostr.config"

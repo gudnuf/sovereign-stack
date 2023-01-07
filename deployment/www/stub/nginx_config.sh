@@ -191,7 +191,7 @@ EOL
         
 EOL
 
-    if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
+    if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then
         cat >>"$NGINX_CONF_PATH" <<EOL
         # We return a JSON object with name/pubkey mapping per NIP05.
         # https://www.reddit.com/r/nostr/comments/rrzk76/nip05_mapping_usernames_to_dns_domains_by_fiatjaf/sssss
@@ -199,7 +199,7 @@ EOL
         location = /.well-known/nostr.json {
             add_header Content-Type application/json;
             add_header Access-Control-Allow-Origin *;
-            return 200 '{ "names": { "_": "${NOSTR_ACCOUNT_PUBKEY}" } }';
+            return 200 '{ "names": { "_": "${NOSTR_ACCOUNT_PUBKEY}" }, "relays": { "${NOSTR_ACCOUNT_PUBKEY}": [ "wss://${NOSTR_FQDN}" ] } }';
         }
         
 EOL
@@ -218,7 +218,7 @@ EOL
 
 EOL
 
-    if [ "$DEPLOY_NOSTR_RELAY" = true ]; then
+    if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then
         cat >>"$NGINX_CONF_PATH" <<EOL
     # wss://$NOSTR_FQDN server block
     server {
