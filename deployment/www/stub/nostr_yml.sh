@@ -59,20 +59,34 @@ configs:
 EOL
 
         # documentation: https://git.sr.ht/~gheartsfield/nostr-rs-relay/tree/0.7.0/item/config.toml
-        cat >>"$NOSTR_CONFIG_PATH" <<EOL
+        cat >"$NOSTR_CONFIG_PATH" <<EOL
 [info]
 relay_url = "wss://${NOSTR_FQDN}/"
-name = "${DOMAIN_NAME}"
+name = "${NOSTR_FQDN}"
+description = "A nostr relay for ${DOMAIN_NAME}."
+pubkey = "${NOSTR_ACCOUNT_PUBKEY}"
+contact = "mailto:${CERTIFICATE_EMAIL_ADDRESS}"
 
 # administrative contact pubkey TODO
-#pubkey = ""
+pubkey = "${NOSTR_ACCOUNT_PUBKEY}"
 
 [options]
 reject_future_seconds = 1800
 
 [limits]
-messages_per_sec = 3
+#messages_per_sec = 3
 #max_event_bytes = 131072
+#max_ws_message_bytes = 131072
+#max_ws_frame_bytes = 131072
+#broadcast_buffer = 16384
+#event_persist_buffer = 4096
+
+[authorization]
+# Pubkey addresses in this array are whitelisted for event publishing.
+# Only valid events by these authors will be accepted, if the variable
+# is set.
+pubkey_whitelist = [ "${NOSTR_ACCOUNT_PUBKEY}" ]
+domain_whitelist = [ "${DOMAIN_NAME}" ]
 EOL
 
         if [ "$STOP_SERVICES" = false ]; then
