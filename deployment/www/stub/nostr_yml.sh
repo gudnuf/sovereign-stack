@@ -63,12 +63,9 @@ EOL
 [info]
 relay_url = "wss://${NOSTR_FQDN}/"
 name = "${NOSTR_FQDN}"
-description = "A nostr relay for ${DOMAIN_NAME}."
+description = "A nostr relay for ${DOMAIN_NAME} whitelisted for pubkey ${NOSTR_ACCOUNT_PUBKEY}."
 pubkey = "${NOSTR_ACCOUNT_PUBKEY}"
 contact = "mailto:${CERTIFICATE_EMAIL_ADDRESS}"
-
-# administrative contact pubkey TODO
-pubkey = "${NOSTR_ACCOUNT_PUBKEY}"
 
 [options]
 reject_future_seconds = 1800

@@ -55,11 +55,6 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         fi
     fi
 
-    if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then
-        echo "ERROR: Ensure NOSTR_ACCOUNT_PUBKEY is configured in your site_definition."
-        exit 1
-    fi
-
     if [ -z "$DUPLICITY_BACKUP_PASSPHRASE" ]; then
         echo "ERROR: Ensure DUPLICITY_BACKUP_PASSPHRASE is configured in your site_definition."
         exit 1
@@ -67,12 +62,6 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
     if [ -z "$DOMAIN_NAME" ]; then
         echo "ERROR: Ensure DOMAIN_NAME is configured in your site_definition."
-        exit 1
-    fi
-
-    if [ -z "$NOSTR_ACCOUNT_PUBKEY" ]; then 
-        echo "ERROR: You MUST specify a Nostr public key. This is how you get all your social features."
-        echo "INFO: Go to your site_definition file and set the NOSTR_ACCOUNT_PUBKEY variable."
         exit 1
     fi
 
@@ -104,8 +93,7 @@ if [ "$RESTART_FRONT_END" = true ]; then
 
         # wait for all docker containers to stop.
         # TODO see if there's a way to check for this.
-        sleep 15
-        
+        sleep 20
     fi
 
     # generate the certs and grab a backup
