@@ -295,7 +295,6 @@ export DEPLOY_GHOST=true
 export DEPLOY_NEXTCLOUD=false
 export NOSTR_ACCOUNT_PUBKEY="NOSTR_IDENTITY_PUBKEY_GOES_HERE"
 export DEPLOY_GITEA=false
-#export DEPLOY_ONION_SITE=false
 export GHOST_MYSQL_PASSWORD="$(new_pass)"
 export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
 export NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"

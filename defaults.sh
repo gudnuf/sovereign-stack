@@ -7,7 +7,6 @@ export DEPLOY_WWW_SERVER=false
 export DEPLOY_BTCPAY_SERVER=false
 export DEPLOY_GHOST=false
 
-export DEPLOY_ONION_SITE=false
 export DEPLOY_NEXTCLOUD=false
 export DEPLOY_GITEA=false
 
