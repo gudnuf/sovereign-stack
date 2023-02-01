@@ -204,7 +204,7 @@ function instantiate_vms {
         # fi
 
         # create the lxd base image.
-        ./create_lxc_base.sh
+        #./create_lxc_base.sh
 
         # # now switch to the current chain project.
         # if ! lxc project list --format csv | grep -a "$BITCOIN_CHAIN"; then
