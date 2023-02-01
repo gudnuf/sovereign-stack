@@ -185,7 +185,7 @@ function instantiate_vms {
         # Goal is to get the macvlan interface.
         LXD_SS_CONFIG_LINE=
         if lxc network list --format csv | grep lxdbr0 | grep -q ss-config; then
-            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbr0 | grep ss-config)"
+            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
         fi
 
         if [ -z "$LXD_SS_CONFIG_LINE" ]; then
