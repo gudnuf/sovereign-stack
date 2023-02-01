@@ -3,7 +3,7 @@
 set -ex
 
 if lxc remote get-default | grep -q "production"; then
-    echo "WARNING: You are running a migration procedure on a production system."
+    echo "WARNING: You are running command against a production system!"
     echo ""
 
     # check if there are any uncommited changes. It's dangerous to 
