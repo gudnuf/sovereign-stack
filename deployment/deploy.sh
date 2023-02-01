@@ -313,19 +313,19 @@ EOL
 
 }
 
-PROJECT_PATH="$PROJECTS_DIR/$BITCOIN_CHAIN"
+PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
 mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
 export PROJECT_PATH="$PROJECT_PATH"
 
 # create a symlink from ./clusterpath/projects/project
-if [ ! -d "$CLUSTER_PATH/projects/$BITCOIN_CHAIN" ]; then
-    ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$BITCOIN_CHAIN"
+if [ ! -d "$CLUSTER_PATH/projects/$PROJECT_NAME" ]; then
+    ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$PROJECT_NAME"
 fi
 
-# create the lxc project as specified by BITCOIN_CHAIN
-if ! lxc project list | grep -q "$BITCOIN_CHAIN"; then
+# create the lxc project as specified by PROJECT_NAME
+if ! lxc project list | grep -q "$PROJECT_NAME"; then
     echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
-    lxc project create "$BITCOIN_CHAIN"
+    lxc project create "$PROJECT_NAME"
 fi
 
 # # check if we need to provision a new lxc project.
@@ -399,6 +399,9 @@ export DEPLOY_BTCPAY_SERVER=true
 
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
+
+echo "HERE"
+exit 1
 
 stub_site_definition
 

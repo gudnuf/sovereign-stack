@@ -41,7 +41,7 @@ source "$CLUSTER_DEFINITION"
 
 # source project defition.
 # Now let's load the project definition.
-PROJECT_PATH="$PROJECTS_DIR/$BITCOIN_CHAIN"
+PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
 source "$PROJECT_DEFINITION_PATH"
 
