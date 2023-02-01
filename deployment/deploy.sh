@@ -400,10 +400,11 @@ export DEPLOY_BTCPAY_SERVER=true
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
 
+stub_site_definition
+
 echo "HERE"
 exit 1
 
-stub_site_definition
 
 # bring the VMs up under the primary domain name.
 instantiate_vms
