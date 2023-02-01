@@ -7,6 +7,7 @@ LATEST_GIT_COMMIT="$(cat ../.git/refs/heads/master)"
 export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
 
 ./check_dependencies.sh
+./check_environment.sh
 
 DOMAIN_NAME=
 RUN_CERT_RENEWAL=true
