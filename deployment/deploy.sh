@@ -3,6 +3,9 @@
 set -ex
 cd "$(dirname "$0")"
 
+LATEST_GIT_COMMIT="$(cat ../.git/refs/heads/master)"
+export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
+
 ./check_dependencies.sh
 
 DOMAIN_NAME=
@@ -411,21 +414,19 @@ for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
     stub_site_definition
 done
 
+
 # now let's run the www and btcpay-specific provisioning scripts.
 if [ "$SKIP_WWW" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
     bash -c "./www/go.sh"
-    ssh ubuntu@"$PRIMARY_WWW_FQDN" echo "$LATEST_GIT_COMMIT" > /home/ubuntu/.ss-githead
+    ssh ubuntu@"$PRIMARY_WWW_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"
 fi
-
-# 
-LATEST_GIT_COMMIT="$(cat ../.git/refs/heads/master)"
-export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
 
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 if [ "$SKIP_BTCPAY" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
     bash -c "./btcpayserver/go.sh"
-    ssh ubuntu@"$BTCPAY_FQDN" echo "$LATEST_GIT_COMMIT" > /home/ubuntu/.ss-githead
+
+    ssh ubuntu@"$BTCPAY_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"
 fi
 
 # deploy clams wallet.
@@ -439,6 +440,5 @@ if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
         cd -
     fi
 fi
-
 
 

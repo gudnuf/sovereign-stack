@@ -5,7 +5,6 @@ cd "$(dirname "$0")"
 
 export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"
 
-OPEN_URL=true
 RUN_SERVICES=true
 
 # we will re-run the btcpayserver provisioning scripts if directed to do so.
@@ -27,7 +26,6 @@ elif [ "$RESTORE_BTCPAY" = true ]; then
     ./restore.sh
 
     RUN_SERVICES=true
-    OPEN_URL=true
     BACKUP_BTCPAY=false
 
 elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
@@ -36,7 +34,6 @@ elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
     ./stub_btcpay_setup.sh
 
     RUN_SERVICES=true
-    OPEN_URL=true
 fi
 
 # if the script gets this far, then we grab a regular backup.
@@ -49,13 +46,6 @@ if [ "$RUN_SERVICES" = true ] && [ "$STOP_SERVICES" = false ]; then
     # The default is to resume services, though admin may want to keep services off (eg., for a migration)
     # we bring the services back up by default.
     ssh "$FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-up.sh"
-
-    OPEN_URL=true
-
 fi
 
-if [ "$OPEN_URL" = true ]; then
-    if wait-for-it -t 5 "$PRIMARY_WWW_FQDN:80"; then
-        xdg-open "http://$PRIMARY_WWW_FQDN" > /dev/null 2>&1
-    fi
-fi
+echo "FINISHED btcpayserver/go.sh"

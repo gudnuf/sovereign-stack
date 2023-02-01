@@ -60,7 +60,3 @@ if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
         ./btcpayserver/stub_btcpay_setup.sh
     fi
 fi
-
-
-
-ssh "$PRIMARY_WWW_FQDN" -- echo ""

@@ -37,12 +37,6 @@ EOF
 
 fi
 
-# first of all, if there are uncommited changes, we quit. You better stash or commit!
-# Remote VPS instances are tagged with your current git HEAD so we know which code revision
-# used when provisioning the VPS.
-LATEST_GIT_COMMIT="$(cat ../.git/refs/heads/master)"
-export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
-
 if [ "$LXD_HOSTNAME" = "$BASE_IMAGE_VM_NAME" ]; then
     # this is for the base image only...
     cat >> "$YAML_PATH" <<EOF
