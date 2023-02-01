@@ -1,8 +1,7 @@
 #!/bin/bash
 
-set -eu
+set -ex
 cd "$(dirname "$0")"
-
 
 # here's the NGINX config. We support ghost and nextcloud.
 NGINX_CONF_PATH="$PROJECT_PATH/nginx.conf"
@@ -12,7 +11,6 @@ echo "" > "$NGINX_CONF_PATH"
 
 # iterate over all our domains and create the nginx config file.
 iteration=0
-echo "DOMAIN_LIST: $DOMAIN_LIST"
 
 for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"
@@ -20,10 +18,11 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export CONTAINER_TLS_PATH="/etc/letsencrypt/${DOMAIN_NAME}/live/${DOMAIN_NAME}"
     
     # source the site path so we know what features it has.
-    source "$RESPOSITORY_PATH/reset_env.sh"
+    echo "BEFORE"
+    source ../../../defaults.sh
     source "$SITE_PATH/site_definition"
-    source "$RESPOSITORY_PATH/domain_env.sh"
-
+    source ../../domain_env.sh
+    echo "after"
     if [ $iteration = 0 ]; then
         cat >>"$NGINX_CONF_PATH" <<EOL
 events {
@@ -63,7 +62,6 @@ EOL
     # http://${DOMAIN_NAME} redirect to https://${WWW_FQDN}
     server {
         listen 80;
-        listen [::]:80;
         
         server_name ${DOMAIN_NAME};
 
@@ -79,7 +77,6 @@ EOL
     # http://${WWW_FQDN} redirect to https://${WWW_FQDN}
     server {
         listen 80;
-        listen [::]:80;
         server_name ${WWW_FQDN};
         return 301 https://${WWW_FQDN}\$request_uri;
     }
@@ -92,7 +89,6 @@ EOL
     # http://${NEXTCLOUD_FQDN} redirect to https://${NEXTCLOUD_FQDN}
     server {
         listen 80;
-        listen [::]:80;
         server_name ${NEXTCLOUD_FQDN};
         return 301 https://${NEXTCLOUD_FQDN}\$request_uri;
     }
@@ -106,7 +102,6 @@ EOL
     # http://${GITEA_FQDN} redirect to https://${GITEA_FQDN}
     server {
         listen 80;
-        listen [::]:80;
         server_name ${GITEA_FQDN};
         return 301 https://${GITEA_FQDN}\$request_uri;
     }
@@ -128,14 +123,13 @@ EOL
     # http://${BTCPAY_USER_FQDN} redirect to https://${BTCPAY_USER_FQDN}
     server {
         listen 80;
-        listen [::]:80;
         server_name ${BTCPAY_SERVER_NAMES};
-        return 301 https://${BTCPAY_USER_FQDN}\$request_uri;
+        return 301 https://\$host\$request_uri;
     }
 
 EOL
 
-    if [ "$iteration" = 0 ]; then
+    if [ $iteration = 0 ]; then
         # TLS config for ghost.
         cat >>"$NGINX_CONF_PATH" <<EOL
     # global TLS settings
@@ -181,7 +175,6 @@ EOL
     # https://${DOMAIN_NAME} redirect to https://${WWW_FQDN}
     server {
         listen 443 ssl http2;
-        listen [::]:443 ssl http2;
 
         ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
@@ -274,6 +267,36 @@ EOL
 
 EOL
 
+    # Clams server entry
+
+#     cat >>"$NGINX_CONF_PATH" <<EOL
+#     # https server block for https://${CLAMS_FQDN}
+#     server {
+#         listen 443 ssl http2;
+
+#         ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+#         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
+#         ssl_trusted_certificate $CONTAINER_TLS_PATH/fullchain.pem;
+
+#         server_name ${CLAMS_FQDN};
+#         index index.js;
+
+#         root  /apps/clams;
+#         index 200.htm;
+ 
+#         location / {
+#             try_files \$uri \$uri/ /200.htm;
+#         }
+
+#         location ~* \.(?:css|js|jpg|svg)$ {
+#             expires 30d;
+#             add_header Cache-Control "public";
+#         }
+
+#     }
+
+# EOL
+
     echo "    # set up cache paths for nginx caching" >>"$NGINX_CONF_PATH"
     for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
         STACK_NAME="$DOMAIN_IDENTIFIER-$LANGUAGE_CODE"
@@ -289,7 +312,6 @@ EOL
     # Main HTTPS listener for https://${WWW_FQDN}
     server {
         listen 443 ssl http2;
-        listen [::]:443 ssl http2;
 
         ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
@@ -328,7 +350,7 @@ EOL
 
         cat >>"$NGINX_CONF_PATH" <<EOL
             proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header Host \$http_host;
+            proxy_set_header Host \$host;
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto  \$scheme;
             proxy_intercept_errors  on;
@@ -370,7 +392,7 @@ EOL
 
         cat >>"$NGINX_CONF_PATH" <<EOL
             proxy_set_header X-Real-IP \$remote_addr;
-            proxy_set_header Host \$http_host;
+            proxy_set_header Host \$host;
 
             proxy_set_header X-Forwarded-For    \$proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto  \$scheme;
@@ -421,7 +443,6 @@ EOL
     # TLS listener for ${NEXTCLOUD_FQDN}
     server {
         listen 443 ssl http2;
-        listen [::]:443 ssl http2;
 
         ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;
@@ -474,7 +495,6 @@ EOL
     # TLS listener for ${GITEA_FQDN}
     server {
         listen 443 ssl http2;
-        listen [::]:443 ssl http2;
 
         ssl_certificate $CONTAINER_TLS_PATH/fullchain.pem;
         ssl_certificate_key $CONTAINER_TLS_PATH/privkey.pem;

@@ -1,15 +1,8 @@
 #!/bin/bash
 
-set -eu
+set -ex
 cd "$(dirname "$0")"
 
-# let's make sure we have an ssh keypair. We just use $SSH_HOME/id_rsa
-# TODO convert this to SSH private key held on Trezor. THus trezor-T required for 
-# login operations. This should be configurable of course.
-if [ ! -f "$SSH_HOME/id_rsa" ]; then
-    # generate a new SSH key for the base vm image.
-    ssh-keygen -f "$SSH_HOME/id_rsa" -t ecdsa -b 521 -N ""
-fi
 
 ## This is a weird if clause since we need to LEFT-ALIGN the statement below.
 SSH_STRING="Host ${FQDN}"
@@ -40,8 +33,9 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
 
     ./stub_lxc_profile.sh "$LXD_VM_NAME"
 
+    lxc copy --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME"/"ss-docker-$(date +%Y-%m)" "$LXD_VM_NAME"
     # now let's create a new VM to work with.
-    lxc init --profile="$LXD_VM_NAME" "$VM_NAME" "$LXD_VM_NAME" --vm
+    #lxc init --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME" "$LXD_VM_NAME" --vm
 
     # let's PIN the HW address for now so we don't exhaust IP
     # and so we can set DNS internally.
@@ -50,8 +44,7 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
 
     lxc start "$LXD_VM_NAME"
 
-    ./wait_for_lxc_ip.sh "$LXD_VM_NAME"
-
+    bash -c "./wait_for_lxc_ip.sh --lxc-name=$LXD_VM_NAME"
 fi
 
 # scan the remote machine and install it's identity in our SSH known_hosts file.
@@ -68,3 +61,6 @@ if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
     fi
 fi
 
+
+
+ssh "$PRIMARY_WWW_FQDN" -- echo ""

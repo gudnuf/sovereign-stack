@@ -1,7 +1,6 @@
 #!/bin/bash
 
-set -e
-
+set -ex
 
 # let's do a refresh of the certificates. Let's Encrypt will not run if it's not time.
 docker pull certbot/certbot:latest
@@ -12,9 +11,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
     # source the site path so we know what features it has.
-    source "$RESPOSITORY_PATH/reset_env.sh"
+    source ../../defaults.sh
     source "$SITE_PATH/site_definition"
-    source "$RESPOSITORY_PATH/domain_env.sh"
+    source ../domain_env.sh
 
     # with the lxd side, we are trying to expose ALL OUR services from one IP address, which terminates
     # at a cachehing reverse proxy that runs nginx.
@@ -23,6 +22,7 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
 
     # this is minimum required; www and btcpay.
     DOMAIN_STRING="-d $DOMAIN_NAME -d $WWW_FQDN -d $BTCPAY_USER_FQDN"
+    if [ "$DOMAIN_NAME" = "$PRIMARY_DOMAIN" ]; then DOMAIN_STRING="$DOMAIN_STRING -d $CLAMS_FQDN"; fi
     if [ "$DEPLOY_NEXTCLOUD" = true ]; then DOMAIN_STRING="$DOMAIN_STRING -d $NEXTCLOUD_FQDN"; fi
     if [ "$DEPLOY_GITEA" = true ]; then DOMAIN_STRING="$DOMAIN_STRING -d $GITEA_FQDN"; fi
     if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then DOMAIN_STRING="$DOMAIN_STRING -d $NOSTR_FQDN"; fi

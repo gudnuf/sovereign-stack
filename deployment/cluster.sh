@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -ex
 cd "$(dirname "$0")"
 
 # This script is meant to be executed on the management machine.
@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 # to use LXD.
 
 DATA_PLANE_MACVLAN_INTERFACE=
-DISK_TO_USE=
+DISK_TO_USE=loop
 
 # override the cluster name.
 CLUSTER_NAME="${1:-}"
@@ -18,7 +18,7 @@ if [ -z "$CLUSTER_NAME" ]; then
 fi
 
 #shellcheck disable=SC1091
-source ./defaults.sh
+source ../defaults.sh
 
 export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
 CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
@@ -30,11 +30,10 @@ if [ ! -f "$CLUSTER_DEFINITION" ]; then
     cat >"$CLUSTER_DEFINITION" <<EOL
 #!/bin/bash
 
-# see https://www.sovereign-stack.org/cluster_definition for more info!
+# see https://www.sovereign-stack.org/cluster-definition for more info!
 
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
-export SOVEREIGN_STACK_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-export PROJECT_NAME="regtest"
+export BITCOIN_CHAIN="regtest"
 #export REGISTRY_URL="https://index.docker.io/v1/"
 
 EOL
@@ -42,7 +41,7 @@ EOL
     chmod 0744 "$CLUSTER_DEFINITION"
     echo "We stubbed out a '$CLUSTER_DEFINITION' file for you."
     echo "Use this file to customize your cluster deployment;"
-    echo "Check out 'https://www.sovereign-stack.org/cluster-definition' for an example."
+    echo "Check out 'https://www.sovereign-stack.org/cluster-definition' for more information."
     exit 1
 fi
 
@@ -50,6 +49,12 @@ source "$CLUSTER_DEFINITION"
 
 if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
     FQDN="${2:-}"
+
+    if [ -z "$FQDN" ]; then
+        echo "ERROR: You MUST provide the FQDN of the cluster host."
+        exit
+    fi
+
     shift
 
     if [ -z "$FQDN" ]; then
@@ -96,12 +101,10 @@ if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
         echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
         echo ""
 
-        ssh "ubuntu@$FQDN" lsblk
+        ssh "ubuntu@$FQDN" lsblk --paths
 
         echo "Please enter the disk or partition that Sovereign Stack will use to store data (default: loop):  "
         read -r DISK_TO_USE
-    else
-        DISK_TO_USE=loop
     fi
 
 else
@@ -113,8 +116,8 @@ fi
 # if the disk is loop-based, then we assume the / path exists.
 if [ "$DISK_TO_USE" != loop ]; then
     # ensure we actually have that disk/partition on the system.
-    if ssh "ubuntu@$FQDN" lsblk | grep -q "$DISK_TO_USE"; then
-        echo "ERROR: We could not the disk you specified. Please run this command again and supply a different disk."
+    if ! ssh "ubuntu@$FQDN" lsblk --paths | grep -q "$DISK_TO_USE"; then
+        echo "ERROR: We could not findthe disk you specified. Please run this command again and supply a different disk."
         echo "NOTE: You can always specify on the command line by adding the '--disk=/dev/sdd', for example."
         exit 1
     fi
@@ -134,13 +137,18 @@ if [ -z "$LXD_CLUSTER_PASSWORD" ]; then
 fi
 
 if ! command -v lxc >/dev/null 2>&1; then
-    if lxc profile list --format csv | grep -q sovereign-stack; then
-        lxc profile delete sovereign-stack
+    if lxc profile list --format csv | grep -q "$BASE_IMAGE_VM_NAME"; then
+        lxc profile delete "$BASE_IMAGE_VM_NAME"
         sleep 1
     fi
 
-    if lxc network list --format csv | grep -q lxdbrSS; then
-        lxc network delete lxdbrSS
+    if lxc network list --format csv | grep -q lxdbr0; then
+        lxc network delete lxdbr0
+        sleep 1
+    fi
+
+    if lxc network list --format csv | grep -q lxdbr1; then
+        lxc network delete lxdbr1
         sleep 1
     fi
 fi
@@ -148,22 +156,13 @@ fi
 ssh -t "ubuntu@$FQDN" "
 set -e
 
-# install ufw and allow SSH. 
-sudo apt update
-sudo apt upgrade -y
-sudo apt install ufw htop dnsutils nano -y
-sudo ufw allow ssh
-sudo ufw allow 8443/tcp comment 'allow LXD management'
-
-# enable the host firewall
-if sudo ufw status | grep -q 'Status: inactive'; then
-    sudo ufw enable
-fi
+# install tool/dependencies
+sudo apt-get update && sudo apt-get upgrade -y && sudo apt install htop dnsutils nano -y
 
 # install lxd as a snap if it's not installed.
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd --candidate
-    sleep 4
+    sudo snap install lxd
+    sleep 10
 fi
 "
 
@@ -173,27 +172,41 @@ if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
     DATA_PLANE_MACVLAN_INTERFACE="$(ssh -t ubuntu@"$FQDN" ip route | grep default | cut -d " " -f 5)"
 fi
 
-# stub out the lxd init file for the remote SSH endpoint.
-CLUSTER_MASTER_LXD_INIT="$CLUSTER_PATH/lxdinit_profile.yml"
-cat >"$CLUSTER_MASTER_LXD_INIT" <<EOF
+# run lxd init on the remote server.
+cat <<EOF | ssh ubuntu@"$FQDN" lxd init --preseed
 config:
   core.https_address: ${MGMT_PLANE_IP}:8443
   core.trust_password: ${LXD_CLUSTER_PASSWORD}
+  core.dns_address: ${MGMT_PLANE_IP}
   images.auto_update_interval: 15
 
 networks:
-- name: lxdbrSS
+- name: lxdbr0
+  description: "ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-}"
+  type: bridge
+  config:
+    ipv4.nat: "true"
+    ipv4.dhcp: "true"
+    ipv6.address: "none"
+    dns.mode: "managed"
+- name: lxdbr1
+  description: "For regtest"
   type: bridge
   config:
     ipv4.address: 10.139.144.1/24
-    ipv4.nat: "false"
-    ipv4.dhcp: "false"
-    ipv6.address: "none"
-    dns.mode: "none"
-  #managed: true
-  description: ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-},${DISK_TO_USE:-}
-  # lxdbrSS is an isolated inter-vm network segment with no outbount Internet access.
-
+    ipv4.nat: false
+    ipv4.dhcp: true
+    ipv6.address: none
+    dns.mode: managed
+profiles:
+- config: {}
+  description: "default profile for sovereign-stack instances."
+  devices:
+    root:
+      path: /
+      pool: ss-base
+      type: disk
+  name: default
 cluster:
   server_name: ${CLUSTER_NAME}
   enabled: true
@@ -206,8 +219,7 @@ cluster:
   cluster_token: ""
 EOF
 
-# configure the LXD Daemon with our preseed.
-cat "$CLUSTER_MASTER_LXD_INIT" | ssh "ubuntu@$FQDN" lxd init --preseed
+#    #
 
 # ensure the lxd service is available over the network, then add a lxc remote, then switch the active remote to it.
 if wait-for-it -t 20 "$FQDN:8443"; then
@@ -222,4 +234,17 @@ else
     exit 1
 fi
 
-echo "HINT: Now you can consider running 'ss-deploy'."
+# create the default storage pool if necessary
+if ! lxc storage list --format csv | grep -q ss-base; then
+
+    if [ "$DISK_TO_USE" != loop ]; then
+        # we omit putting a size here so, so LXD will consume the entire disk if '/dev/sdb' or partition if '/dev/sdb1'.
+        # TODO do some sanity/resource checking on DISK_TO_USE. Impelment full-disk encryption?
+        lxc storage create ss-base zfs source="$DISK_TO_USE"
+
+    else
+        # if a disk is the default 'loop', then we create a zfs storage pool 
+        # on top of the existing filesystem using a loop device, per LXD docs
+        lxc storage create ss-base zfs
+    fi
+fi

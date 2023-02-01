@@ -1,10 +1,7 @@
 #!/bin/bash
 
-set -e
+set -ex
 cd "$(dirname "$0")"
-
-RESPOSITORY_PATH="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
-export RESPOSITORY_PATH="$RESPOSITORY_PATH"
 
 ./check_dependencies.sh
 
@@ -108,7 +105,7 @@ if [ "$RESTORE_BTCPAY" = true ] && [ -z "$BACKUP_BTCPAY_ARCHIVE_PATH" ]; then
 fi
 
 # set up our default paths.
-source ./defaults.sh
+source ../defaults.sh
 
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
@@ -126,26 +123,23 @@ export BACKUP_BTCPAY_ARCHIVE_PATH="$BACKUP_BTCPAY_ARCHIVE_PATH"
 export RESTART_FRONT_END="$RESTART_FRONT_END"
 
 
-# ensure our cluster path is created.
-mkdir -p "$CLUSTER_PATH"
-
-# if an authorized_keys file does not exist, we'll stub one out with the current user.
-# add additional id_rsa.pub entries manually for more administrative logins.
-if [ ! -f "$CLUSTER_PATH/authorized_keys" ]; then
-    cat "$SSH_HOME/id_rsa.pub" >> "$CLUSTER_PATH/authorized_keys"
-    echo "INFO: Sovereign Stack just stubbed out '$CLUSTER_PATH/authorized_keys'. Go update it."
-    echo "      Add ssh pubkeys for your various management machines, if any."
-    echo "      By default we added your main ssh pubkey: '$SSH_HOME/id_rsa.pub'."
-    exit 1
+# todo convert this to Trezor-T
+SSH_PUBKEY_PATH="$SSH_HOME/id_rsa.pub"
+export SSH_PUBKEY_PATH="$SSH_PUBKEY_PATH"
+if [ ! -f "$SSH_PUBKEY_PATH" ]; then
+    # generate a new SSH key for the base vm image.
+    ssh-keygen -f "$SSH_HOME/id_rsa" -t ecdsa -b 521 -N ""
 fi
 
+# ensure our cluster path is created.
+mkdir -p "$CLUSTER_PATH"
 
 CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
 export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
 #########################################
 if [ ! -f "$CLUSTER_DEFINITION" ]; then
-    echo "ERROR: The cluster definition could not be found. You may need to re-run 'ss-cluster create'."
+    echo "ERROR: The cluster definition could not be found. You may need to re-run 'ss-cluster'."
     exit 1
 fi
 
@@ -158,7 +152,6 @@ function new_pass {
 
 function instantiate_vms {
 
-    export BTC_CHAIN="$BTC_CHAIN"
     export UPDATE_BTCPAY="$UPDATE_BTCPAY"
     export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
 
@@ -173,7 +166,7 @@ function instantiate_vms {
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
         source "$SITE_PATH/site_definition"
-        source "$RESPOSITORY_PATH/domain_env.sh"
+        source ./domain_env.sh
 
         # VALIDATE THE INPUT from the ENVFILE
         if [ -z "$DOMAIN_NAME" ]; then
@@ -181,12 +174,15 @@ function instantiate_vms {
             exit 1
         fi
 
+        # # switch to the default project
+        # if ! lxc project list --format csv | grep -a "default (current)"; then
+        #     lxc project switch default
+        # fi
 
-        # first let's get the DISK_TO_USE and DATA_PLANE_MACVLAN_INTERFACE from the ss-config
-        # which is set up during LXD cluster creation ss-cluster.
+        # Goal is to get the macvlan interface.
         LXD_SS_CONFIG_LINE=
-        if lxc network list --format csv | grep lxdbrSS | grep -q ss-config; then
-            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
+        if lxc network list --format csv | grep lxdbr0 | grep -q ss-config; then
+            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbr0 | grep ss-config)"
         fi
 
         if [ -z "$LXD_SS_CONFIG_LINE" ]; then
@@ -196,22 +192,25 @@ function instantiate_vms {
 
         CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
         DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
-        DISK_TO_USE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f3)"
-
         export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
-        export DISK_TO_USE="$DISK_TO_USE"
 
-        ./deployment/create_lxc_base.sh
+
+        # # switch to the default project to ensure the base image is created.
+        # if ! lxc project list --format csv | grep -a "default (current)"; then
+        #     lxc project switch default
+        # fi
+
+        # create the lxd base image.
+        ./create_lxc_base.sh
+
+        # # now switch to the current chain project.
+        # if ! lxc project list --format csv | grep -a "$BITCOIN_CHAIN"; then
+        #     lxc project switch "$BITCOIN_CHAIN"
+        # fi
 
         export MAC_ADDRESS_TO_PROVISION=
         export VPS_HOSTNAME="$VPS_HOSTNAME"
         export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
-
-        # ensure the admin has set the MAC address for the base image.
-        if [ -z "$SOVEREIGN_STACK_MAC_ADDRESS" ]; then
-            echo "ERROR: SOVEREIGN_STACK_MAC_ADDRESS is undefined. Check your project definition."
-            exit 1
-        fi
 
         DDNS_HOST=
 
@@ -226,17 +225,19 @@ function instantiate_vms {
             DDNS_HOST="$WWW_HOSTNAME"
             ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
         elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$SKIP_BTCPAY" = true ]; then
+
+
             DDNS_HOST="$BTCPAY_HOSTNAME"
             VPS_HOSTNAME="$BTCPAY_HOSTNAME"
             MAC_ADDRESS_TO_PROVISION="$BTCPAYSERVER_MAC_ADDRESS"
-            if [ "$BTC_CHAIN" = mainnet ]; then
+            if [ "$BITCOIN_CHAIN" = mainnet ]; then
                 ROOT_DISK_SIZE_GB=150
-            elif [ "$BTC_CHAIN" = testnet ]; then
+            elif [ "$BITCOIN_CHAIN" = testnet ]; then
                 ROOT_DISK_SIZE_GB=70
             fi
 
-        elif [ "$VIRTUAL_MACHINE" = "sovereign-stack" ]; then
-            DDNS_HOST="sovereign-stack-base"
+        elif [ "$VIRTUAL_MACHINE" = "$BASE_IMAGE_VM_NAME" ]; then
+            DDNS_HOST="$BASE_IMAGE_VM_NAME"
             ROOT_DISK_SIZE_GB=8
         else
             echo "ERROR: VIRTUAL_MACHINE not within allowable bounds."
@@ -249,16 +250,12 @@ function instantiate_vms {
         export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
         export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
         export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
-        ./deployment/deploy_vms.sh
 
-        # if the local docker client isn't logged in, do so;
-        # this helps prevent docker pull errors since they throttle.
-        # if [ ! -f "$HOME/.docker/config.json" ]; then
-        #     echo "$REGISTRY_PASSWORD" | docker login --username "$REGISTRY_USERNAME" --password-stdin
-        # fi
+        ./deploy_vms.sh
 
         # this tells our local docker client to target the remote endpoint via SSH
         export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
+
 
         # enable docker swarm mode so we can support docker stacks.
         if docker info | grep -q "Swarm: inactive"; then
@@ -293,7 +290,7 @@ export SITE_LANGUAGE_CODES="en"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 export DEPLOY_GHOST=true
 export DEPLOY_NEXTCLOUD=false
-export NOSTR_ACCOUNT_PUBKEY="NOSTR_IDENTITY_PUBKEY_GOES_HERE"
+export NOSTR_ACCOUNT_PUBKEY=
 export DEPLOY_GITEA=false
 export GHOST_MYSQL_PASSWORD="$(new_pass)"
 export GHOST_MYSQL_ROOT_PASSWORD="$(new_pass)"
@@ -305,7 +302,7 @@ export GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
 EOL
 
             chmod 0744 "$SITE_DEFINITION_PATH"
-            echo "INFO: we stubbed a new site_definition for you at '$SITE_DEFINITION_PATH'. Go update it yo!"
+            echo "INFO: we stubbed a new site_definition for you at '$SITE_DEFINITION_PATH'. Go update it!"
             exit 1
 
         fi
@@ -313,28 +310,26 @@ EOL
 
 }
 
-CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
-PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
+PROJECT_PATH="$PROJECTS_DIR/$BITCOIN_CHAIN"
 mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
 export PROJECT_PATH="$PROJECT_PATH"
 
 # create a symlink from ./clusterpath/projects/project
-if [ ! -d "$CLUSTER_PATH/projects/$PROJECT_NAME" ]; then
-    ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$PROJECT_NAME"
+if [ ! -d "$CLUSTER_PATH/projects/$BITCOIN_CHAIN" ]; then
+    ln -s "$PROJECT_PATH" "$CLUSTER_PATH/projects/$BITCOIN_CHAIN"
 fi
 
-# check if we need to provision a new lxc project.
-if [ "$PROJECT_NAME" != "$CURRENT_PROJECT" ]; then
-    if ! lxc project list | grep -q "$PROJECT_NAME"; then
-        echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
-        lxc project create "$PROJECT_NAME"
-    fi
-
-    echo "INFO: switch to lxd project '$PROJECT_NAME'."
-    lxc project switch "$PROJECT_NAME"
-
+# create the lxc project as specified by BITCOIN_CHAIN
+if ! lxc project list | grep -q "$BITCOIN_CHAIN"; then
+    echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
+    lxc project create "$BITCOIN_CHAIN"
 fi
 
+# # check if we need to provision a new lxc project.
+# if [ "$BITCOIN_CHAIN" != "$CURRENT_PROJECT" ]; then
+#     echo "INFO: switch to lxd project '$BITCOIN_CHAIN'."
+#     lxc project switch "$BITCOIN_CHAIN"
+# fi
 
 # check to see if the enf file exists. exist if not.
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
@@ -346,11 +341,10 @@ if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
 
 # see https://www.sovereign-stack.org/project-definition for more info.
 
-export WWW_SERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-export BTCPAYSERVER_MAC_ADDRESS="CHANGE_ME_REQUIRED"
-export BTC_CHAIN="regtest|testnet|mainnet"
-export PRIMARY_DOMAIN="domain0.tld"
-export OTHER_SITES_LIST="domain1.tld,domain2.tld,domain3.tld"
+export WWW_SERVER_MAC_ADDRESS=
+export BTCPAYSERVER_MAC_ADDRESS=
+export PRIMARY_DOMAIN=
+#export OTHER_SITES_LIST="domain1.tld,domain2.tld,domain3.tld"
 export BTCPAY_SERVER_CPU_COUNT="4"
 export BTCPAY_SERVER_MEMORY_MB="4096"
 export WWW_SERVER_CPU_COUNT="6"
@@ -359,14 +353,30 @@ export WWW_SERVER_MEMORY_MB="4096"
 EOL
 
     chmod 0744 "$PROJECT_DEFINITION_PATH"
-    echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it yo!"
-    echo "INFO: Learn more at https://www.sovereign-stack.org/project-definitions/"
+    echo "INFO: we stubbed a new project_defition for you at '$PROJECT_DEFINITION_PATH'. Go update it!"
+    echo "INFO: Learn more at https://www.sovereign-stack.org/projects/"
 
     exit 1
 fi
 
 # source project defition.
 source "$PROJECT_DEFINITION_PATH"
+
+if [ -z "$PRIMARY_DOMAIN" ]; then
+    echo "ERROR: The PRIMARY_DOMAIN is not specified. Check your project_definition."
+    exit 1
+fi
+
+if [ -z "$WWW_SERVER_MAC_ADDRESS" ]; then
+    echo "ERROR: the WWW_SERVER_MAC_ADDRESS is not specified. Check your project_definition."
+    exit 1
+fi
+
+
+if [ -z "$BTCPAYSERVER_MAC_ADDRESS" ]; then
+    echo "ERROR: the BTCPAYSERVER_MAC_ADDRESS is not specified. Check your project_definition."
+    exit 1
+fi
 
 # the DOMAIN_LIST is a complete list of all our domains. We often iterate over this list.
 DOMAIN_LIST="${PRIMARY_DOMAIN}"
@@ -403,11 +413,32 @@ done
 
 # now let's run the www and btcpay-specific provisioning scripts.
 if [ "$SKIP_WWW" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
-    bash -c "./deployment/www/go.sh"
+    bash -c "./www/go.sh"
+    ssh ubuntu@"$PRIMARY_WWW_FQDN" echo "$LATEST_GIT_COMMIT" > /home/ubuntu/.ss-githead
 fi
+
+# 
+LATEST_GIT_COMMIT="$(cat ../.git/refs/heads/master)"
+export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
 
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 if [ "$SKIP_BTCPAY" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
-    bash -c "./deployment/btcpayserver/go.sh"
+    bash -c "./btcpayserver/go.sh"
+    ssh ubuntu@"$BTCPAY_FQDN" echo "$LATEST_GIT_COMMIT" > /home/ubuntu/.ss-githead
 fi
+
+# deploy clams wallet.
+LOCAL_CLAMS_PATH="$(pwd)/www/clams"
+if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+    if [ ! -d "$LOCAL_CLAMS_PATH" ]; then
+        git clone "$CLAMS_GIT_REPO" "$LOCAL_CLAMS_PATH"
+    else
+        cd "$LOCAL_CLAMS_PATH"
+        git pull
+        cd -
+    fi
+fi
+
+
+

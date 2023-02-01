@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -ex
 cd "$(dirname "$0")"
 
 docker pull "$NOSTR_RELAY_IMAGE"
@@ -10,9 +10,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
     # source the site path so we know what features it has.
-    source "$RESPOSITORY_PATH/reset_env.sh"
+    source ../../../defaults.sh
     source "$SITE_PATH/site_definition"
-    source "$RESPOSITORY_PATH/domain_env.sh"
+    source ../../domain_env.sh
 
     if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then
         REMOTE_NOSTR_PATH="$REMOTE_HOME/nostr"

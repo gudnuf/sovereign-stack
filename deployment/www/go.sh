@@ -14,10 +14,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
     # source the site path so we know what features it has.
-    source "$RESPOSITORY_PATH/reset_env.sh"
+    source ../../defaults.sh
     source "$SITE_PATH/site_definition"
-    source "$RESPOSITORY_PATH/domain_env.sh"
-
+    source ../domain_env.sh
 
     ### Let's check to ensure all the requiredsettings are set.
     if [ "$DEPLOY_GHOST" = true ]; then
@@ -65,8 +64,6 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
         exit 1
     fi
 
-    TOR_CONFIG_PATH=
-
 done
 
 ./stop_docker_stacks.sh
@@ -108,9 +105,9 @@ if [ "$RESTART_FRONT_END" = true ]; then
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
         # source the site path so we know what features it has.
-        source "$RESPOSITORY_PATH/reset_env.sh"
+        source ../../defaults.sh
         source "$SITE_PATH/site_definition"
-        source "$RESPOSITORY_PATH/domain_env.sh"
+        source ../domain_env.sh
 
         # these variable are used by both backup/restore scripts.
         export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups/www/$APP/$DOMAIN_IDENTIFIER"
@@ -140,6 +137,7 @@ fi
 ./stub/nextcloud_yml.sh
 ./stub/gitea_yml.sh
 ./stub/nostr_yml.sh
+
 
 # # start a browser session; point it to port 80 to ensure HTTPS redirect.
 # # WWW_FQDN is in our certificate, so we resolve to that.

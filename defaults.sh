@@ -1,10 +1,29 @@
 #!/bin/bash
 
-set -eu
+set -ex
 
-export WWW_SERVER_MAC_ADDRESS=
+if lxc remote get-default | grep -q "production"; then
+    echo "WARNING: You are running a migration procedure on a production system."
+    echo ""
+
+    # check if there are any uncommited changes. It's dangerous to 
+    # alter production systems when you have commits to make or changes to stash.
+    if git update-index --refresh | grep -q "needs update"; then
+        echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
+        exit 1
+    fi
+
+    RESPONSE=
+    read -r -p "         Are you sure you want to continue (y)  ": RESPONSE
+    if [ "$RESPONSE" != "y" ]; then
+        echo "STOPPING."
+        exit 1
+    fi
+
+fi
+
+
 export DEPLOY_WWW_SERVER=false
-export DEPLOY_BTCPAY_SERVER=false
 export DEPLOY_GHOST=false
 
 export DEPLOY_NEXTCLOUD=false
@@ -16,6 +35,8 @@ export BTCPAY_HOSTNAME_IN_CERT="btcpay"
 export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
+export CLAMS_HOSTNAME="clams"
+export CLAMS_GIT_REPO="https://github.com/farscapian/clams-app-docker.git"
 
 export SITE_LANGUAGE_CODES="en"
 export LANGUAGE_CODE="en"
@@ -37,7 +58,7 @@ export DUPLICITY_BACKUP_PASSPHRASE=
 
 export SSH_HOME="$HOME/.ssh"
 export PASS_HOME="$HOME/.password-store"
-export VM_NAME="sovereign-stack-base"
+
 
 export BTCPAY_SERVER_CPU_COUNT="4"
 export BTCPAY_SERVER_MEMORY_MB="4096"
@@ -47,23 +68,6 @@ export WWW_SERVER_MEMORY_MB="4096"
 export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 
 export NEXTCLOUD_SPACE_GB=10
-
-# first of all, if there are uncommited changes, we quit. You better stash or commit!
-# Remote VPS instances are tagged with your current git HEAD so we know which code revision
-# used when provisioning the VPS.
-#LATEST_GIT_COMMIT="$(cat ./.git/refs/heads/master)"
-#export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
-
-# check if there are any uncommited changes. It's dangerous to instantiate VMs using
-# code that hasn't been committed.
-# if git update-index --refresh | grep -q "needs update"; then
-#     echo "ERROR: You have uncommited changes! Better stash your work with 'git stash'."
-#     exit 1
-# fi
-
-BTC_CHAIN=regtest
-
-export BTC_CHAIN="$BTC_CHAIN"
 
 DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
@@ -89,7 +93,6 @@ export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 export NOSTR_RELAY_IMAGE="scsibug/nostr-rs-relay"
 
-export SOVEREIGN_STACK_MAC_ADDRESS=
 export WWW_SERVER_MAC_ADDRESS=
 export BTCPAYSERVER_MAC_ADDRESS=
 
@@ -97,9 +100,11 @@ export CLUSTERS_DIR="$HOME/ss-clusters"
 export PROJECTS_DIR="$HOME/ss-projects"
 export SITES_PATH="$HOME/ss-sites"
 
-
 # The base VM image.
-export BASE_LXC_IMAGE="ubuntu/22.04/cloud"
+export LXD_UBUNTU_BASE_VERSION="22.04"
+export BASE_IMAGE_VM_NAME="ss-base-${LXD_UBUNTU_BASE_VERSION//./-}"
+export BASE_LXC_IMAGE="ubuntu/$LXD_UBUNTU_BASE_VERSION/cloud"
+export UBUNTU_BASE_IMAGE_NAME="ss-ubuntu-${LXD_UBUNTU_BASE_VERSION//./-}"
 
 # Deploy a registry cache on your management machine.
 export DEPLOY_MGMT_REGISTRY=false
@@ -114,3 +119,4 @@ export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
 # this space is for OS, docker images, etc. DOES NOT INCLUDE USER DATA.
 export ROOT_DISK_SIZE_GB=20
 export REGISTRY_URL="https://index.docker.io/v1/"
+export PRIMARY_DOMAIN=

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+alias ss-deploy='/home/ubuntu/sovereign-stack/deployment/deploy.sh $@'
+alias ss-cluster='/home/ubuntu/sovereign-stack/deployment/cluster.sh $@'
+alias ss-show='/home/ubuntu/sovereign-stack/deployment/show.sh $@'
+alias ss-reset='/home/ubuntu/sovereign-stack/deployment/reset.sh $@'
+alias ss-migrate='/home/ubuntu/sovereign-stack/deployment/migrate.sh $@'
+alias ss-destroy='/home/ubuntu/sovereign-stack/deployment/destroy.sh $@'
+alias ss-help='cat /home/ubuntu/sovereign-stack/deployment/help.txt'
+
+alias ll='ls -lah'

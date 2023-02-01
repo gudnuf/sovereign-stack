@@ -9,9 +9,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
     # source the site path so we know what features it has.
-    source "$RESPOSITORY_PATH/reset_env.sh"
+    source ../../defaults.sh
     source "$SITE_PATH/site_definition"
-    source "$RESPOSITORY_PATH/domain_env.sh"
+    source ../domain_env.sh
 
     ### Stop all services.
     for APP in ghost nextcloud gitea nostr; do

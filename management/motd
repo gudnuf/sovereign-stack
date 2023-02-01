@@ -1,0 +1,4 @@
+#!/bin/bash
+
+echo "Welcome to the management environment. Run 'ss-help' to get started."
+
