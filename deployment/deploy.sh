@@ -406,10 +406,6 @@ stub_site_definition
 instantiate_vms
 
 
-echo "HERE"
-exit 1
-
-
 # let's stub out the rest of our site definitions, if any.
 for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"
