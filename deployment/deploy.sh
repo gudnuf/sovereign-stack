@@ -402,12 +402,13 @@ export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
 
 stub_site_definition
 
+# bring the VMs up under the primary domain name.
+instantiate_vms
+
+
 echo "HERE"
 exit 1
 
-
-# bring the VMs up under the primary domain name.
-instantiate_vms
 
 # let's stub out the rest of our site definitions, if any.
 for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
