@@ -13,8 +13,8 @@ DOMAIN_NAME=
 RUN_CERT_RENEWAL=true
 SKIP_WWW=false
 RESTORE_WWW=false
-BACKUP_CERTS=true
-BACKUP_APPS=true
+BACKUP_CERTS=false
+BACKUP_APPS=false
 BACKUP_BTCPAY=true
 BACKUP_BTCPAY_ARCHIVE_PATH=
 RESTORE_BTCPAY=false
@@ -126,7 +126,6 @@ export USER_SAYS_YES="$USER_SAYS_YES"
 export BACKUP_BTCPAY_ARCHIVE_PATH="$BACKUP_BTCPAY_ARCHIVE_PATH"
 export RESTART_FRONT_END="$RESTART_FRONT_END"
 
-
 # todo convert this to Trezor-T
 SSH_PUBKEY_PATH="$SSH_HOME/id_rsa.pub"
 export SSH_PUBKEY_PATH="$SSH_PUBKEY_PATH"
@@ -185,8 +184,8 @@ function instantiate_vms {
 
         # Goal is to get the macvlan interface.
         LXD_SS_CONFIG_LINE=
-        if lxc network list --format csv | grep lxdbrSS | grep -q ss-config; then
-            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbrSS | grep ss-config)"
+        if lxc network list --format csv | grep lxdbr0 | grep -q ss-config; then
+            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbr0 | grep ss-config)"
         fi
 
         if [ -z "$LXD_SS_CONFIG_LINE" ]; then
@@ -205,7 +204,7 @@ function instantiate_vms {
         # fi
 
         # create the lxd base image.
-        #./create_lxc_base.sh
+        ./create_lxc_base.sh
 
         # # now switch to the current chain project.
         # if ! lxc project list --format csv | grep -a "$BITCOIN_CHAIN"; then
@@ -257,15 +256,15 @@ function instantiate_vms {
 
         ./deploy_vms.sh
 
-        # this tells our local docker client to target the remote endpoint via SSH
-        export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
+        if [ "$VIRTUAL_MACHINE" = www ]; then
+            # this tells our local docker client to target the remote endpoint via SSH
+            export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
 
-
-        # enable docker swarm mode so we can support docker stacks.
-        if docker info | grep -q "Swarm: inactive"; then
-            docker swarm init --advertise-addr enp6s0
+            # enable docker swarm mode so we can support docker stacks.
+            if docker info | grep -q "Swarm: inactive"; then
+                docker swarm init --advertise-addr enp6s0
+            fi
         fi
-
     done
 
 }
@@ -314,8 +313,10 @@ EOL
 
 }
 
+PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
 PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
 mkdir -p "$PROJECT_PATH" "$CLUSTER_PATH/projects"
+export PROJECT_NAME="$PROJECT_NAME"
 export PROJECT_PATH="$PROJECT_PATH"
 
 # create a symlink from ./clusterpath/projects/project
@@ -327,12 +328,13 @@ fi
 if ! lxc project list | grep -q "$PROJECT_NAME"; then
     echo "INFO: The lxd project specified in the cluster_definition did not exist. We'll create one!"
     lxc project create "$PROJECT_NAME"
+    lxc project set "$PROJECT_NAME" features.networks=true
 fi
 
 # # check if we need to provision a new lxc project.
-# if [ "$BITCOIN_CHAIN" != "$CURRENT_PROJECT" ]; then
-#     echo "INFO: switch to lxd project '$BITCOIN_CHAIN'."
-#     lxc project switch "$BITCOIN_CHAIN"
+# if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
+#     echo "INFO: switch to lxd project '$PROJECT_NAME'."
+#     lxc project switch "$PROJECT_NAME"
 # fi
 
 # check to see if the enf file exists. exist if not.
@@ -426,21 +428,7 @@ fi
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 if [ "$SKIP_BTCPAY" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
-    bash -c "./btcpayserver/go.sh"
+    ./btcpayserver/go.sh
 
     ssh ubuntu@"$BTCPAY_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"
 fi
-
-# deploy clams wallet.
-LOCAL_CLAMS_PATH="$(pwd)/www/clams"
-if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
-    if [ ! -d "$LOCAL_CLAMS_PATH" ]; then
-        git clone "$CLAMS_GIT_REPO" "$LOCAL_CLAMS_PATH"
-    else
-        cd "$LOCAL_CLAMS_PATH"
-        git pull
-        cd -
-    fi
-fi
-
-

@@ -1,8 +1,14 @@
 #!/bin/bash
 
-set -exu
+set -ex
 cd "$(dirname "$0")"
 # this script takes down all resources in the cluster. This script is DESTRUCTIVE of data, so make sure it's backed up first.
+
+
+if lxc remote get-default | grep -q "local"; then
+    echo "ERROR: you are on the local lxc remote. Nothing to destroy"
+    exit 1
+fi
 
 RESPONSE=
 read -r -p "Are you sure you want to continue? Responding 'y' here results in destruction of user data!": RESPONSE
@@ -12,6 +18,8 @@ if [ "$RESPONSE" != "y" ]; then
 fi
 
 . ../defaults.sh
+
+
 . ./cluster_env.sh
 
 for VM in www btcpayserver; do

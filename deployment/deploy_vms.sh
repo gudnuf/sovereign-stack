@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -exu
 cd "$(dirname "$0")"
 
 
@@ -34,8 +34,9 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
     ./stub_lxc_profile.sh "$LXD_VM_NAME"
 
     lxc copy --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME"/"ss-docker-$(date +%Y-%m)" "$LXD_VM_NAME"
+
     # now let's create a new VM to work with.
-    #lxc init --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME" "$LXD_VM_NAME" --vm
+    #@lxc init --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME" "$LXD_VM_NAME" --vm
 
     # let's PIN the HW address for now so we don't exhaust IP
     # and so we can set DNS internally.
@@ -52,11 +53,3 @@ ssh-keyscan -H -t ecdsa "$FQDN" >> "$SSH_HOME/known_hosts"
 
 # create a directory to store backup archives. This is on all new vms.
 ssh "$FQDN" mkdir -p "$REMOTE_HOME/backups"
-
-# if this execution is for btcpayserver, then we run the stub/btcpay setup script
-# but only if it hasn't been executed before.
-if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
-    if [ "$(ssh "$BTCPAY_FQDN" [[ ! -f "$REMOTE_HOME/btcpay.complete" ]]; echo $?)" -eq 0 ]; then
-        ./btcpayserver/stub_btcpay_setup.sh
-    fi
-fi

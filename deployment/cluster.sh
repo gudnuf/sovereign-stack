@@ -8,12 +8,13 @@ cd "$(dirname "$0")"
 # to use LXD.
 
 DATA_PLANE_MACVLAN_INTERFACE=
-DISK_TO_USE=loop
+DISK_TO_USE=
 
 # override the cluster name.
 CLUSTER_NAME="${1:-}"
 if [ -z "$CLUSTER_NAME" ]; then
-    echo "ERROR: The cluster name was not provided."
+    echo "ERROR: The cluster name was not provided. Syntax is: 'ss-cluster CLUSTER_NAME SSH_HOST_FQDN'"
+    echo "  for example: 'ss-cluster dev clusterhost01.domain.tld"
     exit 1
 fi
 
@@ -34,6 +35,7 @@ if [ ! -f "$CLUSTER_DEFINITION" ]; then
 
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
 export BITCOIN_CHAIN="regtest"
+export PROJECT_PREFIX="dev"
 #export REGISTRY_URL="https://index.docker.io/v1/"
 
 EOL
@@ -147,10 +149,6 @@ if ! command -v lxc >/dev/null 2>&1; then
         sleep 1
     fi
 
-    if lxc network list --format csv | grep -q lxdbr1; then
-        lxc network delete lxdbr1
-        sleep 1
-    fi
 fi
 
 ssh -t "ubuntu@$FQDN" "
@@ -172,6 +170,9 @@ if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
     DATA_PLANE_MACVLAN_INTERFACE="$(ssh -t ubuntu@"$FQDN" ip route | grep default | cut -d " " -f 5)"
 fi
 
+export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
+
+echo "DATA_PLANE_MACVLAN_INTERFACE: $DATA_PLANE_MACVLAN_INTERFACE"
 # run lxd init on the remote server.
 cat <<EOF | ssh ubuntu@"$FQDN" lxd init --preseed
 config:
@@ -179,22 +180,13 @@ config:
   core.trust_password: ${LXD_CLUSTER_PASSWORD}
   core.dns_address: ${MGMT_PLANE_IP}
   images.auto_update_interval: 15
-
+  
 networks:
 - name: lxdbr0
-  description: "ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-}"
+  description: "ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-error}"
   type: bridge
   config:
-    ipv4.nat: "true"
-    ipv4.dhcp: "true"
-    ipv6.address: "none"
-    dns.mode: "managed"
-- name: lxdbr1
-  description: "For regtest"
-  type: bridge
-  config:
-    ipv4.address: 10.139.144.1/24
-    ipv4.nat: false
+    ipv4.nat: true
     ipv4.dhcp: true
     ipv6.address: none
     dns.mode: managed
@@ -218,8 +210,6 @@ cluster:
   cluster_certificate_path: ""
   cluster_token: ""
 EOF
-
-#    #
 
 # ensure the lxd service is available over the network, then add a lxc remote, then switch the active remote to it.
 if wait-for-it -t 20 "$FQDN:8443"; then

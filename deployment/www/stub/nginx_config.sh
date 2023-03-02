@@ -141,7 +141,7 @@ EOL
     add_header Strict-Transport-Security "max-age=63072000" always;
     ssl_stapling on;
     ssl_stapling_verify on;
-    resolver 198.54.117.10;
+    e
     # TODO change resolver to local DNS resolver, or inherit from system.
 
 

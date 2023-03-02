@@ -3,8 +3,8 @@
 set -eu
 cd "$(dirname "$0")"
 
-if ! lxc remote get-default | grep -q local; then
-    lxc remote switch local
+if ! lxc remote get-default | grep -q "local"; then
+    lxc remote switch "local"
 fi
 
 # if the mgmt machine doesn't exist, then warn the user to perform ./install.sh
@@ -24,4 +24,5 @@ fi
 
 wait-for-it -t 300 "$IP_V4_ADDRESS:22" > /dev/null 2>&1
 
+# let's ensure ~/.ssh/ssh_config is using the correct IP address for ss-mgmt.
 ssh ubuntu@"$IP_V4_ADDRESS"

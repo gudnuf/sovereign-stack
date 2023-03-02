@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 export DEPLOY_WWW_SERVER=false
 export DEPLOY_GHOST=false
@@ -89,7 +89,7 @@ export UBUNTU_BASE_IMAGE_NAME="ss-ubuntu-${LXD_UBUNTU_BASE_VERSION//./-}"
 export DEPLOY_MGMT_REGISTRY=false
 export OTHER_SITES_LIST=
 export BTCPAY_ALT_NAMES=
-
+export BITCOIN_CHAIN=regtest
 export REMOTE_HOME="/home/ubuntu"
 
 export BTCPAY_SERVER_APPPATH="$REMOTE_HOME/btcpayserver-docker"

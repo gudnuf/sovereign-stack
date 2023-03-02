@@ -24,7 +24,7 @@ fi
 
 # install snap
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd
+    sudo snap install lxd --channel=5.11/candidate
     sleep 3
 
     # run lxd init on the remote server./dev/nvme1n1
@@ -39,8 +39,7 @@ networks:
     ipv6.address: none
   description: "Default network bridge for ss-mgmt outbound network access."
   name: lxdbr0
-  type: "bridge"
-  project: default
+  type: bridge
 storage_pools:
 - config:
     source: ${DISK}
@@ -73,7 +72,7 @@ if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
 fi
 
 if ! lxc list --format csv | grep -q ss-mgmt; then
-    lxc init "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB
+    lxc init "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
 
     # mount the pre-verified sovereign stack git repo into the new vm
     lxc config device add ss-mgmt sscode disk source="$(pwd)" path=/home/ubuntu/sovereign-stack
@@ -81,7 +80,7 @@ fi
 
 if lxc list --format csv | grep -q "ss-mgmt,STOPPED"; then
     lxc start ss-mgmt
-    sleep 15
+    sleep 20
 fi
 
 . ./management/wait_for_lxc_ip.sh
@@ -92,13 +91,15 @@ fi
 #     sleep 1
 # done
 
-# now run the mgmt provisioning script.
 SSH_PUBKEY_PATH="$HOME/.ssh/id_rsa.pub"
+if [ ! -f "$SSH_PUBKEY_PATH" ]; then
+    ssh-keygen -f "$SSH_HOME/id_rsa" -t ecdsa -b 521 -N ""
+fi
+
+# now run the mgmt provisioning script.
+
 if [ -f "$SSH_PUBKEY_PATH" ]; then
     lxc file push "$SSH_PUBKEY_PATH" ss-mgmt/home/ubuntu/.ssh/authorized_keys
-else
-    echo "ERROR: You need to generate an SSH key."
-    exit 1
 fi
 
 lxc file push ./management/bash_profile ss-mgmt/home/ubuntu/.bash_profile

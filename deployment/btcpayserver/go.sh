@@ -5,6 +5,15 @@ cd "$(dirname "$0")"
 
 export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"
 
+docker pull btcpayserver/lightning:v22.11.1
+docker build -t clightning:latest ./core-lightning
+
+# run the btcpay setup script if it hasn't been done before.
+if [ "$(ssh "$BTCPAY_FQDN" [[ ! -f "$REMOTE_HOME/btcpay.complete" ]]; echo $?)" -eq 0 ]; then
+    ./stub_btcpay_setup.sh
+    BACKUP_BTCPAY=false
+fi
+
 RUN_SERVICES=true
 
 # we will re-run the btcpayserver provisioning scripts if directed to do so.
@@ -34,6 +43,7 @@ elif [ "$RECONFIGURE_BTCPAY_SERVER" == true ]; then
     ./stub_btcpay_setup.sh
 
     RUN_SERVICES=true
+    BACKUP_BTCPAY=false
 fi
 
 # if the script gets this far, then we grab a regular backup.

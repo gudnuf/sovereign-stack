@@ -137,7 +137,7 @@ fi
 ./stub/nextcloud_yml.sh
 ./stub/gitea_yml.sh
 ./stub/nostr_yml.sh
-
+./deploy_clams.sh
 
 # # start a browser session; point it to port 80 to ensure HTTPS redirect.
 # # WWW_FQDN is in our certificate, so we resolve to that.

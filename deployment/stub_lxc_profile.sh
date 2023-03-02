@@ -107,14 +107,15 @@ if [ "$LXD_HOSTNAME" = "$BASE_IMAGE_VM_NAME" ]; then
       - path: /etc/docker/daemon.json
         content: |
               {
-                "registry-mirrors": ["${REGISTRY_URL}"],
-                "labels": [ "githead=${LATEST_GIT_COMMIT}" ]
+                "registry-mirrors": ["${REGISTRY_URL}"]
               }
 
     runcmd:
       - sudo apt-get install -y openssh-server
 
 EOF
+#,
+#"labels": [ "githead=${LATEST_GIT_COMMIT}" ]
 
 else 
     # all other machines.
@@ -195,7 +196,7 @@ cat >> "$YAML_PATH" <<EOF
     type: nic
   enp6s0:
     name: enp6s0
-    network: lxdbr1
+    network: lxdbr0
     type: nic
 
 name: ${PRIMARY_DOMAIN}

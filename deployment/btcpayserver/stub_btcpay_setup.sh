@@ -3,12 +3,26 @@
 set -e
 cd "$(dirname "$0")"
 
+# default is for regtest
+CLIGHTNING_WEBSOCKET_PORT=9736
+if [ "$BITCOIN_CHAIN" = testnet ]; then
+    CLIGHTNING_WEBSOCKET_PORT=9737
+elif [ "$BITCOIN_CHAIN" = mainnet ]; then
+    CLIGHTNING_WEBSOCKET_PORT=9738
+fi
+
+export CLIGHTNING_WEBSOCKET_PORT="$CLIGHTNING_WEBSOCKET_PORT"
+
 # export BTCPAY_FASTSYNC_ARCHIVE_FILENAME="utxo-snapshot-bitcoin-testnet-1445586.tar"
 # BTCPAY_REMOTE_RESTORE_PATH="/var/lib/docker/volumes/generated_bitcoin_datadir/_data"
 
 # This is the config for a basic proxy to the listening port 127.0.0.1:2368
 # It also supports modern TLS, so SSL certs must be available.
 #opt-add-nostr-relay;
+
+export BTCPAYSERVER_GITREPO="https://github.com/farscapian/btcpayserver-docker"
+#https://github.com/btcpayserver/btcpayserver-docker
+
 cat > "$SITE_PATH/btcpay.sh" <<EOL
 #!/bin/bash
 
@@ -22,7 +36,7 @@ done
 
 if [ ! -d "btcpayserver-docker" ]; then 
     echo "cloning btcpayserver-docker"; 
-    git clone -b master https://github.com/btcpayserver/btcpayserver-docker btcpayserver-docker;
+    git clone -b master ${BTCPAYSERVER_GITREPO} btcpayserver-docker;
     git config --global --add safe.directory /home/ubuntu/btcpayserver-docker
 else
     cd ./btcpayserver-docker
@@ -67,6 +81,11 @@ services:
     environment:
       LIGHTNINGD_OPT: |
         announce-addr-dns=true
+        experimental-websocket-port=9736
+    ports:
+      - "${CLIGHTNING_WEBSOCKET_PORT}:9736"
+    expose:
+      - "9736"
 
 EOF
 

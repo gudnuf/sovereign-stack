@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 CURRENT_CLUSTER="$(lxc remote get-default)"
@@ -30,6 +30,8 @@ export CLUSTER_PATH="$CLUSTERS_DIR/$CURRENT_CLUSTER"
 CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
 export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
+echo "CLUSTER_DEFINITION: $CLUSTER_DEFINITION"
+
 # ensure the cluster definition exists.
 if [ ! -f "$CLUSTER_DEFINITION" ]; then
     echo "ERROR: The cluster definition could not be found. You may need to run 'ss-cluster'."
@@ -41,10 +43,17 @@ source "$CLUSTER_DEFINITION"
 
 # source project defition.
 # Now let's load the project definition.
+PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
+export PROJECT_NAME="$PROJECT_NAME"
 PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
-source "$PROJECT_DEFINITION_PATH"
 
+if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
+    echo "ERROR: 'project_definition' not found $PROJECT_DEFINITION_PATH not found."
+    exit 1
+fi
+
+source "$PROJECT_DEFINITION_PATH"
 export PRIMARY_SITE_DEFINITION_PATH="$SITES_PATH/$PRIMARY_DOMAIN/site_definition"
 source "$PRIMARY_SITE_DEFINITION_PATH"
 
