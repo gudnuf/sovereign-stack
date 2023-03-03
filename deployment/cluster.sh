@@ -87,6 +87,9 @@ if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
         esac
     done
 
+    # first let's copy our ssh pubkey to the remote server so we don't have to login constantly.
+    ssh-copy-id -i "$HOME/.ssh/id_rsa.pub" "ubuntu@$FQDN"
+
     if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
         echo "INFO: It looks like you didn't provide input on the command line for the data plane macvlan interface."
         echo "      We need to know which interface that is! Enter it here now."
@@ -159,7 +162,7 @@ sudo apt-get update && sudo apt-get upgrade -y && sudo apt install htop dnsutils
 
 # install lxd as a snap if it's not installed.
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd
+    sudo snap install lxd --channel=5.10/stable
     sleep 10
 fi
 "

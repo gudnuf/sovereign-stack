@@ -50,12 +50,6 @@ if [ "$LXD_HOSTNAME" = "$BASE_IMAGE_VM_NAME" ]; then
     preserve_hostname: false
     fqdn: ${BASE_IMAGE_VM_NAME}
 
-    apt:
-      sources:
-        docker.list:
-          source: "deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable"
-          keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
-
     packages:
       - curl
       - ssh-askpass
@@ -76,10 +70,6 @@ if [ "$LXD_HOSTNAME" = "$BASE_IMAGE_VM_NAME" ]; then
       - wait-for-it
       - dnsutils
       - wget
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-compose-plugin
 
     groups:
       - docker
@@ -104,18 +94,33 @@ if [ "$LXD_HOSTNAME" = "$BASE_IMAGE_VM_NAME" ]; then
               UsePAM no
               LogLevel INFO
 
-      - path: /etc/docker/daemon.json
-        content: |
-              {
-                "registry-mirrors": ["${REGISTRY_URL}"]
-              }
-
     runcmd:
+      - sudo mkdir -m 0755 -p /etc/apt/keyrings
+      - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+      - sudo apt-get update
+      - sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
       - sudo apt-get install -y openssh-server
 
 EOF
-#,
-#"labels": [ "githead=${LATEST_GIT_COMMIT}" ]
+
+
+    # apt:
+    #   sources:
+    #     docker.list:
+    #       source: "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${LXD_UBUNTU_BASE_VERSION} stable"
+    #       keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
+
+    #   - path: /etc/docker/daemon.json
+    #     content: |
+    #           {
+    #             "registry-mirrors": ["${REGISTRY_URL}"],
+    #             "labels": [ "githead=${LATEST_GIT_COMMIT}" ]
+    #           }
+
+
+#      - sudo apt-get update
+      #- sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 
 else 
     # all other machines.

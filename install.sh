@@ -24,7 +24,7 @@ fi
 
 # install snap
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd --channel=5.11/candidate
+    sudo snap install lxd --channel=5.10/stable
     sleep 3
 
     # run lxd init on the remote server./dev/nvme1n1

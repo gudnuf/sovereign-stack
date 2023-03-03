@@ -10,6 +10,7 @@ if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
         git clone "$CLAMS_GIT_REPO" "$LOCAL_CLAMS_REPO_PATH"
     else
         cd "$LOCAL_CLAMS_REPO_PATH"
+        #git config pull.ff only
         git pull
         cd -
     fi

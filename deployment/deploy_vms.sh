@@ -33,7 +33,7 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
 
     ./stub_lxc_profile.sh "$LXD_VM_NAME"
 
-    lxc copy --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME"/"ss-docker-$(date +%Y-%m)" "$LXD_VM_NAME"
+    lxc copy --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME"/"ss-docker-$LXD_UBUNTU_BASE_VERSION" "$LXD_VM_NAME"
 
     # now let's create a new VM to work with.
     #@lxc init --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME" "$LXD_VM_NAME" --vm

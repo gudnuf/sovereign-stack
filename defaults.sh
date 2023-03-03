@@ -80,7 +80,7 @@ export PROJECTS_DIR="$HOME/ss-projects"
 export SITES_PATH="$HOME/ss-sites"
 
 # The base VM image.
-export LXD_UBUNTU_BASE_VERSION="22.04"
+export LXD_UBUNTU_BASE_VERSION="jammy"
 export BASE_IMAGE_VM_NAME="ss-base-${LXD_UBUNTU_BASE_VERSION//./-}"
 export BASE_LXC_IMAGE="ubuntu/$LXD_UBUNTU_BASE_VERSION/cloud"
 export UBUNTU_BASE_IMAGE_NAME="ss-ubuntu-${LXD_UBUNTU_BASE_VERSION//./-}"

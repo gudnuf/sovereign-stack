@@ -17,7 +17,7 @@ fi
 # If the lxc VM does exist, then we will delete it (so we can start fresh) 
 if lxc list -q --format csv | grep -q "$BASE_IMAGE_VM_NAME"; then
     # if there's no snapshot, we dispense with the old image and try again.
-    if ! lxc info "$BASE_IMAGE_VM_NAME" | grep -q "ss-docker-$(date +%Y-%m)"; then
+    if ! lxc info "$BASE_IMAGE_VM_NAME" | grep -q "ss-docker-$LXD_UBUNTU_BASE_VERSION"; then
         lxc delete "$BASE_IMAGE_VM_NAME" --force
         ssh-keygen -f "$SSH_HOME/known_hosts" -R "$BASE_IMAGE_VM_NAME"
     fi
@@ -31,12 +31,13 @@ else
 
     lxc start "$BASE_IMAGE_VM_NAME"
 
-    sleep 70
+    sleep 30
 
     # ensure the ssh service is listening at localhost
     lxc exec "$BASE_IMAGE_VM_NAME" -- wait-for-it 127.0.0.1:22 -t 120
 
+
     # stop the VM and get a snapshot.
     lxc stop "$BASE_IMAGE_VM_NAME"
-    lxc snapshot "$BASE_IMAGE_VM_NAME" "ss-docker-$(date +%Y-%m)"
+    lxc snapshot "$BASE_IMAGE_VM_NAME" "ss-docker-$LXD_UBUNTU_BASE_VERSION"
 fi
