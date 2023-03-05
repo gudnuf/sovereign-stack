@@ -25,7 +25,9 @@ for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     if [ "$DOMAIN_NAME" = "$PRIMARY_DOMAIN" ]; then DOMAIN_STRING="$DOMAIN_STRING -d $CLAMS_FQDN"; fi
     if [ "$DEPLOY_NEXTCLOUD" = true ]; then DOMAIN_STRING="$DOMAIN_STRING -d $NEXTCLOUD_FQDN"; fi
     if [ "$DEPLOY_GITEA" = true ]; then DOMAIN_STRING="$DOMAIN_STRING -d $GITEA_FQDN"; fi
+    if [ "$DEPLOY_CLAMS" = true ]; then DOMAIN_STRING="$DOMAIN_STRING -d $CLAMS_FQDN"; fi
     if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then DOMAIN_STRING="$DOMAIN_STRING -d $NOSTR_FQDN"; fi
+
     
     # if BTCPAY_ALT_NAMES has been set by the admin, iterate over the list
     # and append the domain names to the certbot request

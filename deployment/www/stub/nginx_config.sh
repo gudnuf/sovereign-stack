@@ -141,9 +141,6 @@ EOL
     add_header Strict-Transport-Security "max-age=63072000" always;
     ssl_stapling on;
     ssl_stapling_verify on;
-    e
-    # TODO change resolver to local DNS resolver, or inherit from system.
-
 
     # default server if hostname not specified.
     server {
@@ -516,6 +513,31 @@ EOL
     }
 
 EOL
+    fi
+
+    # deploy Clams browser app under the primary domain.
+    if [ $iteration = 0 ]; then
+
+cat >> "$NGINX_CONF_PATH" <<EOF
+
+    # server block for the clams browser-app; just a static website
+    server {
+        listen 443 ssl;
+
+        server_name ${CLAMS_FQDN};
+
+        autoindex off;
+        server_tokens off;
+        
+        gzip_static on;
+
+        root /browser-app;
+        index 200.html;
+    }
+
+EOF
+
+
     fi
 
     iteration=$((iteration+1))

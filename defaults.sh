@@ -2,8 +2,9 @@
 
 set -e
 
-export DEPLOY_WWW_SERVER=false
-export DEPLOY_GHOST=false
+
+export DEPLOY_GHOST=true
+export DEPLOY_CLAMS=true
 
 export DEPLOY_NEXTCLOUD=false
 export DEPLOY_GITEA=false

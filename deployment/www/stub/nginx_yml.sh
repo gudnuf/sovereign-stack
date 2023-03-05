@@ -31,25 +31,25 @@ EOL
         for LANGUAGE_CODE in ${SITE_LANGUAGE_CODES//,/ }; do
             # We create another ghost instance under /
             cat >> "$DOCKER_YAML_PATH" <<EOL
-        - ghostnet-$DOMAIN_IDENTIFIER-$LANGUAGE_CODE
+      - ghostnet-$DOMAIN_IDENTIFIER-$LANGUAGE_CODE
 EOL
         
             if [ "$LANGUAGE_CODE" = en ]; then
                 if [ "$DEPLOY_GITEA" = "true" ]; then
                     cat >> "$DOCKER_YAML_PATH" <<EOL
-        - giteanet-$DOMAIN_IDENTIFIER-en
+      - giteanet-$DOMAIN_IDENTIFIER-en
 EOL
                 fi
 
                 if [ "$DEPLOY_NEXTCLOUD" = "true" ]; then
                     cat >> "$DOCKER_YAML_PATH" <<EOL
-        - nextcloudnet-$DOMAIN_IDENTIFIER-en
+      - nextcloudnet-$DOMAIN_IDENTIFIER-en
 EOL
                 fi
 
                 if [ -n "$NOSTR_ACCOUNT_PUBKEY" ]; then
                     cat >> "$DOCKER_YAML_PATH" <<EOL
-        - nostrnet-$DOMAIN_IDENTIFIER-en
+      - nostrnet-$DOMAIN_IDENTIFIER-en
 EOL
                 fi
             fi
@@ -58,16 +58,24 @@ EOL
 
     done
 
-        cat >> "$DOCKER_YAML_PATH" <<EOL
+            cat >> "$DOCKER_YAML_PATH" <<EOL
     volumes:
       - ${REMOTE_HOME}/letsencrypt:/etc/letsencrypt:ro
+EOL
+        if [ "$DEPLOY_CLAMS" = true ]; then
+            cat >> "$DOCKER_YAML_PATH" <<EOL
+      - clams-browser-app:/browser-app:ro
+EOL
+        fi
+
+        cat >> "$DOCKER_YAML_PATH" <<EOL
     configs:
       - source: nginx-config
         target: /etc/nginx/nginx.conf
     deploy:
       restart_policy:
         condition: on-failure
-        
+
 configs:
   nginx-config:
     file: ${PROJECT_PATH}/nginx.conf
@@ -128,6 +136,15 @@ EOL
             fi
         done
     done
+
+        if [ "$DEPLOY_CLAMS" = true ]; then
+            cat >> "$DOCKER_YAML_PATH" <<EOL
+volumes:
+  clams-browser-app:
+    external: true
+    name: clams-root
+EOL
+        fi
 
 
 if [ "$STOP_SERVICES" = false ]; then

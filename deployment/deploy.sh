@@ -292,6 +292,7 @@ export DOMAIN_NAME="${DOMAIN_NAME}"
 export SITE_LANGUAGE_CODES="en"
 export DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 export DEPLOY_GHOST=true
+export DEPLOY_CLAMS=true
 export DEPLOY_NEXTCLOUD=false
 export NOSTR_ACCOUNT_PUBKEY=
 export DEPLOY_GITEA=false

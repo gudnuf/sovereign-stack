@@ -3,6 +3,9 @@
 set -eu
 cd "$(dirname "$0")"
 
+# prepare clams images and such
+./prepare_clams.sh
+
 # Create the nginx config file which covers all domains.
 bash -c ./stub/nginx_config.sh
 
@@ -137,7 +140,6 @@ fi
 ./stub/nextcloud_yml.sh
 ./stub/gitea_yml.sh
 ./stub/nostr_yml.sh
-./deploy_clams.sh
 
 # # start a browser session; point it to port 80 to ensure HTTPS redirect.
 # # WWW_FQDN is in our certificate, so we resolve to that.
