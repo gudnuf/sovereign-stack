@@ -21,6 +21,8 @@ done
 
 . ./cluster_env.sh
 
+. ./project_env.sh
+
 # Check to see if any of the VMs actually don't exist. 
 # (we only migrate instantiated vms)
 for VM in www btcpayserver; do

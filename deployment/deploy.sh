@@ -397,10 +397,6 @@ export DOMAIN_COUNT=$(("$(echo "$DOMAIN_LIST" | tr -cd , | wc -c)"+1))
 # let's provision our primary domain first.
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 
-# we deploy the WWW and btcpay server under the PRIMARY_DOMAIN.
-export DEPLOY_WWW_SERVER=true
-export DEPLOY_BTCPAY_SERVER=true
-
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
 
@@ -408,7 +404,6 @@ stub_site_definition
 
 # bring the VMs up under the primary domain name.
 instantiate_vms
-
 
 # let's stub out the rest of our site definitions, if any.
 for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
@@ -421,14 +416,14 @@ done
 
 
 # now let's run the www and btcpay-specific provisioning scripts.
-if [ "$SKIP_WWW" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+if [ "$SKIP_WWW" = false ]; then
     bash -c "./www/go.sh"
     ssh ubuntu@"$PRIMARY_WWW_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"
 fi
 
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-if [ "$SKIP_BTCPAY" = false ] && [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
+if [ "$SKIP_BTCPAY" = false ]; then
     ./btcpayserver/go.sh
 
     ssh ubuntu@"$BTCPAY_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"

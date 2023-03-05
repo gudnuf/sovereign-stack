@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 # see https://www.sovereign-stack.org/management/
@@ -25,7 +25,7 @@ fi
 # install snap
 if ! snap list | grep -q lxd; then
     sudo snap install lxd --channel=5.10/stable
-    sleep 3
+    sleep 5
 
     # run lxd init on the remote server./dev/nvme1n1
     # 

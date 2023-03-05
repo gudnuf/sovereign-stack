@@ -159,6 +159,3 @@ fi
 #     xdg-open "http://$GITEA_FQDN" > /dev/null 2>&1
 # fi
 
-# if [ "$DEPLOY_BTCPAY_SERVER" = true ]; then
-#     xdg-open "http://$BTCPAY_USER_FQDN" > /dev/null 2>&1
-# fi

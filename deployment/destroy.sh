@@ -22,6 +22,8 @@ fi
 
 . ./cluster_env.sh
 
+. ./project_env.sh
+
 for VM in www btcpayserver; do
     LXD_NAME="$VM-${DOMAIN_NAME//./-}"
 
