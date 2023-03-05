@@ -154,18 +154,12 @@ if ! command -v lxc >/dev/null 2>&1; then
 
 fi
 
-ssh -t "ubuntu@$FQDN" "
-set -e
-
-# install tool/dependencies
-sudo apt-get update && sudo apt-get upgrade -y && sudo apt install htop dnsutils nano -y
-
-# install lxd as a snap if it's not installed.
-if ! snap list | grep -q lxd; then
-    sudo snap install lxd --channel=5.10/stable
+# install dependencies.
+ssh "ubuntu@$FQDN" sudo apt-get update && sudo apt-get upgrade -y && sudo apt install htop dnsutils nano -y
+if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
+    ssh "ubuntu@$FQDN" sudo snap install lxd --channel=5.10/stable
     sleep 10
 fi
-"
 
 # if the DATA_PLANE_MACVLAN_INTERFACE is not specified, then we 'll
 # just attach VMs to the network interface used for for the default route.
