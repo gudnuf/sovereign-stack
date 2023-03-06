@@ -13,10 +13,9 @@ git tag -a "$TAG_NAME" -m "$TAG_MESSAGE" -s
 git push --set-upstream origin --all
 git push --set-upstream origin --tags
 
-
 ## note this will only work if you have permissions to update HEAD on https://git.sovereign-stack.org/ss/sovereign-stack.git
 RESPONSE=
-read -r -p "         Would you like to push this to the main ss repo? (y)  ": RESPONSE
+read -r -p "         Would you like to push this to the main Sovereign Stack repo? (y)  ": RESPONSE
 if [ "$RESPONSE" != "y" ]; then
     # optional; push to remote
     git push --set-upstream ss-upstream --all
