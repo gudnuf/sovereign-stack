@@ -3,6 +3,15 @@
 set -exu
 cd "$(dirname "$0")"
 
+
+# check if there are any uncommited changes. It's dangerous to 
+# alter production systems when you have commits to make or changes to stash.
+if git update-index --refresh | grep -q "needs update"; then
+    echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
+    exit 1
+fi
+
+
 USER_SAYS_YES=false
 
 for i in "$@"; do
@@ -22,6 +31,19 @@ done
 . ./cluster_env.sh
 
 . ./project_env.sh
+
+
+# deploy clams wallet.
+PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
+PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
+if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
+    git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
+else
+    cd "$PROJECTS_SCRIPTS_PATH"
+    git pull
+    cd -
+fi
+
 
 # Check to see if any of the VMs actually don't exist. 
 # (we only migrate instantiated vms)
@@ -43,11 +65,31 @@ echo "INFO: The BTCPAY_RESTORE_ARCHIVE_PATH for this migration will be: $BTCPAY_
 # the --stop flag ensures that services do NOT come back online.
 # by default, we grab a backup. 
 
+# first, let's grab the GIT commit from the remote machine.
+export DOMAIN_NAME="$PRIMARY_DOMAIN"
+export SITE_PATH="$SITES_PATH/$PRIMARY_DOMAIN"
+
+# source the site path so we know what features it has.
+source ../defaults.sh
+source "$SITE_PATH/site_definition"
+source ./project/domain_env.sh
+
+GIT_COMMIT_ON_REMOTE_HOST="$(ssh ubuntu@$BTCPAY_FQDN cat /home/ubuntu/.ss-githead)"
+cd project/
+git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
+cd -
+sleep 5
+
 # run deploy which backups up everything, but doesnt restart any services.
 bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 
 # call the destroy script. If user proceed, then user data is DESTROYED!
 USER_SAYS_YES="$USER_SAYS_YES" ./destroy.sh
 
+cd project/
+git checkout "$TARGET_PROJECT_GIT_COMMIT"
+cd -
+
+sleep 5
 # Then we can run a restore operation and specify the backup archive at the CLI.
 bash -c "./project/deploy.sh -y --restore-www --restore-btcpay --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"

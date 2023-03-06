@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 cd "$(dirname "$0")"
 # this script takes down all resources in the cluster. This script is DESTRUCTIVE of data, so make sure it's backed up first.
 

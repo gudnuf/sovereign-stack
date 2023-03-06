@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 # this script will tag the repo then push it to origin

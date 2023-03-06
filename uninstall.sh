@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 
 # this script undoes install.sh
 if ! command -v lxc >/dev/null 2>&1; then

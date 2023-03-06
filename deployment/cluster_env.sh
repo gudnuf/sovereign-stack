@@ -30,8 +30,6 @@ export CLUSTER_PATH="$CLUSTERS_DIR/$CURRENT_CLUSTER"
 CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
 export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
 
-echo "CLUSTER_DEFINITION: $CLUSTER_DEFINITION"
-
 # ensure the cluster definition exists.
 if [ ! -f "$CLUSTER_DEFINITION" ]; then
     echo "ERROR: The cluster definition could not be found. You may need to run 'ss-cluster'."

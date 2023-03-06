@@ -98,3 +98,5 @@ export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
 export ROOT_DISK_SIZE_GB=20
 export REGISTRY_URL="https://index.docker.io/v1/"
 export PRIMARY_DOMAIN=
+
+export TARGET_PROJECT_GIT_COMMIT=0701de580bdd6d32058852b0c6f290867d2d8ea2
