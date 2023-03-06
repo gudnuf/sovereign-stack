@@ -23,7 +23,7 @@ EOL
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
         # source the site path so we know what features it has.
-        source ../../../defaults.sh
+        source ../../../../defaults.sh
         source "$SITE_PATH/site_definition"
         source ../../domain_env.sh
 
@@ -96,7 +96,7 @@ EOL
         export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
         # source the site path so we know what features it has.
-        source ../../../defaults.sh
+        source ../../../../defaults.sh
         source "$SITE_PATH/site_definition"
         source ../../domain_env.sh
 

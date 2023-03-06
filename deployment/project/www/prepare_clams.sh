@@ -5,8 +5,10 @@ cd "$(dirname "$0")"
 
 # deploy clams wallet.
 LOCAL_CLAMS_REPO_PATH="$(pwd)/clams"
+BROWSER_APP_GIT_TAG="1.5.0"
+BROWSER_APP_GIT_REPO_URL="https://github.com/clams-tech/browser-app"
 if [ ! -d "$LOCAL_CLAMS_REPO_PATH" ]; then
-    git clone "$CLAMS_GIT_REPO" "$LOCAL_CLAMS_REPO_PATH"
+    git clone "$BROWSER_APP_GIT_REPO_URL" "$LOCAL_CLAMS_REPO_PATH"
 else
     cd "$LOCAL_CLAMS_REPO_PATH"
     git config --global pull.rebase false
@@ -15,8 +17,6 @@ else
 fi
 
 # lxc file push -r -p "$LOCAL_CLAMS_REPO_PATH" "${PRIMARY_WWW_FQDN//./-}$REMOTE_HOME"
-BROWSER_APP_GIT_TAG="1.5.0"
-BROWSER_APP_GIT_REPO_URL="https://github.com/clams-tech/browser-app"
 BROWSER_APP_IMAGE_NAME="browser-app:$BROWSER_APP_GIT_TAG"
 # build the browser-app image.
 if ! docker image list --format "{{.Repository}}:{{.Tag}}" | grep -q "$BROWSER_APP_IMAGE_NAME"; then

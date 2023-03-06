@@ -3,11 +3,37 @@
 set -ex
 cd "$(dirname "$0")"
 
-LATEST_GIT_COMMIT="$(cat ../.git/refs/heads/master)"
+LATEST_GIT_COMMIT="$(cat ../../.git/refs/heads/master)"
 export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
 
-./check_dependencies.sh
-./check_environment.sh
+# check to ensure dependencies are met.
+for cmd in wait-for-it dig rsync sshfs lxc; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        echo "This script requires \"${cmd}\" to be installed. Please run 'install.sh'."
+        exit 1
+    fi
+done
+
+# do a spot check; if we are on production warn.
+if lxc remote get-default | grep -q "production"; then
+    echo "WARNING: You are running command against a production system!"
+    echo ""
+
+    # check if there are any uncommited changes. It's dangerous to 
+    # alter production systems when you have commits to make or changes to stash.
+    if git update-index --refresh | grep -q "needs update"; then
+        echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
+        exit 1
+    fi
+
+    RESPONSE=
+    read -r -p "         Are you sure you want to continue (y)  ": RESPONSE
+    if [ "$RESPONSE" != "y" ]; then
+        echo "STOPPING."
+        exit 1
+    fi
+
+fi
 
 DOMAIN_NAME=
 RUN_CERT_RENEWAL=true
@@ -109,7 +135,7 @@ if [ "$RESTORE_BTCPAY" = true ] && [ -z "$BACKUP_BTCPAY_ARCHIVE_PATH" ]; then
 fi
 
 # set up our default paths.
-source ../defaults.sh
+source ../../defaults.sh
 
 export DOMAIN_NAME="$DOMAIN_NAME"
 export REGISTRY_DOCKER_IMAGE="registry:2"
@@ -151,122 +177,6 @@ source "$CLUSTER_DEFINITION"
 # this is our password generation mechanism. Relying on GPG for secure password generation
 function new_pass {
     gpg --gen-random --armor 1 25
-}
-
-function instantiate_vms {
-
-    export UPDATE_BTCPAY="$UPDATE_BTCPAY"
-    export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
-
-    # iterate over all our server endpoints and provision them if needed.
-    # www
-    VPS_HOSTNAME=
-
-    for VIRTUAL_MACHINE in www btcpayserver; do
-        export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
-        FQDN=
-
-        export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-
-        source "$SITE_PATH/site_definition"
-        source ./domain_env.sh
-
-        # VALIDATE THE INPUT from the ENVFILE
-        if [ -z "$DOMAIN_NAME" ]; then
-            echo "ERROR: DOMAIN_NAME not specified. Use the --domain-name= option."
-            exit 1
-        fi
-
-        # # switch to the default project
-        # if ! lxc project list --format csv | grep -a "default (current)"; then
-        #     lxc project switch default
-        # fi
-
-        # Goal is to get the macvlan interface.
-        LXD_SS_CONFIG_LINE=
-        if lxc network list --format csv | grep lxdbr0 | grep -q ss-config; then
-            LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbr0 | grep ss-config)"
-        fi
-
-        if [ -z "$LXD_SS_CONFIG_LINE" ]; then
-            echo "ERROR: the MACVLAN interface has not been specified. You may need to run ss-cluster again."
-            exit 1
-        fi
-
-        CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
-        DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
-        export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
-
-
-        # # switch to the default project to ensure the base image is created.
-        # if ! lxc project list --format csv | grep -a "default (current)"; then
-        #     lxc project switch default
-        # fi
-
-        # create the lxd base image.
-        ./create_lxc_base.sh
-
-        # # now switch to the current chain project.
-        # if ! lxc project list --format csv | grep -a "$BITCOIN_CHAIN"; then
-        #     lxc project switch "$BITCOIN_CHAIN"
-        # fi
-
-        export MAC_ADDRESS_TO_PROVISION=
-        export VPS_HOSTNAME="$VPS_HOSTNAME"
-        export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
-
-        DDNS_HOST=
-
-        if [ "$VIRTUAL_MACHINE" = www ]; then
-            if [ "$SKIP_WWW" = true ]; then
-                echo "INFO: Skipping WWW due to command line argument."
-                continue
-            fi
-
-            VPS_HOSTNAME="$WWW_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
-            DDNS_HOST="$WWW_HOSTNAME"
-            ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
-        elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$SKIP_BTCPAY" = true ]; then
-
-
-            DDNS_HOST="$BTCPAY_HOSTNAME"
-            VPS_HOSTNAME="$BTCPAY_HOSTNAME"
-            MAC_ADDRESS_TO_PROVISION="$BTCPAYSERVER_MAC_ADDRESS"
-            if [ "$BITCOIN_CHAIN" = mainnet ]; then
-                ROOT_DISK_SIZE_GB=150
-            elif [ "$BITCOIN_CHAIN" = testnet ]; then
-                ROOT_DISK_SIZE_GB=70
-            fi
-
-        elif [ "$VIRTUAL_MACHINE" = "$BASE_IMAGE_VM_NAME" ]; then
-            DDNS_HOST="$BASE_IMAGE_VM_NAME"
-            ROOT_DISK_SIZE_GB=8
-        else
-            echo "ERROR: VIRTUAL_MACHINE not within allowable bounds."
-            exit
-        fi
-
-        export DDNS_HOST="$DDNS_HOST"
-        export FQDN="$DDNS_HOST.$DOMAIN_NAME"
-        export LXD_VM_NAME="${FQDN//./-}"
-        export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
-        export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
-        export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
-
-        ./deploy_vms.sh
-
-        if [ "$VIRTUAL_MACHINE" = www ]; then
-            # this tells our local docker client to target the remote endpoint via SSH
-            export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
-
-            # enable docker swarm mode so we can support docker stacks.
-            if docker info | grep -q "Swarm: inactive"; then
-                docker swarm init --advertise-addr enp6s0
-            fi
-        fi
-    done
-
 }
 
 
@@ -403,7 +313,118 @@ export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
 stub_site_definition
 
 # bring the VMs up under the primary domain name.
-instantiate_vms
+
+export UPDATE_BTCPAY="$UPDATE_BTCPAY"
+export RECONFIGURE_BTCPAY_SERVER="$RECONFIGURE_BTCPAY_SERVER"
+
+# iterate over all our server endpoints and provision them if needed.
+# www
+VPS_HOSTNAME=
+
+for VIRTUAL_MACHINE in www btcpayserver; do
+    export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
+    FQDN=
+
+    export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+
+    source "$SITE_PATH/site_definition"
+    source ./domain_env.sh
+
+    # VALIDATE THE INPUT from the ENVFILE
+    if [ -z "$DOMAIN_NAME" ]; then
+        echo "ERROR: DOMAIN_NAME not specified. Use the --domain-name= option."
+        exit 1
+    fi
+
+    # # switch to the default project
+    # if ! lxc project list --format csv | grep -a "default (current)"; then
+    #     lxc project switch default
+    # fi
+
+    # Goal is to get the macvlan interface.
+    LXD_SS_CONFIG_LINE=
+    if lxc network list --format csv | grep lxdbr0 | grep -q ss-config; then
+        LXD_SS_CONFIG_LINE="$(lxc network list --format csv | grep lxdbr0 | grep ss-config)"
+    fi
+
+    if [ -z "$LXD_SS_CONFIG_LINE" ]; then
+        echo "ERROR: the MACVLAN interface has not been specified. You may need to run ss-cluster again."
+        exit 1
+    fi
+
+    CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
+    DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
+    export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
+
+
+    # # switch to the default project to ensure the base image is created.
+    # if ! lxc project list --format csv | grep -a "default (current)"; then
+    #     lxc project switch default
+    # fi
+
+    # create the lxd base image.
+    ./create_lxc_base.sh
+
+    # # now switch to the current chain project.
+    # if ! lxc project list --format csv | grep -a "$BITCOIN_CHAIN"; then
+    #     lxc project switch "$BITCOIN_CHAIN"
+    # fi
+
+    export MAC_ADDRESS_TO_PROVISION=
+    export VPS_HOSTNAME="$VPS_HOSTNAME"
+    export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
+
+    DDNS_HOST=
+
+    if [ "$VIRTUAL_MACHINE" = www ]; then
+        if [ "$SKIP_WWW" = true ]; then
+            echo "INFO: Skipping WWW due to command line argument."
+            continue
+        fi
+
+        VPS_HOSTNAME="$WWW_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
+        DDNS_HOST="$WWW_HOSTNAME"
+        ROOT_DISK_SIZE_GB="$((ROOT_DISK_SIZE_GB + NEXTCLOUD_SPACE_GB))"
+    elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$SKIP_BTCPAY" = true ]; then
+
+
+        DDNS_HOST="$BTCPAY_HOSTNAME"
+        VPS_HOSTNAME="$BTCPAY_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$BTCPAYSERVER_MAC_ADDRESS"
+        if [ "$BITCOIN_CHAIN" = mainnet ]; then
+            ROOT_DISK_SIZE_GB=150
+        elif [ "$BITCOIN_CHAIN" = testnet ]; then
+            ROOT_DISK_SIZE_GB=70
+        fi
+
+    elif [ "$VIRTUAL_MACHINE" = "$BASE_IMAGE_VM_NAME" ]; then
+        DDNS_HOST="$BASE_IMAGE_VM_NAME"
+        ROOT_DISK_SIZE_GB=8
+    else
+            echo "ERROR: VIRTUAL_MACHINE not within allowable bounds."
+            exit
+        fi
+
+        export DDNS_HOST="$DDNS_HOST"
+        export FQDN="$DDNS_HOST.$DOMAIN_NAME"
+        export LXD_VM_NAME="${FQDN//./-}"
+        export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
+        export REMOTE_CERT_DIR="$REMOTE_CERT_BASE_DIR/$FQDN"
+        export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
+
+        ./deploy_vms.sh
+
+        if [ "$VIRTUAL_MACHINE" = www ]; then
+            # this tells our local docker client to target the remote endpoint via SSH
+            export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
+
+            # enable docker swarm mode so we can support docker stacks.
+            if docker info | grep -q "Swarm: inactive"; then
+                docker swarm init --advertise-addr enp6s0
+            fi
+        fi
+    done
 
 # let's stub out the rest of our site definitions, if any.
 for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
@@ -417,7 +438,7 @@ done
 
 # now let's run the www and btcpay-specific provisioning scripts.
 if [ "$SKIP_WWW" = false ]; then
-    bash -c "./www/go.sh"
+    ./www/go.sh
     ssh ubuntu@"$PRIMARY_WWW_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"
 fi
 

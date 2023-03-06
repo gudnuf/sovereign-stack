@@ -5,7 +5,6 @@ cd "$(dirname "$0")"
 
 ./stub_lxc_profile.sh "$BASE_IMAGE_VM_NAME"
 
-
 # let's download our base image.
 if ! lxc image list --format csv --columns l | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
     # if the image doesn't exist, download it from Ubuntu's image server

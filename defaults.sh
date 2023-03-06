@@ -2,7 +2,6 @@
 
 set -e
 
-
 export DEPLOY_GHOST=true
 export DEPLOY_CLAMS=true
 
@@ -16,7 +15,6 @@ export NEXTCLOUD_HOSTNAME="nextcloud"
 export GITEA_HOSTNAME="git"
 export NOSTR_HOSTNAME="relay"
 export CLAMS_HOSTNAME="clams"
-export CLAMS_GIT_REPO="https://github.com/farscapian/clams-app-docker.git"
 
 export SITE_LANGUAGE_CODES="en"
 export LANGUAGE_CODE="en"

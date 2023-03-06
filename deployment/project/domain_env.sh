@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 export NEXTCLOUD_FQDN="$NEXTCLOUD_HOSTNAME.$DOMAIN_NAME"
 export BTCPAY_FQDN="$BTCPAY_HOSTNAME.$DOMAIN_NAME"

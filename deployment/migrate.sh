@@ -44,10 +44,10 @@ echo "INFO: The BTCPAY_RESTORE_ARCHIVE_PATH for this migration will be: $BTCPAY_
 # by default, we grab a backup. 
 
 # run deploy which backups up everything, but doesnt restart any services.
-bash -c "./deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
+bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 
 # call the destroy script. If user proceed, then user data is DESTROYED!
 USER_SAYS_YES="$USER_SAYS_YES" ./destroy.sh
 
 # Then we can run a restore operation and specify the backup archive at the CLI.
-bash -c "./deploy.sh -y --restore-www --restore-btcpay --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
+bash -c "./project/deploy.sh -y --restore-www --restore-btcpay --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
