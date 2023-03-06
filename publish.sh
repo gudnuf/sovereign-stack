@@ -7,7 +7,10 @@ cd "$(dirname "$0")"
 TAG_NAME="$(head -n 1 ./version.txt)"
 TAG_MESSAGE="Creating tag $TAG_NAME on $(date)."
 
-git tag -a "$TAG_NAME" -m "$TAG_MESSAGE" -s
+# create the git tag.
+if ! git tag | grep -q "$TAG_NAME"; then
+    git tag -a "$TAG_NAME" -m "$TAG_MESSAGE" -s
+fi
 
 # push commits and tags to origin
 git push --set-upstream origin --all
@@ -16,7 +19,7 @@ git push --set-upstream origin --tags
 ## note this will only work if you have permissions to update HEAD on https://git.sovereign-stack.org/ss/sovereign-stack.git
 RESPONSE=
 read -r -p "         Would you like to push this to the main Sovereign Stack repo? (y)  ": RESPONSE
-if [ "$RESPONSE" != "y" ]; then
+if [ "$RESPONSE" = "y" ]; then
     # optional; push to remote
     git push --set-upstream ss-upstream --all
     git push --set-upstream ss-upstream --tags
