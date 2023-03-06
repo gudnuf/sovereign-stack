@@ -1,12 +1,9 @@
 #!/bin/bash
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
 
 export DOCKER_HOST="ssh://ubuntu@$BTCPAY_FQDN"
-
-docker pull btcpayserver/lightning:v22.11.1
-docker build -t clightning:latest ./core-lightning
 
 # run the btcpay setup script if it hasn't been done before.
 if [ "$(ssh "$BTCPAY_FQDN" [[ ! -f "$REMOTE_HOME/btcpay.complete" ]]; echo $?)" -eq 0 ]; then

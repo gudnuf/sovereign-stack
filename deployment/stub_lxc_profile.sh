@@ -94,6 +94,12 @@ if [ "$LXD_HOSTNAME" = "$BASE_IMAGE_VM_NAME" ]; then
               UsePAM no
               LogLevel INFO
 
+      - path: /etc/docker/daemon.json
+        content: |
+              {
+                "registry-mirrors": ["${REGISTRY_URL}"]
+              }
+
     runcmd:
       - sudo mkdir -m 0755 -p /etc/apt/keyrings
       - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -104,6 +110,13 @@ if [ "$LXD_HOSTNAME" = "$BASE_IMAGE_VM_NAME" ]; then
 
 EOF
 
+    #   - path: /etc/docker/daemon.json
+    #     content: |
+    #           {
+    #             "registry-mirrors": "${REGISTRY_URL}",
+    #             "labels": "githead=${LATEST_GIT_COMMIT}"
+    #           }
+                #"labels": [githead="${LATEST_GIT_COMMIT}"]
 
     # apt:
     #   sources:
@@ -111,12 +124,7 @@ EOF
     #       source: "deb [arch=amd64] https://download.docker.com/linux/ubuntu ${LXD_UBUNTU_BASE_VERSION} stable"
     #       keyid: 9DC858229FC7DD38854AE2D88D81803C0EBFCD88
 
-    #   - path: /etc/docker/daemon.json
-    #     content: |
-    #           {
-    #             "registry-mirrors": ["${REGISTRY_URL}"],
-    #             "labels": [ "githead=${LATEST_GIT_COMMIT}" ]
-    #           }
+
 
 
 #      - sudo apt-get update

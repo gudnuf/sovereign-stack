@@ -36,7 +36,7 @@ if [ ! -f "$CLUSTER_DEFINITION" ]; then
 export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
 export BITCOIN_CHAIN="regtest"
 export PROJECT_PREFIX="dev"
-#export REGISTRY_URL="https://index.docker.io/v1/"
+#export REGISTRY_URL=http://registry.domain.tld:5000
 
 EOL
 

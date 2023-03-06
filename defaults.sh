@@ -53,7 +53,7 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.26.2"
+export GHOST_IMAGE="ghost:5.37.0"
 
 # TODO switch to mysql. May require intricate export work for existing sites. 
 # THIS MUST BE COMPLETED BEFORE v1 RELEASE
@@ -61,10 +61,10 @@ export GHOST_IMAGE="ghost:5.26.2"
 export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 
-export NGINX_IMAGE="nginx:1.23.2"
+export NGINX_IMAGE="nginx:1.23.3"
 
 # version of backup is 24.0.3
-export NEXTCLOUD_IMAGE="nextcloud:25.0.2"
+export NEXTCLOUD_IMAGE="nextcloud:25.0.4"
 export NEXTCLOUD_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 # TODO PIN the gitea version number.

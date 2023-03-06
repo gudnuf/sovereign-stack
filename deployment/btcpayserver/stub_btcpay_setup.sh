@@ -20,8 +20,7 @@ export CLIGHTNING_WEBSOCKET_PORT="$CLIGHTNING_WEBSOCKET_PORT"
 # It also supports modern TLS, so SSL certs must be available.
 #opt-add-nostr-relay;
 
-export BTCPAYSERVER_GITREPO="https://github.com/farscapian/btcpayserver-docker"
-#https://github.com/btcpayserver/btcpayserver-docker
+export BTCPAYSERVER_GITREPO="https://github.com/btcpayserver/btcpayserver-docker"
 
 cat > "$SITE_PATH/btcpay.sh" <<EOL
 #!/bin/bash

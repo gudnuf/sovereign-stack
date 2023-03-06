@@ -3,14 +3,15 @@
 set -eu
 cd "$(dirname "$0")"
 
+# redirect all docker commands to the remote host.
+DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
+export DOCKER_HOST="$DOCKER_HOST"
+
 # prepare clams images and such
 ./prepare_clams.sh
 
 # Create the nginx config file which covers all domains.
 bash -c ./stub/nginx_config.sh
-
-# redirect all docker commands to the remote host.
-export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
 
 for DOMAIN_NAME in ${DOMAIN_LIST//,/ }; do
     export DOMAIN_NAME="$DOMAIN_NAME"

@@ -19,7 +19,6 @@ fi
 
 . ../defaults.sh
 
-
 . ./cluster_env.sh
 
 . ./project_env.sh
