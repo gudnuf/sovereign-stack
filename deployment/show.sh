@@ -1,6 +1,9 @@
 #!/bin/bash
 
-lxc remote list
+echo "LXD REMOTE: $(lxc remote get-default)"
+
+lxc project list
+
 lxc storage list
 lxc image list
 lxc project list
