@@ -17,8 +17,8 @@ if lxc image list | grep -q "$BASE_IMAGE_VM_NAME"; then
     lxc image rm "$BASE_IMAGE_VM_NAME"
 fi
 
-if lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
-    lxc image rm "$UBUNTU_BASE_IMAGE_NAME"
+if lxc image list | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
+    lxc image rm "$DOCKER_BASE_IMAGE_NAME"
 fi
 
 CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
@@ -38,6 +38,11 @@ fi
 if lxc network list --format csv | grep -q lxdbr0; then
     lxc network delete lxdbr0
 fi
+
+if lxc network list --format csv | grep -q lxdbr1; then
+    lxc network delete lxdbr1
+fi
+
 
 if lxc storage list --format csv | grep -q ss-base; then
     lxc storage delete ss-base

@@ -23,6 +23,12 @@ fi
 
 . ./project_env.sh
 
+if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
+    if lxc project list | grep -q "$PROJECT_NAME"; then
+        lxc project switch "$PROJECT_NAME"
+    fi
+fi
+
 for VM in www btcpayserver; do
     LXD_NAME="$VM-${DOMAIN_NAME//./-}"
 
@@ -38,6 +44,19 @@ for VM in www btcpayserver; do
     fi
 done
 
+
+if lxc network list -q | grep -q ss-ovn; then
+    lxc network delete ss-ovn
+fi
+
+if ! lxc info | grep "project:" | grep -q default; then
+    lxc project switch default
+fi
+
+
+if lxc project list | grep -q "$PROJECT_NAME"; then
+    lxc project delete "$PROJECT_NAME"
+fi
 
 # delete the base image so it can be created.
 if lxc list | grep -q "$BASE_IMAGE_VM_NAME"; then

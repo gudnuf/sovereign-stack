@@ -155,11 +155,25 @@ if ! command -v lxc >/dev/null 2>&1; then
         sleep 1
     fi
 
+
+    if lxc network list --format csv | grep -q lxdbr1; then
+        lxc network delete lxdbr1
+        sleep 1
+    fi
+
 fi
 
 # install dependencies.
+ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano -y'
 if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
+    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=5.11/stable'
+    sleep 5
 fi
+
+# install OVN for the project-specific bridge networks
+ssh -t "ubuntu@$FQDN" "sudo apt-get install -y ovn-host ovn-central"
+
+ssh -t "ubuntu@$FQDN" "sudo ovs-vsctl set open_vswitch . external_ids:ovn-remote=unix:/var/run/ovn/ovnsb_db.sock external_ids:ovn-encap-type=geneve external_ids:ovn-encap-ip=127.0.0.1"
 
 # if the DATA_PLANE_MACVLAN_INTERFACE is not specified, then we 'll
 # just attach VMs to the network interface used for for the default route.
@@ -182,9 +196,20 @@ networks:
   description: "ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-error}"
   type: bridge
   config:
+    ipv4.address: 10.9.9.1/24
+    ipv4.dhcp.ranges: 10.9.9.10-10.9.9.127
     ipv4.nat: true
     ipv6.address: none
     dns.mode: managed
+- name: lxdbr1
+  description: "Non-natting bridge for ovn networks to connect to."
+  type: bridge
+  config:
+    ipv4.address: 10.10.10.1/24
+    ipv4.dhcp.ranges: 10.10.10.10-10.10.10.63
+    ipv4.ovn.ranges: 10.10.10.64-10.10.10.254
+    ipv4.nat: false
+    ipv6.address: none
 profiles:
 - config: {}
   description: "default profile for sovereign-stack instances."
