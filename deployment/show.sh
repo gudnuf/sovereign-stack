@@ -1,10 +1,9 @@
 #!/bin/bash
 
-lxc list
+lxc remote list
+lxc storage list
+lxc image list
+lxc project list
 lxc network list
 lxc profile list
-lxc image list
-lxc storage list
-lxc storage info ss-base
-lxc project list
-lxc remote list
+lxc list
