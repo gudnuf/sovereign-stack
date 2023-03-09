@@ -34,7 +34,7 @@ sleep 1
 
 # install snap
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd --channel=5.10/stable
+    sudo snap install lxd --channel=5.11/stable
     sleep 6
 
     # We just do an auto initialization. All we are using is the LXD client inside the management environment.
