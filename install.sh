@@ -138,7 +138,7 @@ if [ "$ADDED_COMMAND" = true ]; then
 fi
 
 
-# deploy clams wallet.
+# As part of the install script, we pull down any other sovereign-stack git repos
 PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
 PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
 if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
