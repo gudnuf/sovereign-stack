@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 cd "$(dirname "$0")"
 
 # This script is meant to be executed on the management machine.
@@ -10,57 +10,57 @@ cd "$(dirname "$0")"
 DATA_PLANE_MACVLAN_INTERFACE=
 DISK_TO_USE=
 
-# override the cluster name.
-CLUSTER_NAME="${1:-}"
-if [ -z "$CLUSTER_NAME" ]; then
-    echo "ERROR: The cluster name was not provided. Syntax is: 'ss-cluster CLUSTER_NAME SSH_HOST_FQDN'"
-    echo "  for example: 'ss-cluster dev clusterhost01.domain.tld"
+# override the remote name.
+REMOTE_NAME="${1:-}"
+if [ -z "$REMOTE_NAME" ]; then
+    echo "ERROR: The remote name was not provided. Syntax is: 'ss-remote REMOTE_NAME SSH_HOST_FQDN'"
+    echo "  for example: 'ss-remote dev host01.domain.tld"
     exit 1
 fi
 
 #shellcheck disable=SC1091
 source ../defaults.sh
 
-export CLUSTER_PATH="$CLUSTERS_DIR/$CLUSTER_NAME"
-CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
-export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
+export REMOTE_PATH="$REMOTES_DIR/$REMOTE_NAME"
+REMOTE_DEFINITION="$REMOTE_PATH/remote_definition"
+export REMOTE_DEFINITION="$REMOTE_DEFINITION"
 
-mkdir -p "$CLUSTER_PATH"
-if [ ! -f "$CLUSTER_DEFINITION" ]; then
-    # stub out a cluster_definition.
-    cat >"$CLUSTER_DEFINITION" <<EOL
+mkdir -p "$REMOTE_PATH"
+if [ ! -f "$REMOTE_DEFINITION" ]; then
+    # stub out a remote_definition.
+    cat >"$REMOTE_DEFINITION" <<EOL
 #!/bin/bash
 
-# see https://www.sovereign-stack.org/cluster-definition for more info!
+# see https://www.sovereign-stack.org/remote for more info!
 
-export LXD_CLUSTER_PASSWORD="$(gpg --gen-random --armor 1 14)"
+export LXD_REMOTE_PASSWORD="$(gpg --gen-random --armor 1 14)"
 export BITCOIN_CHAIN="regtest"
-export PROJECT_PREFIX="dev"
+export PROJECT_PREFIX="$REMOTE_NAME"
 #export REGISTRY_URL=http://registry.domain.tld:5000
 
 EOL
 
-    chmod 0744 "$CLUSTER_DEFINITION"
-    echo "We stubbed out a '$CLUSTER_DEFINITION' file for you."
-    echo "Use this file to customize your cluster deployment;"
-    echo "Check out 'https://www.sovereign-stack.org/cluster-definition' for more information."
+    chmod 0744 "$REMOTE_DEFINITION"
+    echo "We stubbed out a '$REMOTE_DEFINITION' file for you."
+    echo "Use this file to customize your remote deployment;"
+    echo "Check out 'https://www.sovereign-stack.org/remote' for more information."
     exit 1
 fi
 
-source "$CLUSTER_DEFINITION"
+source "$REMOTE_DEFINITION"
 
-if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
+if ! lxc remote list | grep -q "$REMOTE_NAME"; then
     FQDN="${2:-}"
 
     if [ -z "$FQDN" ]; then
-        echo "ERROR: You MUST provide the FQDN of the cluster host."
+        echo "ERROR: You MUST provide the FQDN of the remote host."
         exit
     fi
 
     shift
 
     if [ -z "$FQDN" ]; then
-        echo "ERROR: The Fully Qualified Domain Name of the new cluster member was not set."
+        echo "ERROR: The Fully Qualified Domain Name of the new remote member was not set."
         exit 1
     fi
 
@@ -113,10 +113,13 @@ if ! lxc remote list | grep -q "$CLUSTER_NAME"; then
     fi
 
 else
-    echo "ERROR: the cluster already exists! You need to go delete your lxd remote if you want to re-create your cluster."
-    echo "       It's may also be helpful to reset/rename your cluster path."
+    echo "ERROR: the remote already exists! You need to go delete your lxd remote if you want to re-create your remote."
+    echo "       It's may also be helpful to reset/rename your remote path."
     exit 1
 fi
+
+
+#ssh "ubuntu@$FQDN" 'sudo echo "ubuntu ALL=(ALL) NOPASSWD: /bin/su - a" >> /etc/sudoers'
 
 # if the disk is loop-based, then we assume the / path exists.
 if [ "$DISK_TO_USE" != loop ]; then
@@ -135,9 +138,9 @@ IP_OF_MGMT_MACHINE="$(ssh ubuntu@"$FQDN" env | grep SSH_CLIENT | cut -d " " -f 1
 IP_OF_MGMT_MACHINE="${IP_OF_MGMT_MACHINE#*=}"
 IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 
-# error out if the cluster password is unset.
-if [ -z "$LXD_CLUSTER_PASSWORD" ]; then
-    echo "ERROR: LXD_CLUSTER_PASSWORD must be set in your cluster_definition."
+# error out if the remote password is unset.
+if [ -z "$LXD_REMOTE_PASSWORD" ]; then
+    echo "ERROR: LXD_REMOTE_PASSWORD must be set in your remote_definition."
     exit 1
 fi
 
@@ -155,10 +158,7 @@ if ! command -v lxc >/dev/null 2>&1; then
 fi
 
 # install dependencies.
-ssh "ubuntu@$FQDN" sudo apt-get update && sudo apt-get upgrade -y && sudo apt install htop dnsutils nano -y
 if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
-    ssh "ubuntu@$FQDN" sudo snap install lxd --channel=5.10/stable
-    sleep 10
 fi
 
 # if the DATA_PLANE_MACVLAN_INTERFACE is not specified, then we 'll
@@ -169,12 +169,11 @@ fi
 
 export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
 
-echo "DATA_PLANE_MACVLAN_INTERFACE: $DATA_PLANE_MACVLAN_INTERFACE"
 # run lxd init on the remote server.
 cat <<EOF | ssh ubuntu@"$FQDN" lxd init --preseed
 config:
   core.https_address: ${MGMT_PLANE_IP}:8443
-  core.trust_password: ${LXD_CLUSTER_PASSWORD}
+  core.trust_password: ${LXD_REMOTE_PASSWORD}
   core.dns_address: ${MGMT_PLANE_IP}
   images.auto_update_interval: 15
   
@@ -184,7 +183,6 @@ networks:
   type: bridge
   config:
     ipv4.nat: true
-    ipv4.dhcp: true
     ipv6.address: none
     dns.mode: managed
 profiles:
@@ -197,7 +195,7 @@ profiles:
       type: disk
   name: default
 cluster:
-  server_name: ${CLUSTER_NAME}
+  server_name: ${REMOTE_NAME}
   enabled: true
   member_config: []
   cluster_address: ""
@@ -211,11 +209,11 @@ EOF
 # ensure the lxd service is available over the network, then add a lxc remote, then switch the active remote to it.
 if wait-for-it -t 20 "$FQDN:8443"; then
     # now create a remote on your local LXC client and switch to it.
-    # the software will now target the new cluster.
-    lxc remote add "$CLUSTER_NAME" "$FQDN" --password="$LXD_CLUSTER_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
-    lxc remote switch "$CLUSTER_NAME"
+    # the software will now target the new remote.
+    lxc remote add "$REMOTE_NAME" "$FQDN" --password="$LXD_REMOTE_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
+    lxc remote switch "$REMOTE_NAME"
 
-    echo "INFO: You have create a new cluster named '$CLUSTER_NAME'. Great! We switched your lxd remote to it."
+    echo "INFO: You have create a new remote named '$REMOTE_NAME'. Great! We switched your lxd remote to it."
 else
     echo "ERROR: Could not detect the LXD endpoint. Something went wrong."
     exit 1
@@ -228,7 +226,6 @@ if ! lxc storage list --format csv | grep -q ss-base; then
         # we omit putting a size here so, so LXD will consume the entire disk if '/dev/sdb' or partition if '/dev/sdb1'.
         # TODO do some sanity/resource checking on DISK_TO_USE. Impelment full-disk encryption?
         lxc storage create ss-base zfs source="$DISK_TO_USE"
-
     else
         # if a disk is the default 'loop', then we create a zfs storage pool 
         # on top of the existing filesystem using a loop device, per LXD docs

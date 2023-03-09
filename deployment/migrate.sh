@@ -28,7 +28,7 @@ done
 
 . ../defaults.sh
 
-. ./cluster_env.sh
+. ./remote_env.sh
 
 . ./project_env.sh
 

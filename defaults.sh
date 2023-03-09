@@ -74,7 +74,7 @@ export NOSTR_RELAY_IMAGE="scsibug/nostr-rs-relay"
 export WWW_SERVER_MAC_ADDRESS=
 export BTCPAYSERVER_MAC_ADDRESS=
 
-export CLUSTERS_DIR="$HOME/ss-clusters"
+export REMOTES_DIR="$HOME/ss-remotes"
 export PROJECTS_DIR="$HOME/ss-projects"
 export SITES_PATH="$HOME/ss-sites"
 

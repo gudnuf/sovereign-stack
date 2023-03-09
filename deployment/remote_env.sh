@@ -3,9 +3,9 @@
 set -eu
 cd "$(dirname "$0")"
 
-CURRENT_CLUSTER="$(lxc remote get-default)"
+CURRENT_REMOTE="$(lxc remote get-default)"
 
-if echo "$CURRENT_CLUSTER" | grep -q "production"; then
+if echo "$CURRENT_REMOTE" | grep -q "production"; then
     echo "WARNING: You are running a migration procedure on a production system."
     echo ""
 
@@ -26,15 +26,15 @@ if echo "$CURRENT_CLUSTER" | grep -q "production"; then
 
 fi
 
-export CLUSTER_PATH="$CLUSTERS_DIR/$CURRENT_CLUSTER"
-CLUSTER_DEFINITION="$CLUSTER_PATH/cluster_definition"
-export CLUSTER_DEFINITION="$CLUSTER_DEFINITION"
+export REMOTE_PATH="$REMOTES_DIR/$CURRENT_REMOTE"
+REMOTE_DEFINITION="$REMOTE_PATH/remote_definition"
+export REMOTE_DEFINITION="$REMOTE_DEFINITION"
 
-# ensure the cluster definition exists.
-if [ ! -f "$CLUSTER_DEFINITION" ]; then
-    echo "ERROR: The cluster definition could not be found. You may need to run 'ss-cluster'."
-    echo "INFO: Consult https://www.sovereign-stack.org/clusters for more information."
+# ensure the remote definition exists.
+if [ ! -f "$REMOTE_DEFINITION" ]; then
+    echo "ERROR: The remote definition could not be found. You may need to run 'ss-remote'."
+    echo "INFO: Consult https://www.sovereign-stack.org/remote for more information."
     exit 1
 fi
 
-source "$CLUSTER_DEFINITION"
+source "$REMOTE_DEFINITION"

@@ -2,7 +2,7 @@
 
 set -e
 cd "$(dirname "$0")"
-# this script takes down all resources in the cluster. This script is DESTRUCTIVE of data, so make sure it's backed up first.
+# this script takes down all resources in the remote. This script is DESTRUCTIVE of data, so make sure it's backed up first.
 
 
 if lxc remote get-default | grep -q "local"; then
@@ -19,7 +19,7 @@ fi
 
 . ../defaults.sh
 
-. ./cluster_env.sh
+. ./remote_env.sh
 
 . ./project_env.sh
 

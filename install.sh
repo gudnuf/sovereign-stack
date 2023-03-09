@@ -60,7 +60,6 @@ profiles:
       type: disk
   name: default
 projects: []
-cluster: null
 
 EOF
 

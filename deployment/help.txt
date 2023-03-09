@@ -3,7 +3,7 @@ Sovereign Stack Help.
 
 You are in the Sovereign Stack management environment. From here, you can issue several commands:
 
-    ss-cluster - Take a remote SSH endpoint under management of Sovereign Stack.
+    ss-remote - Take a remote SSH endpoint under management of Sovereign Stack.
     ss-deploy  - Creates an deployment to your active LXD remote (lxc remote get-default).
     ss-destroy - Destroys the active deployment (Warning: this action is DESTRUCTUVE of user data).
     ss-migrate - migrates an existing deployment to the newest version of Sovereign Stack.
