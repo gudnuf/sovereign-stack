@@ -10,8 +10,13 @@ if lxc remote get-default | grep -q "local"; then
     exit 1
 fi
 
+echo "WARNING: this script backs up your existing remote and saves all data locally in the SSME."
+echo "         Then, all your VMs are destroyed on the remote resulting is destruction of user data."
+echo "         But then we re-create everything using the new codebase, then restore user data to the"
+echo "         newly provisioned VMs."
+
 RESPONSE=
-read -r -p "Are you sure you want to continue? Responding 'y' here results in destruction of user data!": RESPONSE
+read -r -p "Are you sure you want to continue (y/n):  ": RESPONSE
 if [ "$RESPONSE" != "y" ]; then
     echo "STOPPING."
     exit 0
