@@ -2,8 +2,8 @@
 
 set -e
 cd "$(dirname "$0")"
-# this script takes down all resources in the remote. This script is DESTRUCTIVE of data, so make sure it's backed up first.
 
+# this script destroys all resources in the current project.
 
 if lxc remote get-default | grep -q "local"; then
     echo "ERROR: you are on the local lxc remote. Nothing to destroy"
