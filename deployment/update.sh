@@ -12,20 +12,6 @@ if git update-index --refresh | grep -q "needs update"; then
 fi
 
 
-USER_SAYS_YES=false
-
-for i in "$@"; do
-    case $i in
-        -y)
-            USER_SAYS_YES=true
-            shift
-        ;;
-        *)
-        echo "Unexpected option: $1"
-        ;;
-    esac
-done
-
 . ../defaults.sh
 
 . ./remote_env.sh
@@ -63,6 +49,9 @@ source ../defaults.sh
 source "$SITE_PATH/site_definition"
 source ./project/domain_env.sh
 
+
+# now we want to switch the git HEAD of the project subdirectory to the 
+# version of code that was last used
 GIT_COMMIT_ON_REMOTE_HOST="$(ssh ubuntu@$BTCPAY_FQDN cat /home/ubuntu/.ss-githead)"
 cd project/
 git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
@@ -73,7 +62,7 @@ sleep 5
 bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 
 # call the destroy script. If user proceed, then user data is DESTROYED!
-USER_SAYS_YES="$USER_SAYS_YES" ./destroy.sh
+./destroy.sh
 
 cd project/
 git checkout "$TARGET_PROJECT_GIT_COMMIT"
