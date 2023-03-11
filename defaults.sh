@@ -51,7 +51,7 @@ DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
 
 
 # run the docker stack.
-export GHOST_IMAGE="ghost:5.37.0"
+export GHOST_IMAGE="ghost:5.38.0"
 
 # TODO switch to mysql. May require intricate export work for existing sites. 
 # THIS MUST BE COMPLETED BEFORE v1 RELEASE
@@ -85,8 +85,6 @@ export BASE_LXC_IMAGE="ubuntu/$LXD_UBUNTU_BASE_VERSION/cloud"
 export UBUNTU_BASE_IMAGE_NAME="ss-ubuntu-${LXD_UBUNTU_BASE_VERSION//./-}"
 export DOCKER_BASE_IMAGE_NAME="ss-docker-${LXD_UBUNTU_BASE_VERSION//./-}"
 
-# Deploy a registry cache on your management machine.
-export DEPLOY_MGMT_REGISTRY=false
 export OTHER_SITES_LIST=
 export BTCPAY_ALT_NAMES=
 export BITCOIN_CHAIN=regtest

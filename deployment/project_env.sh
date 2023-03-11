@@ -20,6 +20,6 @@ export PRIMARY_SITE_DEFINITION_PATH="$SITES_PATH/$PRIMARY_DOMAIN/site_definition
 source "$PRIMARY_SITE_DEFINITION_PATH"
 
 if [ -z "$PRIMARY_DOMAIN" ]; then
-    echo "ERROR: The PRIMARY_DOMAIN is not specified. Check your remote definition."
+    echo "ERROR: The PRIMARY_DOMAIN is not specified. Check your remote definition at '$PRIMARY_SITE_DEFINITION_PATH'."
     exit 1
 fi
