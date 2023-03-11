@@ -100,4 +100,7 @@ export ROOT_DISK_SIZE_GB=20
 export REGISTRY_URL="https://index.docker.io/v1/"
 export PRIMARY_DOMAIN=
 
+# this is the git commit of the project/ sub git repo.
+# used in the migration script to switch into past for backup
+# then back to present (TARGET_PROJECT_GIT_COMMIT) for restore.
 export TARGET_PROJECT_GIT_COMMIT=df205cfabf3f2bee31561af1c8b6e036280829e6
