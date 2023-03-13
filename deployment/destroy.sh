@@ -26,46 +26,52 @@ fi
 
 . ./remote_env.sh
 
-. ./project_env.sh
+for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
+    NO_PARENS="${PROJECT_CHAIN:1:${#PROJECT_CHAIN}-2}"
+    PROJECT_PREFIX=$(echo "$NO_PARENS" | cut -d'|' -f1)
+    BITCOIN_CHAIN=$(echo "$NO_PARENS" | cut -d'|' -f2)
+    export PROJECT_PREFIX="$PROJECT_PREFIX"
+    export BITCOIN_CHAIN="$BITCOIN_CHAIN"
 
-if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
-    if lxc project list | grep -q "$PROJECT_NAME"; then
-        lxc project switch "$PROJECT_NAME"
+    . ./project_env.sh
+
+    if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
+        if lxc project list | grep -q "$PROJECT_NAME"; then
+            lxc project switch "$PROJECT_NAME"
+        fi
     fi
-fi
 
-for VM in www btcpayserver; do
-    LXD_NAME="$VM-${DOMAIN_NAME//./-}"
+    for VM in www btcpayserver; do
+        LXD_NAME="$VM-${DOMAIN_NAME//./-}"
 
-    if lxc list | grep -q "$LXD_NAME"; then
-        lxc delete -f "$LXD_NAME"
+        if lxc list | grep -q "$LXD_NAME"; then
+            lxc delete -f "$LXD_NAME"
 
+            # remove the ssh known endpoint else we get warnings.
+            ssh-keygen -f "$SSH_HOME/known_hosts" -R "$LXD_NAME"
+        fi
+
+        if lxc profile list | grep -q "$LXD_NAME"; then
+            lxc profile delete "$LXD_NAME"
+        fi
+    done
+
+    if lxc network list -q | grep -q ss-ovn; then
+        lxc network delete ss-ovn
+    fi
+
+    if ! lxc info | grep "project:" | grep -q default; then
+        lxc project switch default
+    fi
+
+    if lxc project list | grep -q "$PROJECT_NAME"; then
+        lxc project delete "$PROJECT_NAME"
+    fi
+
+    # delete the base image so it can be created.
+    if lxc list | grep -q "$BASE_IMAGE_VM_NAME"; then
+        lxc delete -f "$BASE_IMAGE_VM_NAME"
         # remove the ssh known endpoint else we get warnings.
         ssh-keygen -f "$SSH_HOME/known_hosts" -R "$LXD_NAME"
     fi
-
-    if lxc profile list | grep -q "$LXD_NAME"; then
-        lxc profile delete "$LXD_NAME"
-    fi
 done
-
-
-if lxc network list -q | grep -q ss-ovn; then
-    lxc network delete ss-ovn
-fi
-
-if ! lxc info | grep "project:" | grep -q default; then
-    lxc project switch default
-fi
-
-
-if lxc project list | grep -q "$PROJECT_NAME"; then
-    lxc project delete "$PROJECT_NAME"
-fi
-
-# delete the base image so it can be created.
-if lxc list | grep -q "$BASE_IMAGE_VM_NAME"; then
-    lxc delete -f "$BASE_IMAGE_VM_NAME"
-    # remove the ssh known endpoint else we get warnings.
-    ssh-keygen -f "$SSH_HOME/known_hosts" -R "$LXD_NAME"
-fi
