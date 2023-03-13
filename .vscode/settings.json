@@ -14,11 +14,11 @@
         "-x"
     ],
     "shellcheck.ignorePatterns": {},
-    "shellcheck.exclude": [
-        "SC1090",
-        "SC1091",
-        "SC2029"
-    ],
+    // "shellcheck.exclude": [
+    //     "SC1090",
+    //     "SC1091",
+    //     "SC2029"
+    // ],
     "terminal.integrated.fontFamily": "monospace",
     "workbench.colorCustomizations": {
         "activityBar.background": "#1900a565",
