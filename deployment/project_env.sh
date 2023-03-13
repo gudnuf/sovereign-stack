@@ -31,3 +31,9 @@ if [ -z "$PRIMARY_DOMAIN" ]; then
 fi
 
 source "$PRIMARY_SITE_DEFINITION_PATH"
+
+if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
+    if lxc project list | grep -q "$PROJECT_NAME"; then
+        lxc project switch "$PROJECT_NAME"
+    fi
+fi
