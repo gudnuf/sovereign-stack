@@ -8,10 +8,11 @@ cd "$(dirname "$0")"
 PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
 export PROJECT_NAME="$PROJECT_NAME"
 PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
-PROJECT_DEFINITION_PATH="$PROJECT_PATH/project_definition"
+export PROJECT_PATH="$PROJECT_PATH"
+PROJECT_DEFINITION_PATH="$PROJECT_PATH/project.conf"
 
 if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
-    echo "ERROR: 'project_definition' not found $PROJECT_DEFINITION_PATH not found."
+    echo "ERROR: 'project.conf' not found $PROJECT_DEFINITION_PATH not found."
     exit 1
 fi
 

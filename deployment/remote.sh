@@ -22,28 +22,25 @@ fi
 source ../defaults.sh
 
 export REMOTE_PATH="$REMOTES_DIR/$REMOTE_NAME"
-REMOTE_DEFINITION="$REMOTE_PATH/remote_definition"
+REMOTE_DEFINITION="$REMOTE_PATH/remote.conf"
 export REMOTE_DEFINITION="$REMOTE_DEFINITION"
 
 mkdir -p "$REMOTE_PATH"
 if [ ! -f "$REMOTE_DEFINITION" ]; then
-    # stub out a remote_definition.
+    # stub out a remote.conf.
     cat >"$REMOTE_DEFINITION" <<EOL
-#!/bin/bash
+# https://www.sovereign-stack.org/ss-remote
 
-# see https://www.sovereign-stack.org/remote for more info!
-
-export LXD_REMOTE_PASSWORD="$(gpg --gen-random --armor 1 14)"
-export BITCOIN_CHAIN="regtest"
-export PROJECT_PREFIX="$REMOTE_NAME"
-#export REGISTRY_URL=http://registry.domain.tld:5000
+LXD_REMOTE_PASSWORD="$(gpg --gen-random --armor 1 14)"
+DEPLOYMENT_STRING="(dev|regtest),(staging|testnet)"
+# REGISTRY_URL=http://registry.domain.tld:5000
 
 EOL
 
     chmod 0744 "$REMOTE_DEFINITION"
     echo "We stubbed out a '$REMOTE_DEFINITION' file for you."
     echo "Use this file to customize your remote deployment;"
-    echo "Check out 'https://www.sovereign-stack.org/remote' for more information."
+    echo "Check out 'https://www.sovereign-stack.org/ss-remote' for more information."
     exit 1
 fi
 
@@ -140,7 +137,7 @@ IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 
 # error out if the remote password is unset.
 if [ -z "$LXD_REMOTE_PASSWORD" ]; then
-    echo "ERROR: LXD_REMOTE_PASSWORD must be set in your remote_definition."
+    echo "ERROR: LXD_REMOTE_PASSWORD must be set in your remote.conf file."
     exit 1
 fi
 

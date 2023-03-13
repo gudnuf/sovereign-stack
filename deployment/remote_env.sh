@@ -27,13 +27,13 @@ if echo "$CURRENT_REMOTE" | grep -q "production"; then
 fi
 
 export REMOTE_PATH="$REMOTES_DIR/$CURRENT_REMOTE"
-REMOTE_DEFINITION="$REMOTE_PATH/remote_definition"
+REMOTE_DEFINITION="$REMOTE_PATH/remote.conf"
 export REMOTE_DEFINITION="$REMOTE_DEFINITION"
 
 # ensure the remote definition exists.
 if [ ! -f "$REMOTE_DEFINITION" ]; then
     echo "ERROR: The remote definition could not be found. You may need to run 'ss-remote'."
-    echo "INFO: Consult https://www.sovereign-stack.org/remote for more information."
+    echo "INFO: Consult https://www.sovereign-stack.org/ss-remote for more information."
     exit 1
 fi
 
