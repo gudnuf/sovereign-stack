@@ -51,7 +51,7 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
 
     # source the site path so we know what features it has.
     source ../defaults.sh
-    source "$SITE_PATH/site_definition"
+    source "$SITE_PATH/site.conf"
     source ./project/domain_env.sh
 
     # now we want to switch the git HEAD of the project subdirectory to the 

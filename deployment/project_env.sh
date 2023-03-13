@@ -17,7 +17,8 @@ if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
 fi
 
 source "$PROJECT_DEFINITION_PATH"
-export PRIMARY_SITE_DEFINITION_PATH="$SITES_PATH/$PRIMARY_DOMAIN/site_definition"
+
+export PRIMARY_SITE_DEFINITION_PATH="$SITES_PATH/$PRIMARY_DOMAIN/site.conf"
 
 if [ ! -f "$PRIMARY_SITE_DEFINITION_PATH" ]; then
     echo "ERROR: the site definition does not exist."
