@@ -40,6 +40,9 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     export PROJECT_PREFIX="$PROJECT_PREFIX"
     export BITCOIN_CHAIN="$BITCOIN_CHAIN"
 
+    PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
+    PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
+
     # if the user sets USER_TARGET_PROJECT, let's ensure the project exists.
     if [ -n "$USER_TARGET_PROJECT" ]; then
         if ! lxc project list | grep -q "$USER_TARGET_PROJECT"; then
