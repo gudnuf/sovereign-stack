@@ -23,6 +23,22 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     export PROJECT_PREFIX="$PROJECT_PREFIX"
     export BITCOIN_CHAIN="$BITCOIN_CHAIN"
 
+    # if the user sets USER_TARGET_PROJECT, let's ensure the project exists.
+    if [ -n "$USER_TARGET_PROJECT" ]; then
+        if ! lxc project list | grep -q "$USER_TARGET_PROJECT"; then
+            echo "ERROR: the project does not exist! Nothing to update."
+            exit 1
+        fi
+
+        if [ "$PROJECT_NAME" != "$USER_TARGET_PROJECT" ]; then
+            echo "INFO: Skipping project '$PROJECT_NAME' since the system owner has used the --project switch."
+            exit
+        fi
+    fi
+
+    export PROJECT_NAME="$PROJECT_NAME"
+    export PROJECT_PATH="$PROJECT_PATH"
+
     . ./project_env.sh
 
     # Check to see if any of the VMs actually don't exist. 

@@ -3,12 +3,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-# source project defition.
-# Now let's load the project definition.
-PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
-export PROJECT_NAME="$PROJECT_NAME"
-PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
-export PROJECT_PATH="$PROJECT_PATH"
+
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project.conf"
 
 if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
