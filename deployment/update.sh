@@ -11,6 +11,23 @@ if git update-index --refresh | grep -q "needs update"; then
     exit 1
 fi
 
+USER_TARGET_PROJECT=
+
+# grab any modifications from the command line.
+for i in "$@"; do
+    case $i in
+        --project=*)
+            USER_TARGET_PROJECT="${i#*=}"
+            shift
+        ;;
+
+        *)
+        echo "Unexpected option: $1"
+        exit 1
+        ;;
+    esac
+done
+
 
 . ../defaults.sh
 
