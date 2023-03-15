@@ -101,4 +101,4 @@ export PRIMARY_DOMAIN=
 # this is the git commit of the project/ sub git repo.
 # used in the migration script to switch into past for backup
 # then back to present (TARGET_PROJECT_GIT_COMMIT) for restore.
-export TARGET_PROJECT_GIT_COMMIT=72c4df897af0a054ad938a5badf94cd13ef45ec5
+export TARGET_PROJECT_GIT_COMMIT=29acc1796dca29f56f80005f869d3bdc1faf6c58
