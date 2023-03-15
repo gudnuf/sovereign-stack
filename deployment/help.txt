@@ -1,5 +1,5 @@
 
-You are in the Sovereign Stack management environment. From here, you can issue several commands:
+You are in the Sovereign Stack Management Environment (SSME). From here, you can issue several commands:
 
     ss-remote  - Take a remote SSH endpoint under management of Sovereign Stack.
     ss-deploy  - Creates a deployment to your active LXD remote.
@@ -7,6 +7,6 @@ You are in the Sovereign Stack management environment. From here, you can issue 
     ss-update  - brings an existing deployment up to the newest version of Sovereign Stack.
     ss-show    - show the lxd resources associated with the current remote.
 
-For more infomation about all these topics, consult the Sovereign Stack website. Relevant posts include:
+For more infomation about all these topics, consult the Sovereign Stack website starting with:
 
   - https://www.sovereign-stack.org/tag/instance-management/
