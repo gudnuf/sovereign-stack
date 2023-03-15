@@ -74,9 +74,11 @@ export NOSTR_RELAY_IMAGE="scsibug/nostr-rs-relay"
 export WWW_SERVER_MAC_ADDRESS=
 export BTCPAYSERVER_MAC_ADDRESS=
 
-export REMOTES_DIR="$HOME/ss-remotes"
-export PROJECTS_DIR="$HOME/ss-projects"
-export SITES_PATH="$HOME/ss-sites"
+export SS_ROOT_PATH="$HOME/.ss"
+
+export REMOTES_DIR="$SS_ROOT_PATH/remotes"
+export PROJECTS_DIR="$SS_ROOT_PATH/projects"
+export SITES_PATH="$SS_ROOT_PATH/sites"
 
 # The base VM image.
 export LXD_UBUNTU_BASE_VERSION="jammy"
