@@ -5,6 +5,12 @@ cd "$(dirname "$0")"
 
 # see https://www.sovereign-stack.org/management/
 
+# this script is not meant to be executed from the SSME; Let's let's check and abort if so.
+if [ "$(hostname)" = ss-mgmt ]; then
+    echo "ERROR: This command is meant to be executed from the bare metal management machine -- not the SSME."
+    exit 1
+fi
+
 . ./defaults.sh
 
 # the DISK variable here tells us which disk (partition) the admin wants to use for 
@@ -155,8 +161,7 @@ if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
     git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
 else
     cd "$PROJECTS_SCRIPTS_PATH"
-    git pull origin main
+    git -c advice.detachedHead=false pull origin main
     git checkout "$TARGET_PROJECT_GIT_COMMIT"
     cd -
 fi
-

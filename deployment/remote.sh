@@ -199,7 +199,7 @@ networks:
     ipv6.address: none
     dns.mode: managed
 - name: lxdbr1
-  description: "Non-natting bridge for ovn networks to connect to."
+  description: "Non-natting bridge needed for ovn networks."
   type: bridge
   config:
     ipv4.address: 10.10.10.1/24
@@ -254,3 +254,12 @@ if ! lxc storage list --format csv | grep -q ss-base; then
         lxc storage create ss-base zfs
     fi
 fi
+
+# create the testnet/mainnet blocks/chainstate subvolumes.
+for CHAIN in mainnet testnet; do
+    for DATA in blocks chainstate; do
+        if ! lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
+            lxc storage volume create ss-base "$CHAIN-$DATA" --type=filesystem
+        fi
+    done
+done

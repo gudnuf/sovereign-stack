@@ -80,6 +80,9 @@ export REMOTES_DIR="$SS_ROOT_PATH/remotes"
 export PROJECTS_DIR="$SS_ROOT_PATH/projects"
 export SITES_PATH="$SS_ROOT_PATH/sites"
 
+# mount into ss-mgmt/home/ubuntu/snap/lxd/common/config
+export LXD_CONFIG_PATH="$SS_ROOT_PATH/lxd"
+
 # The base VM image.
 export LXD_UBUNTU_BASE_VERSION="jammy"
 export BASE_IMAGE_VM_NAME="ss-base-${LXD_UBUNTU_BASE_VERSION//./-}"
@@ -103,4 +106,4 @@ export PRIMARY_DOMAIN=
 # this is the git commit of the project/ sub git repo.
 # used in the migration script to switch into past for backup
 # then back to present (TARGET_PROJECT_GIT_COMMIT) for restore.
-export TARGET_PROJECT_GIT_COMMIT=657b68f9cb83404bd6eef7e196bbe2b7a3ba25d4
+export TARGET_PROJECT_GIT_COMMIT=06341c884240e1c64f08993f20fd031201745fbb

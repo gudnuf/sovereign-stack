@@ -34,7 +34,6 @@ if lxc list --format csv | grep -q "ss-mgmt"; then
 
     lxc config device remove ss-mgmt sscode
 
-    SS_ROOT_PATH="$HOME/.ss"
     if [ -d "$SS_ROOT_PATH" ]; then
         lxc config device remove ss-mgmt ssroot
     fi
