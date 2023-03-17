@@ -3,14 +3,12 @@
 set -eu
 cd "$(dirname "$0")"
 
-
 # check if there are any uncommited changes. It's dangerous to 
 # alter production systems when you have commits to make or changes to stash.
 if git update-index --refresh | grep -q "needs update"; then
     echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
     exit 1
 fi
-
 
 echo "WARNING: this script backs up your existing remote and saves all data locally in the SSME."
 echo "         Then, all your VMs are destroyed on the remote resulting is destruction of user data."
@@ -108,9 +106,11 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     # version of code that was last used
     GIT_COMMIT_ON_REMOTE_HOST="$(ssh ubuntu@$BTCPAY_FQDN cat /home/ubuntu/.ss-githead)"
     cd project/
+    echo "INFO: switch the 'project' repo to commit prior commit '$GIT_COMMIT_ON_REMOTE_HOST'"
+    echo "      This allows Sovereign Stack to can grab a backup using the version of the code"
+    echo "      that was used when the deployment was created."
     git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
     cd -
-    sleep 5
 
     # run deploy which backups up everything, but doesnt restart any services.
     bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
@@ -119,10 +119,11 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     ./destroy.sh
 
     cd project/
+    echo "INFO: switching the 'project' repo back to the most recent commit '$TARGET_PROJECT_GIT_COMMIT'"
+    echo "      That way new deployments will be instantiated using the latest codebase."
     git checkout "$TARGET_PROJECT_GIT_COMMIT"
     cd -
 
-    sleep 5
     # Then we can run a restore operation and specify the backup archive at the CLI.
     bash -c "./project/deploy.sh -y --restore-www --restore-btcpay --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 

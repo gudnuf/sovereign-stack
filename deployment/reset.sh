@@ -63,4 +63,6 @@ CURRENT_REMOTE="$(lxc remote get-default)"
 if ! lxc remote get-default | grep -q "local"; then
     lxc remote switch local
     lxc remote remove "$CURRENT_REMOTE"
+
+    echo "INFO: The remote '$CURRENT_REMOTE' has been removed! You are currenly controlling your local instance."
 fi
