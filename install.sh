@@ -71,11 +71,23 @@ EOF
 
 fi
 
-SS_ROOT_PATH="$HOME/.ss"
 
-# pull the image down if it's not there.
+# we need to get the base image. IMport it if it's cached, else download it then cache it.
 if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
-    lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
+    # if the image if cached locally, import it from disk, otherwise download it from ubuntu
+    if [ -d "$SS_JAMMY_PATH" ]; then
+        lxc image import "$SS_JAMMY_PATH/meta-bf1a2627bdddbfb0a9bf1f8ae146fa794800c6c91281d3db88c8d762f58bd057.tar.xz" \
+            "$SS_JAMMY_PATH/bf1a2627bdddbfb0a9bf1f8ae146fa794800c6c91281d3db88c8d762f58bd057.qcow2" \
+            --alias "$UBUNTU_BASE_IMAGE_NAME"
+    else
+        lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
+    fi
+fi
+
+# export the image if it's not cached.
+if [ ! -d "$SS_JAMMY_PATH" ]; then
+    mkdir "$SS_JAMMY_PATH" 
+    lxc image export "$UBUNTU_BASE_IMAGE_NAME" "$SS_JAMMY_PATH" --vm
 fi
 
 # if the ss-mgmt doesn't exist, create it.
@@ -89,6 +101,23 @@ if ! lxc list --format csv | grep -q ss-mgmt; then
     # this allows the data to persist across ss-mgmt vms; ie. install/uninstall
     if [ -d "$SS_ROOT_PATH" ]; then
         lxc config device add ss-mgmt ssroot disk source="$SS_ROOT_PATH" path=/home/ubuntu/.ss
+    fi
+
+    # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
+    BITCOIN_TESTNET_BLOCKS_PATH="$HOME/.bitcoin/testnet3/blocks"
+    if [ -d "$BITCOIN_TESTNET_BLOCKS_PATH" ]; then
+        lxc config device add ss-mgmt ss-testnet-blocks disk source="$BITCOIN_TESTNET_BLOCKS_PATH" path=/home/ubuntu/.ss/cache/bitcoin/testnet/blocks
+    fi
+
+        # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
+    BITCOIN_TESTNET_CHAINSTATE_PATH="$HOME/.bitcoin/testnet3/chainstate"
+    if [ -d "$BITCOIN_TESTNET_CHAINSTATE_PATH" ]; then
+        lxc config device add ss-mgmt ss-testnet-chainstate disk source="$BITCOIN_TESTNET_CHAINSTATE_PATH" path=/home/ubuntu/.ss/cache/bitcoin/testnet/chainstate
+    fi
+
+    # mount the ssh directory in there.
+    if [ -f "$SSH_PUBKEY_PATH" ]; then
+        lxc config device add ss-mgmt ss-ssh disk source="$HOME/.ssh" path=/home/ubuntu/.ssh
     fi
 fi
 
