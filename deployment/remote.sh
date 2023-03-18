@@ -116,12 +116,6 @@ if [ "$DISK_TO_USE" != loop ]; then
     fi
 fi
 
-# The MGMT Plane IP is the IP address that the LXD API binds to, which happens
-# to be the same as whichever SSH connection you're coming in on.
-MGMT_PLANE_IP="$(ssh ubuntu@"$FQDN" env | grep SSH_CONNECTION | cut -d " " -f 3)"
-IP_OF_MGMT_MACHINE="$(ssh ubuntu@"$FQDN" env | grep SSH_CLIENT | cut -d " " -f 1 )"
-IP_OF_MGMT_MACHINE="${IP_OF_MGMT_MACHINE#*=}"
-IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 
 # error out if the remote password is unset.
 if [ -z "$LXD_REMOTE_PASSWORD" ]; then
@@ -166,6 +160,11 @@ if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
 fi
 
 export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
+
+MGMT_PLANE_IP="$(ssh ubuntu@"$FQDN" env | grep SSH_CONNECTION | cut -d " " -f 3)"
+IP_OF_MGMT_MACHINE="$(ssh ubuntu@"$FQDN" env | grep SSH_CLIENT | cut -d " " -f 1 )"
+IP_OF_MGMT_MACHINE="${IP_OF_MGMT_MACHINE#*=}"
+IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 
 # run lxd init on the remote server.
 cat <<EOF | ssh ubuntu@"$FQDN" lxd init --preseed
