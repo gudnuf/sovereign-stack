@@ -47,7 +47,7 @@ export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
 
 export NEXTCLOUD_SPACE_GB=10
 
-DEFAULT_DB_IMAGE="mariadb:10.9.3-jammy"
+DEFAULT_DB_IMAGE="mariadb:10.11.2-jammy"
 
 
 # run the docker stack.
@@ -100,13 +100,19 @@ export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
 
 # this space is for OS, docker images, etc. DOES NOT INCLUDE USER DATA.
 export ROOT_DISK_SIZE_GB=20
-export REGISTRY_URL="https://index.docker.io/v1/"
+export REGISTRY_URL="https://index.docker.io/v1"
 export PRIMARY_DOMAIN=
 
 # this is the git commit of the project/ sub git repo.
 # used in the migration script to switch into past for backup
 # then back to present (TARGET_PROJECT_GIT_COMMIT) for restore.
-export TARGET_PROJECT_GIT_COMMIT=c661ac0be91276593f718debe1266e8bab3a3c65
+export TARGET_PROJECT_GIT_COMMIT=bde59ef71718fd8810762dbbbd4877a7968a8cd1
+
+# 
+export TESTNET_BLOCK_HASH=00000000d8277ba1ca66b40b3e3476629e6f0f97c5b8cfaeabfe402e55db223a
+export MAINNET_BLOCK_HASH=000000000000000000047941e3a6102e8896a4ae66b962599568eb25abd6b405
+
+
 
 export SS_CACHE_PATH="$SS_ROOT_PATH/cache"
 export SS_JAMMY_PATH="$SS_CACHE_PATH/$UBUNTU_BASE_IMAGE_NAME"

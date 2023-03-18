@@ -43,7 +43,6 @@ if lxc network list --format csv | grep -q lxdbr1; then
     lxc network delete lxdbr1
 fi
 
-
 # create the testnet/mainnet blocks/chainstate subvolumes.
 for CHAIN in mainnet testnet; do
     for DATA in blocks chainstate; do
@@ -53,16 +52,14 @@ for CHAIN in mainnet testnet; do
     done
 done
 
-
 if lxc storage list --format csv | grep -q ss-base; then
     lxc storage delete ss-base
 fi
-
 
 CURRENT_REMOTE="$(lxc remote get-default)"
 if ! lxc remote get-default | grep -q "local"; then
     lxc remote switch local
     lxc remote remove "$CURRENT_REMOTE"
 
-    echo "INFO: The remote '$CURRENT_REMOTE' has been removed! You are currenly controlling your local instance."
+    echo "INFO: The remote '$CURRENT_REMOTE' has been removed! You are now controlling your local instance."
 fi

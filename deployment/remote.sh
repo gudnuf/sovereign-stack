@@ -93,7 +93,7 @@ if ! lxc remote list | grep -q "$REMOTE_NAME"; then
 
         ssh "ubuntu@$FQDN" lsblk --paths
 
-        echo "Please enter the disk or partition that Sovereign Stack will use to store data (default: loop):  "
+        echo "Please enter the disk or partition that Sovereign Stack will use to store data:  "
         read -r DISK_TO_USE
     fi
 
@@ -221,7 +221,7 @@ if wait-for-it -t 20 "$FQDN:8443"; then
     lxc remote add "$REMOTE_NAME" "$FQDN" --password="$LXD_REMOTE_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
     lxc remote switch "$REMOTE_NAME"
 
-    echo "INFO: You have create a new remote named '$REMOTE_NAME'. Great! We switched your lxd remote to it."
+    echo "INFO: You have create a new remote named '$REMOTE_NAME'. Your lxc client is now target it."
 else
     echo "ERROR: Could not detect the LXD endpoint. Something went wrong."
     exit 1
