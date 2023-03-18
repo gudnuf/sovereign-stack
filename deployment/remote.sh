@@ -87,18 +87,6 @@ if ! lxc remote list | grep -q "$REMOTE_NAME"; then
     # first let's copy our ssh pubkey to the remote server so we don't have to login constantly.
     ssh-copy-id -i "$HOME/.ssh/id_rsa.pub" "ubuntu@$FQDN"
 
-    if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
-        echo "INFO: It looks like you didn't provide input on the command line for the data plane macvlan interface."
-        echo "      We need to know which interface that is! Enter it here now."
-        echo ""
-
-        ssh "ubuntu@$FQDN" ip link
-
-        echo "Please enter the network interface that's dedicated to the Sovereign Stack data plane: "
-        read -r DATA_PLANE_MACVLAN_INTERFACE
-
-    fi
-
     if [ -z "$DISK_TO_USE" ]; then
         echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
         echo ""
@@ -172,10 +160,9 @@ ssh -t "ubuntu@$FQDN" "sudo apt-get install -y ovn-host ovn-central"
 
 ssh -t "ubuntu@$FQDN" "sudo ovs-vsctl set open_vswitch . external_ids:ovn-remote=unix:/var/run/ovn/ovnsb_db.sock external_ids:ovn-encap-type=geneve external_ids:ovn-encap-ip=127.0.0.1"
 
-# if the DATA_PLANE_MACVLAN_INTERFACE is not specified, then we 'll
-# just attach VMs to the network interface used for for the default route.
+# if the user did not specify the interface, we just use whatever is used for the default route.
 if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
-    DATA_PLANE_MACVLAN_INTERFACE="$(ssh -t ubuntu@"$FQDN" ip route | grep default | cut -d " " -f 5)"
+    DATA_PLANE_MACVLAN_INTERFACE="$(ssh ubuntu@"$FQDN" ip route | grep "default via" | awk '{print $5}')"
 fi
 
 export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
