@@ -38,6 +38,10 @@ if lxc list --format csv | grep -q "ss-mgmt"; then
         lxc config device remove ss-mgmt ssroot
     fi
 
+    if [ -d "$HOME/.ssh" ]; then
+        lxc config device remove ss-mgmt ss-ssh
+    fi
+
     lxc delete ss-mgmt
 fi
 

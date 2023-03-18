@@ -91,6 +91,7 @@ if [ ! -d "$SS_JAMMY_PATH" ]; then
 fi
 
 # if the ss-mgmt doesn't exist, create it.
+SSH_PUBKEY_PATH="$HOME/.ssh/id_rsa.pub"
 if ! lxc list --format csv | grep -q ss-mgmt; then
     lxc init "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
 
@@ -134,16 +135,6 @@ fi
 while lxc exec ss-mgmt -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
     sleep 1
 done
-
-SSH_PUBKEY_PATH="$HOME/.ssh/id_rsa.pub"
-if [ ! -f "$SSH_PUBKEY_PATH" ]; then
-    ssh-keygen -f "$SSH_HOME/id_rsa" -t ecdsa -b 521 -N ""
-fi
-
-# place the bare metal mgmt machine ssh pubkey on the remote host in the authorzed_keys section
-if [ -f "$SSH_PUBKEY_PATH" ]; then
-    lxc file push "$SSH_PUBKEY_PATH" ss-mgmt/home/ubuntu/.ssh/authorized_keys
-fi
 
 # do some other preparations for user experience
 lxc file push ./management/bash_profile ss-mgmt/home/ubuntu/.bash_profile
