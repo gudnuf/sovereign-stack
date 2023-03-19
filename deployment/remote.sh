@@ -239,13 +239,16 @@ if ! lxc storage list --format csv | grep -q ss-base; then
         # on top of the existing filesystem using a loop device, per LXD docs
         lxc storage create ss-base zfs
     fi
-fi
 
-# create the testnet/mainnet blocks/chainstate subvolumes.
-for CHAIN in mainnet testnet; do
-    for DATA in blocks chainstate; do
-        if ! lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
-            lxc storage volume create ss-base "$CHAIN-$DATA" --type=filesystem
-        fi
+    # create the testnet/mainnet blocks/chainstate subvolumes.
+    for CHAIN in mainnet testnet; do
+        for DATA in blocks chainstate; do
+            if ! lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
+                lxc storage volume create ss-base "$CHAIN-$DATA" --type=filesystem
+            fi
+        done
     done
-done
+
+else
+    echo "WARNING! The host '$FQDN' appears to have Sovereign Stack worksloads already provisioned. Proceed with care."
+fi

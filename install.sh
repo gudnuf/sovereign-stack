@@ -105,15 +105,35 @@ if ! lxc list --format csv | grep -q ss-mgmt; then
     fi
 
     # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
-    BITCOIN_TESTNET_BLOCKS_PATH="$HOME/.bitcoin/testnet3/blocks"
+    BITCOIN_DIR="$HOME/.bitcoin"
+    REMOTE_BITCOIN_CACHE_PATH="/home/ubuntu/.ss/cache/bitcoin"
+    BITCOIN_TESTNET_BLOCKS_PATH="$BITCOIN_DIR/testnet3/blocks"
     if [ -d "$BITCOIN_TESTNET_BLOCKS_PATH" ]; then
-        lxc config device add ss-mgmt ss-testnet-blocks disk source="$BITCOIN_TESTNET_BLOCKS_PATH" path=/home/ubuntu/.ss/cache/bitcoin/testnet/blocks
+        lxc config device add ss-mgmt ss-testnet-blocks disk source="$BITCOIN_TESTNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/testnet/blocks
     fi
 
         # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
-    BITCOIN_TESTNET_CHAINSTATE_PATH="$HOME/.bitcoin/testnet3/chainstate"
+    BITCOIN_TESTNET_CHAINSTATE_PATH="$BITCOIN_DIR/testnet3/chainstate"
     if [ -d "$BITCOIN_TESTNET_CHAINSTATE_PATH" ]; then
-        lxc config device add ss-mgmt ss-testnet-chainstate disk source="$BITCOIN_TESTNET_CHAINSTATE_PATH" path=/home/ubuntu/.ss/cache/bitcoin/testnet/chainstate
+        lxc config device add ss-mgmt ss-testnet-chainstate disk source="$BITCOIN_TESTNET_CHAINSTATE_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/testnet/chainstate
+    fi
+
+    # if a ~/.bitcoin/blocks dir exists, mount it in.
+    BITCOIN_MAINNET_BLOCKS_PATH="$BITCOIN_DIR/blocks"
+    if [ -d "$BITCOIN_MAINNET_BLOCKS_PATH" ]; then
+        lxc config device add ss-mgmt ss-mainnet-blocks disk source="$BITCOIN_MAINNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/blocks
+    else
+        echo "WARNING: the blocks directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
+        exit 1
+    fi
+
+        # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
+    BITCOIN_MAINNET_CHAINSTATE_PATH="$BITCOIN_DIR/chainstate"
+    if [ -d "$BITCOIN_MAINNET_CHAINSTATE_PATH" ]; then
+        lxc config device add ss-mgmt ss-mainnet-chainstate disk source="$BITCOIN_MAINNET_CHAINSTATE_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/chainstate
+        else
+        echo "WARNING: the chainstate directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
+        exit 1
     fi
 
     # mount the ssh directory in there.
