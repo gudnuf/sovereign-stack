@@ -10,7 +10,7 @@ if lxc remote get-default | grep -q "local"; then
     exit 1
 fi
 
-echo "WARNING: This will DESTROY any existing VMs!"
+echo "WARNING: This will DESTROY any existing VMs! Use the --purge flag to delete ALL Sovereign Stack LXD resources."
 
 RESPONSE=
 read -r -p "Are you sure you want to continue (y/n):  ": RESPONSE
