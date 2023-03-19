@@ -17,9 +17,6 @@ fi
 # lxd resources. By default, we provision the disk under / as a loop device. Admin
 # can override with CLI modifications.
 DISK="rpool/lxd"
-
-#DISK="/dev/sda1"
-
 export DISK="$DISK"
 
 # let's check to ensure the management machine is on the Baseline ubuntu

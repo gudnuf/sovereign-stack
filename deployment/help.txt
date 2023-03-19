@@ -2,7 +2,8 @@
 You are in the Sovereign Stack Management Environment (SSME). From here, you can issue several commands:
 
     ss-remote  - Take a remote SSH endpoint under management of Sovereign Stack.
-    ss-deploy  - Creates a deployment to your active LXD remote.
+    ss-deploy  - Deploys Sovereign Stack instances to your currenty remote according to your
+                 various remote.conf, project.conf, and site.conf files.
     ss-show    - show the lxd resources associated with the current remote.
     ss-update  - brings an existing deployment up to the newest version of Sovereign Stack.
     ss-destroy - Destroys the active deployment (WARNING: destructive).
