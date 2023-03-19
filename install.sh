@@ -120,17 +120,15 @@ if ! lxc list --format csv | grep -q ss-mgmt; then
     if [ -d "$BITCOIN_MAINNET_BLOCKS_PATH" ]; then
         lxc config device add ss-mgmt ss-mainnet-blocks disk source="$BITCOIN_MAINNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/blocks
     else
-        echo "WARNING: the blocks directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
-        exit 1
+        echo "INFO: the blocks directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
     fi
 
         # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
     BITCOIN_MAINNET_CHAINSTATE_PATH="$BITCOIN_DIR/chainstate"
     if [ -d "$BITCOIN_MAINNET_CHAINSTATE_PATH" ]; then
         lxc config device add ss-mgmt ss-mainnet-chainstate disk source="$BITCOIN_MAINNET_CHAINSTATE_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/chainstate
-        else
-        echo "WARNING: the chainstate directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
-        exit 1
+    else
+        echo "INFO: the chainstate directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
     fi
 
     # mount the ssh directory in there.

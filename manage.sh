@@ -7,6 +7,11 @@ if ! lxc remote get-default | grep -q "local"; then
     lxc remote switch "local"
 fi
 
+if ! lxc list -q --format csv | grep -q ss-mgmt; then
+    echo "ERROR: the 'ss-mgmt' VM does not exist. You may need to run install.sh"
+    exit 1
+fi
+
 # if the mgmt machine doesn't exist, then warn the user to perform ./install.sh
 if ! lxc list --format csv | grep -q "ss-mgmt"; then
     echo "ERROR: the management machine VM does not exist. You probably need to run './install.sh'."
