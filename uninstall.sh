@@ -32,13 +32,15 @@ if lxc list --format csv | grep -q "ss-mgmt"; then
         lxc stop ss-mgmt
     fi
 
-    lxc config device remove ss-mgmt sscode
-
-    if [ -d "$SS_ROOT_PATH" ]; then
-        lxc config device remove ss-mgmt ssroot
+    if lxc config device list ss-mgmt -q | grep -q "ss-code"; then
+        lxc config device remove ss-mgmt ss-code
     fi
 
-    if [ -d "$HOME/.ssh" ]; then
+    if lxc config device list ss-mgmt -q | grep -q "ss-root"; then
+        lxc config device remove ss-mgmt ss-root
+    fi
+
+    if lxc config device list ss-mgmt -q | grep -q "ss-ssh"; then
         lxc config device remove ss-mgmt ss-ssh
     fi
 
