@@ -72,10 +72,11 @@ fi
 # we need to get the base image. IMport it if it's cached, else download it then cache it.
 if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
     # if the image if cached locally, import it from disk, otherwise download it from ubuntu
-    if [ -d "$SS_JAMMY_PATH" ]; then
-        lxc image import "$SS_JAMMY_PATH/meta-bf1a2627bdddbfb0a9bf1f8ae146fa794800c6c91281d3db88c8d762f58bd057.tar.xz" \
-            "$SS_JAMMY_PATH/bf1a2627bdddbfb0a9bf1f8ae146fa794800c6c91281d3db88c8d762f58bd057.qcow2" \
-            --alias "$UBUNTU_BASE_IMAGE_NAME"
+    IMAGE_IDENTIFIER=$(find "$SS_JAMMY_PATH" | grep ".qcow2" | head -n1 | cut -d "." -f1)
+    METADATA_FILE="$SS_JAMMY_PATH/meta-$IMAGE_IDENTIFIER.tar.xz"
+    IMAGE_FILE="$SS_JAMMY_PATH/$IMAGE_IDENTIFIER.qcow2"
+    if [ -d "$SS_JAMMY_PATH" ] && [ -f "$METADATA_FILE" ] && [ -f "$IMAGE_FILE" ]; then
+        lxc image import "$METADATA_FILE" "$IMAGE_FILE" --alias "$UBUNTU_BASE_IMAGE_NAME"
     else
         lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
     fi
