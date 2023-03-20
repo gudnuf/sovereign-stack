@@ -1,11 +1,6 @@
 #!/bin/bash
 
-alias ss-deploy='/home/ubuntu/sovereign-stack/deployment/project/deploy.sh $@'
-alias ss-remote='/home/ubuntu/sovereign-stack/deployment/remote.sh $@'
-alias ss-show='/home/ubuntu/sovereign-stack/deployment/show.sh $@'
-alias ss-reset='/home/ubuntu/sovereign-stack/deployment/reset.sh $@'
-alias ss-update='/home/ubuntu/sovereign-stack/deployment/update.sh $@'
-alias ss-destroy='/home/ubuntu/sovereign-stack/deployment/destroy.sh $@'
-alias ss-help='cat /home/ubuntu/sovereign-stack/deployment/help.txt'
-
-alias ll='ls -lah'
+# this wires up the aliases for remote ssh sessions.
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi

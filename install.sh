@@ -150,6 +150,7 @@ while lxc exec ss-mgmt -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
 done
 
 # do some other preparations for user experience
+lxc file push ./management/bash_aliases ss-mgmt/home/ubuntu/.bash_aliases
 lxc file push ./management/bash_profile ss-mgmt/home/ubuntu/.bash_profile
 lxc file push ./management/bashrc ss-mgmt/home/ubuntu/.bashrc
 lxc file push ./management/motd ss-mgmt/etc/update-motd.d/sovereign-stack
