@@ -95,11 +95,9 @@ if ! lxc list --format csv | grep -q ss-mgmt; then
     # mount the pre-verified sovereign stack git repo into the new vm
     lxc config device add ss-mgmt ss-code disk source="$(pwd)" path=/home/ubuntu/sovereign-stack
 
-    # if the System Owner has a ~/.ss directory, then we'll mount it into the vm
-    # this allows the data to persist across ss-mgmt vms; ie. install/uninstall
-    if [ -d "$SS_ROOT_PATH" ]; then
-        lxc config device add ss-mgmt ss-root disk source="$SS_ROOT_PATH" path=/home/ubuntu/.ss
-    fi
+    # create the ~/.ss path and mount it into the vm.
+    mkdir -p "$SS_ROOT_PATH"
+    lxc config device add ss-mgmt ss-root disk source="$SS_ROOT_PATH" path=/home/ubuntu/.ss
 
     # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
     BITCOIN_DIR="$HOME/.bitcoin"
