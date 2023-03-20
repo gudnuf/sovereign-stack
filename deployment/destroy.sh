@@ -50,11 +50,6 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
 
     # if the user sets USER_TARGET_PROJECT, let's ensure the project exists.
     if [ -n "$USER_TARGET_PROJECT" ]; then
-        if ! lxc project list | grep -q "$USER_TARGET_PROJECT"; then
-            echo "ERROR: the project does not exist! Nothing to destroy."
-            exit 1
-        fi
-
         if [ "$PROJECT_NAME" != "$USER_TARGET_PROJECT" ]; then
             echo "INFO: Skipping project '$PROJECT_NAME' since the system owner has used the --project= switch."
             exit

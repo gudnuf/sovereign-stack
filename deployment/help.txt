@@ -11,4 +11,5 @@ You are in the Sovereign Stack Management Environment (SSME). From here, you can
 
 For more infomation about all these topics, consult the Sovereign Stack website starting with:
 
-  - https://www.sovereign-stack.org/tag/instance-management/
+  - https://www.sovereign-stack.org/tag/deployment-management/
+
