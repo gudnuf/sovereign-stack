@@ -28,7 +28,7 @@ fi
 
 # install lxd snap and initialize it
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd
+    sudo snap install lxd --channel=latest/candidate
     sleep 5
 
     # run lxd init
