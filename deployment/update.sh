@@ -116,7 +116,7 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     bash -c "./project/deploy.sh --project=$PROJECT_NAME --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 
     # call the destroy script. If user proceed, then user data is DESTROYED!
-    ./destroy.sh
+    bash -c "./destroy.sh --project=$PROJECT_NAME"
 
     cd project/
     echo "INFO: switching the 'project' repo back to the most recent commit '$TARGET_PROJECT_GIT_COMMIT'"
