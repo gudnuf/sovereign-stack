@@ -23,14 +23,25 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     BITCOIN_CHAIN=$(echo "$NO_PARENS" | cut -d'|' -f2)
     PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
 
+    echo
+    echo
+    echo "Project: $PROJECT_NAME"
+    echo "----------------------"
     if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
         if lxc project list | grep -q "$PROJECT_NAME"; then
             lxc project switch "$PROJECT_NAME"
         fi
     fi
 
+    echo
+    echo "  Networks:"
     lxc network list
+    echo
+    echo "  Profiles:"
     lxc profile list
+    echo
+    echo "  Instances (VMs):"
     lxc list
+    echo
 
 done

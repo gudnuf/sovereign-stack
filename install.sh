@@ -79,13 +79,9 @@ if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
         lxc image import "$METADATA_FILE" "$IMAGE_FILE" --alias "$UBUNTU_BASE_IMAGE_NAME"
     else
         lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
+        mkdir -p "$SS_JAMMY_PATH" 
+        lxc image export "$UBUNTU_BASE_IMAGE_NAME" "$SS_JAMMY_PATH" --vm
     fi
-fi
-
-# export the image if it's not cached.
-if [ ! -d "$SS_JAMMY_PATH" ]; then
-    mkdir "$SS_JAMMY_PATH" 
-    lxc image export "$UBUNTU_BASE_IMAGE_NAME" "$SS_JAMMY_PATH" --vm
 fi
 
 # if the ss-mgmt doesn't exist, create it.
