@@ -113,7 +113,7 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     cd -
 
     # run deploy which backups up everything, but doesnt restart any services.
-    bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
+    bash -c "./project/deploy.sh --project=$PROJECT_NAME --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 
     # call the destroy script. If user proceed, then user data is DESTROYED!
     ./destroy.sh
@@ -125,6 +125,6 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     cd -
 
     # Then we can run a restore operation and specify the backup archive at the CLI.
-    bash -c "./project/deploy.sh -y --restore-www --restore-btcpay --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
+    bash -c "./project/deploy.sh --project=$PROJECT_NAME -y --restore-www --restore-btcpay --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
 
 done
