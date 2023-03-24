@@ -26,14 +26,13 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     echo
     echo
     echo "Project: $PROJECT_NAME"
-    echo "----------------------"
+    echo "----------------------------------------------------------"
     if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
         if lxc project list | grep -q "$PROJECT_NAME"; then
             lxc project switch "$PROJECT_NAME"
         fi
     fi
 
-    echo
     echo "  Networks:"
     lxc network list
     echo
@@ -42,6 +41,5 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     echo
     echo "  Instances (VMs):"
     lxc list
-    echo
-
+    echo "----------------------------------------------------------"
 done
