@@ -56,7 +56,7 @@ export GHOST_IMAGE="ghost:5.38.0"
 # TODO switch to mysql. May require intricate export work for existing sites. 
 # THIS MUST BE COMPLETED BEFORE v1 RELEASE
 #https://forum.ghost.org/t/how-to-migrate-from-mariadb-10-to-mysql-8/29575
-export GHOST_DB_IMAGE="$DEFAULT_DB_IMAGE"
+export GHOST_DB_IMAGE="mysql:8.0.32"
 
 
 export NGINX_IMAGE="nginx:1.23.3"
