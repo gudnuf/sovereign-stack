@@ -63,7 +63,6 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
         fi
 
         if [ "$PROJECT_NAME" != "$USER_TARGET_PROJECT" ]; then
-            echo "INFO: Skipping project '$PROJECT_NAME' since the system owner has used the --project switch."
             exit
         fi
     fi
