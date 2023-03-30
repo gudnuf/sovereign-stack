@@ -3,7 +3,6 @@
 set -eu
 cd "$(dirname "$0")"
 
-
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project.conf"
 
 if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
@@ -32,3 +31,6 @@ if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
         lxc project switch "$PROJECT_NAME"
     fi
 fi
+
+SHASUM_OF_PRIMARY_DOMAIN="$(echo -n "$PRIMARY_DOMAIN" | sha256sum | awk '{print $1;}' )"
+export PRIMARY_DOMAIN_IDENTIFIER="${SHASUM_OF_PRIMARY_DOMAIN: -6}"

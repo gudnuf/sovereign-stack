@@ -1,14 +1,14 @@
 #!/bin/bash
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
 
 # check if there are any uncommited changes. It's dangerous to 
 # alter production systems when you have commits to make or changes to stash.
-if git update-index --refresh | grep -q "needs update"; then
-    echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
-    exit 1
-fi
+# if git update-index --refresh | grep -q "needs update"; then
+#     echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
+#     exit 1
+# fi
 
 echo "WARNING: this script backs up your existing remote and saves all data locally in the SSME."
 echo "         Then, all your VMs are destroyed on the remote resulting is destruction of user data."
@@ -63,7 +63,7 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
         fi
 
         if [ "$PROJECT_NAME" != "$USER_TARGET_PROJECT" ]; then
-            exit
+            continue
         fi
     fi
 

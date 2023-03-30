@@ -19,13 +19,6 @@ fi
 DISK="rpool/lxd"
 export DISK="$DISK"
 
-# let's check to ensure the management machine is on the Baseline ubuntu
-# TODO maybe remove this check; this theoretically should work on anything that support bash and lxd?
-if ! lsb_release -d | grep -q "Ubuntu 22.04"; then
-    echo "ERROR: Your machine is not running the Ubuntu 22.04 LTS baseline OS on your management machine."
-    exit 1
-fi
-
 # install lxd snap and initialize it
 if ! snap list | grep -q lxd; then
     sudo snap install lxd --channel=latest/candidate
