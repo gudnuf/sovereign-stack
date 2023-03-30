@@ -10,15 +10,6 @@ if lxc remote get-default | grep -q "local"; then
     exit 1
 fi
 
-echo "WARNING: This will DESTROY any existing VMs!"
-
-RESPONSE=
-read -r -p "Are you sure you want to continue (y/n):  ": RESPONSE
-if [ "$RESPONSE" != "y" ]; then
-    echo "STOPPING."
-    exit 0
-fi
-
 USER_TARGET_PROJECT=
 
 # grab any modifications from the command line.
@@ -66,8 +57,8 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
         fi
     fi
 
-    for VM in www btcpayserver; do
-        LXD_NAME="$VM-${DOMAIN_NAME//./-}"
+    for VIRTUAL_MACHINE in www btcpayserver; do
+        LXD_NAME="$VIRTUAL_MACHINE-${PRIMARY_DOMAIN//./-}"
 
         if lxc list | grep -q "$LXD_NAME"; then
             lxc delete -f "$LXD_NAME"
@@ -79,6 +70,24 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
         if lxc profile list | grep -q "$LXD_NAME"; then
             lxc profile delete "$LXD_NAME"
         fi
+
+        # destroy the docker volume
+        VM_ID=w
+        if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
+            VM_ID="b"
+        fi
+
+        RESPONSE=
+        read -r -p "Do you want to delete the docker volume for '$LXD_NAME'?": RESPONSE
+        if [ "$RESPONSE" = "y" ]; then
+            VOLUME_NAME="$PRIMARY_DOMAIN_IDENTIFIER-$VM_ID"
+            if lxc storage volume list ss-base | grep -q "$VOLUME_NAME"; then
+                lxc storage volume delete ss-base "$VOLUME_NAME"
+            fi
+        else
+            echo "INFO: User DID NOT select 'y'. The storage volume will remain."
+        fi
+
     done
 
     if lxc network list -q | grep -q ss-ovn; then
