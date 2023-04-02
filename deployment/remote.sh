@@ -21,7 +21,7 @@ fi
 #shellcheck disable=SC1091
 source ../defaults.sh
 
-export REMOTE_PATH="$REMOTES_DIR/$REMOTE_NAME"
+export REMOTE_PATH="$REMOTES_PATH/$REMOTE_NAME"
 REMOTE_DEFINITION="$REMOTE_PATH/remote.conf"
 export REMOTE_DEFINITION="$REMOTE_DEFINITION"
 

@@ -76,8 +76,8 @@ export BTCPAYSERVER_MAC_ADDRESS=
 
 export SS_ROOT_PATH="$HOME/.ss"
 
-export REMOTES_DIR="$SS_ROOT_PATH/remotes"
-export PROJECTS_DIR="$SS_ROOT_PATH/projects"
+export REMOTES_PATH="$SS_ROOT_PATH/remotes"
+export PROJECTS_PATH="$SS_ROOT_PATH/projects"
 export SITES_PATH="$SS_ROOT_PATH/sites"
 
 # mount into ss-mgmt/home/ubuntu/snap/lxd/common/config
@@ -96,9 +96,8 @@ export OTHER_SITES_LIST=
 export BTCPAY_ALT_NAMES=
 export BITCOIN_CHAIN=regtest
 export REMOTE_HOME="/home/ubuntu"
-
-export BTCPAY_SERVER_APPPATH="$REMOTE_HOME/btcpayserver-docker"
-export REMOTE_CERT_BASE_DIR="$REMOTE_HOME/.certs"
+export REMOTE_DATA_PATH="/home/ubuntu/ss-data"
+export BTCPAY_SERVER_APPPATH="$REMOTE_DATA_PATH/btcpayserver-docker"
 
 # this space is for OS, docker images, etc. DOES NOT INCLUDE USER DATA.
 export ROOT_DISK_SIZE_GB=20
