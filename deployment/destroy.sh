@@ -31,25 +31,7 @@ done
 
 . ./remote_env.sh
 
-for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
-    NO_PARENS="${PROJECT_CHAIN:1:${#PROJECT_CHAIN}-2}"
-    PROJECT_PREFIX=$(echo "$NO_PARENS" | cut -d'|' -f1)
-    BITCOIN_CHAIN=$(echo "$NO_PARENS" | cut -d'|' -f2)
-
-    PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
-    PROJECT_PATH="$PROJECTS_DIR/$PROJECT_NAME"
-
-    # if the user sets USER_TARGET_PROJECT, let's ensure the project exists.
-    if [ -n "$USER_TARGET_PROJECT" ]; then
-        if [ "$PROJECT_NAME" != "$USER_TARGET_PROJECT" ]; then
-            continue
-        fi
-    fi
-
-    export PROJECT_NAME="$PROJECT_NAME"
-    export PROJECT_PATH="$PROJECT_PATH"
-
-    . ./project_env.sh
+. ./project_env.sh
 
     if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
         if lxc project list | grep -q "$PROJECT_NAME"; then
@@ -90,22 +72,13 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
 
     done
 
-    if lxc network list -q | grep -q ss-ovn; then
-        lxc network delete ss-ovn
-    fi
+if lxc network list -q | grep -q ss-ovn; then
+    lxc network delete ss-ovn
+fi
 
-    if ! lxc info | grep "project:" | grep -q default; then
-        lxc project switch default
-    fi
-
-    if lxc project list | grep -q "$PROJECT_NAME"; then
-        lxc project delete "$PROJECT_NAME"
-    fi
-
-    # delete the base image so it can be created.
-    if lxc list | grep -q "$BASE_IMAGE_VM_NAME"; then
-        lxc delete -f "$BASE_IMAGE_VM_NAME"
-        # remove the ssh known endpoint else we get warnings.
-        ssh-keygen -f "$SSH_HOME/known_hosts" -R "$LXD_NAME"
-    fi
-done
+# delete the base image so it can be created.
+if lxc list | grep -q "$BASE_IMAGE_VM_NAME"; then
+    lxc delete -f "$BASE_IMAGE_VM_NAME" --project default
+    # remove the ssh known endpoint else we get warnings.
+    ssh-keygen -f "$SSH_HOME/known_hosts" -R "$BASE_IMAGE_VM_NAME"
+fi
