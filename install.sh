@@ -1,9 +1,9 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
-# see https://www.sovereign-stack.org/management/
+# https://www.sovereign-stack.org/install/
 
 # this script is not meant to be executed from the SSME; Let's let's check and abort if so.
 if [ "$(hostname)" = ss-mgmt ]; then
@@ -72,55 +72,74 @@ if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
         lxc image import "$METADATA_FILE" "$IMAGE_FILE" --alias "$UBUNTU_BASE_IMAGE_NAME"
     else
         lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
-        mkdir -p "$SS_JAMMY_PATH" 
+        mkdir -p "$SS_JAMMY_PATH"
         lxc image export "$UBUNTU_BASE_IMAGE_NAME" "$SS_JAMMY_PATH" --vm
     fi
 fi
 
 # if the ss-mgmt doesn't exist, create it.
 SSH_PUBKEY_PATH="$HOME/.ssh/id_rsa.pub"
+FROM_BUILT_IMAGE=false
 if ! lxc list --format csv | grep -q ss-mgmt; then
-    lxc init "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
 
-    # mount the pre-verified sovereign stack git repo into the new vm
+    # TODO check to see if there's an existing ss-mgmt image to spawn from, otherwise do this.
+    if lxc image list | grep -q ss-mgmt; then
+        FROM_BUILT_IMAGE=true
+        lxc init ss-mgmt ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
+    else
+        lxc init "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
+    fi
+
+fi
+
+# mount the pre-verified sovereign stack git repo into the new vm
+if ! lxc config device show ss-mgmt | grep -q ss-code; then
     lxc config device add ss-mgmt ss-code disk source="$(pwd)" path=/home/ubuntu/sovereign-stack
+fi
+# create the ~/.ss path and mount it into the vm.
+mkdir -p "$SS_ROOT_PATH"
 
-    # create the ~/.ss path and mount it into the vm.
-    mkdir -p "$SS_ROOT_PATH"
+if ! lxc config device show ss-mgmt | grep -q ss-root; then
     lxc config device add ss-mgmt ss-root disk source="$SS_ROOT_PATH" path=/home/ubuntu/.ss
+fi
 
-    # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
-    BITCOIN_DIR="$HOME/.bitcoin"
-    REMOTE_BITCOIN_CACHE_PATH="/home/ubuntu/.ss/cache/bitcoin"
-    BITCOIN_TESTNET_BLOCKS_PATH="$BITCOIN_DIR/testnet3/blocks"
-    if [ -d "$BITCOIN_TESTNET_BLOCKS_PATH" ]; then
+# if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
+BITCOIN_DIR="$HOME/.bitcoin"
+REMOTE_BITCOIN_CACHE_PATH="/home/ubuntu/.ss/cache/bitcoin"
+BITCOIN_TESTNET_BLOCKS_PATH="$BITCOIN_DIR/testnet3/blocks"
+if [ -d "$BITCOIN_TESTNET_BLOCKS_PATH" ]; then
+    if ! lxc config device show ss-mgmt | grep -q ss-testnet-blocks; then
         lxc config device add ss-mgmt ss-testnet-blocks disk source="$BITCOIN_TESTNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/testnet/blocks
     fi
+fi
 
-        # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
-    BITCOIN_TESTNET_CHAINSTATE_PATH="$BITCOIN_DIR/testnet3/chainstate"
-    if [ -d "$BITCOIN_TESTNET_CHAINSTATE_PATH" ]; then
+    # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
+BITCOIN_TESTNET_CHAINSTATE_PATH="$BITCOIN_DIR/testnet3/chainstate"
+if [ -d "$BITCOIN_TESTNET_CHAINSTATE_PATH" ]; then
+    if ! lxc config device show ss-mgmt | grep -q ss-testnet-chainstate; then
         lxc config device add ss-mgmt ss-testnet-chainstate disk source="$BITCOIN_TESTNET_CHAINSTATE_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/testnet/chainstate
     fi
+fi
 
-    # if a ~/.bitcoin/blocks dir exists, mount it in.
-    BITCOIN_MAINNET_BLOCKS_PATH="$BITCOIN_DIR/blocks"
-    if [ -d "$BITCOIN_MAINNET_BLOCKS_PATH" ]; then
+# if a ~/.bitcoin/blocks dir exists, mount it in.
+BITCOIN_MAINNET_BLOCKS_PATH="$BITCOIN_DIR/blocks"
+if [ -d "$BITCOIN_MAINNET_BLOCKS_PATH" ]; then
+    if ! lxc config device show ss-mgmt | grep -q ss-mainnet-blocks; then
         lxc config device add ss-mgmt ss-mainnet-blocks disk source="$BITCOIN_MAINNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/blocks
-    else
-        echo "INFO: the blocks directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
     fi
+fi
 
-        # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
-    BITCOIN_MAINNET_CHAINSTATE_PATH="$BITCOIN_DIR/chainstate"
-    if [ -d "$BITCOIN_MAINNET_CHAINSTATE_PATH" ]; then
+    # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
+BITCOIN_MAINNET_CHAINSTATE_PATH="$BITCOIN_DIR/chainstate"
+if [ -d "$BITCOIN_MAINNET_CHAINSTATE_PATH" ]; then
+    if ! lxc config device show ss-mgmt | grep -q ss-mainnet-blocks; then
         lxc config device add ss-mgmt ss-mainnet-chainstate disk source="$BITCOIN_MAINNET_CHAINSTATE_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/chainstate
-    else
-        echo "INFO: the chainstate directory was not found for mainnet. It will NOT be mounted into ss-mgmt."
     fi
+fi
 
-    # mount the ssh directory in there.
-    if [ -f "$SSH_PUBKEY_PATH" ]; then
+# mount the ssh directory in there.
+if [ -f "$SSH_PUBKEY_PATH" ]; then
+    if ! lxc config device show ss-mgmt | grep -q ss-ssh; then
         lxc config device add ss-mgmt ss-ssh disk source="$HOME/.ssh" path=/home/ubuntu/.ssh
     fi
 fi
@@ -169,15 +188,25 @@ ssh-keyscan -H -t ecdsa "$IP_V4_ADDRESS" >> "$SSH_HOME/known_hosts"
 
 ssh "ubuntu@$IP_V4_ADDRESS" sudo chown -R ubuntu:ubuntu /home/ubuntu
 
-ssh "ubuntu@$IP_V4_ADDRESS" /home/ubuntu/sovereign-stack/management/provision.sh
 
-#lxc restart ss-mgmt
+if [ "$FROM_BUILT_IMAGE" = false ]; then
+    ssh "ubuntu@$IP_V4_ADDRESS" /home/ubuntu/sovereign-stack/management/provision.sh
+
+    lxc stop ss-mgmt
+
+    if ! lxc image list | grep -q "ss-mgmt"; then
+        lxc publish ss-mgmt --alias=ss-mgmt
+    fi
+
+    lxc start ss-mgmt
+fi
 
 if [ "$ADDED_COMMAND" = true ]; then
     echo "NOTICE! You need to run 'source ~/.bashrc' before continuing. After that, type 'ss-manage' to enter your management environment."
 fi
 
 . ./defaults.sh
+
 # As part of the install script, we pull down any other sovereign-stack git repos
 PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
 PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"

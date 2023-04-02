@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 
 PURGE_LXD=false
 
@@ -57,7 +57,7 @@ if [ "$PURGE_LXD" = true ]; then
         lxc profile device remove default enp5s0
     fi
 
-    if lxc network list | grep -q lxdbr0; then
+    if lxc network list --project default | grep -q lxdbr0; then
         lxc network delete lxdbr0
     fi
 
