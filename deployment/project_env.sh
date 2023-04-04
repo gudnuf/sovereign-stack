@@ -2,14 +2,14 @@
 
 set -eu
 
-export PROJECT_NAME="$(lxc info | grep "project:" | awk '{print $2}')"
+PROJECT_NAME="$(lxc info | grep "project:" | awk '{print $2}')"
+export PROJECT_NAME="$PROJECT_NAME"
 
 if [ "$PROJECT_NAME" = default ]; then
     echo "ERROR: You are on the default project. Use 'lxc project list' and 'lxc project switch <project>'."
     exit 1
 fi
 
-PROJECT_PREFIX=$(echo "$PROJECT_NAME" | cut -d'-' -f1)
 BITCOIN_CHAIN=$(echo "$PROJECT_NAME" | cut -d'-' -f2)
 
 export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
