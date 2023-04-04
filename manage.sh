@@ -1,7 +1,15 @@
 #!/bin/bash
 
+# https://www.sovereign-stack.org/ss-manage/
+
 set -eu
 cd "$(dirname "$0")"
+
+# check to ensure dependencies are met.
+if ! command -v lxc >/dev/null 2>&1; then
+    echo "This script requires 'lxd/lxc' to be installed. Please run 'install.sh'."
+    exit 1
+fi
 
 if ! lxc remote get-default | grep -q "local"; then
     lxc remote switch "local"
