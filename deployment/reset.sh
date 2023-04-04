@@ -63,14 +63,14 @@ if [ "$PURGE_LXD" = true ]; then
         lxc network delete lxdbr1 --project default
     fi
 
-    # create the testnet/mainnet blocks/chainstate subvolumes.
-    for CHAIN in mainnet testnet; do
-        for DATA in blocks chainstate; do
-            if lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
-                lxc storage volume delete ss-base "$CHAIN-$DATA"
-            fi
-        done
-    done
+    # # create the testnet/mainnet blocks/chainstate subvolumes.
+    # for CHAIN in mainnet testnet; do
+    #     for DATA in blocks chainstate; do
+    #         if lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
+    #             lxc storage volume delete ss-base "$CHAIN-$DATA"
+    #         fi
+    #     done
+    # done
 
     if lxc storage list --format csv | grep -q ss-base; then
         lxc storage delete ss-base

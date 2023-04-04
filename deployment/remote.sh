@@ -240,14 +240,14 @@ if ! lxc storage list --format csv | grep -q ss-base; then
         lxc storage create ss-base zfs
     fi
 
-    # create the testnet/mainnet blocks/chainstate subvolumes.
-    for CHAIN in mainnet testnet; do
-        for DATA in blocks chainstate; do
-            if ! lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
-                lxc storage volume create ss-base "$CHAIN-$DATA" --type=filesystem
-            fi
-        done
-    done
+    # # create the testnet/mainnet blocks/chainstate subvolumes.
+    # for CHAIN in mainnet testnet; do
+    #     for DATA in blocks chainstate; do
+    #         if ! lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
+    #             lxc storage volume create ss-base "$CHAIN-$DATA" --type=filesystem
+    #         fi
+    #     done
+    # done
 
 else
     echo "WARNING! The host '$FQDN' appears to have Sovereign Stack worksloads already provisioned. Proceed with care."
