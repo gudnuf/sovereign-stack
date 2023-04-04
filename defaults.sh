@@ -4,7 +4,7 @@ set -e
 
 export DEPLOY_GHOST=true
 export DEPLOY_CLAMS=false
-
+export DEPLOY_NOSTR=false
 export DEPLOY_NEXTCLOUD=false
 export DEPLOY_GITEA=false
 
