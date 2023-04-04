@@ -5,7 +5,7 @@ alias ss-remote='/home/ubuntu/sovereign-stack/deployment/remote.sh $@'
 alias ss-show='/home/ubuntu/sovereign-stack/deployment/show.sh $@'
 alias ss-reset='/home/ubuntu/sovereign-stack/deployment/reset.sh $@'
 alias ss-update='/home/ubuntu/sovereign-stack/deployment/update.sh $@'
-alias ss-destroy='/home/ubuntu/sovereign-stack/deployment/destroy.sh $@'
+alias ss-down='/home/ubuntu/sovereign-stack/deployment/down.sh $@'
 alias ss-help='cat /home/ubuntu/sovereign-stack/deployment/help.txt'
 
 alias ll='ls -lah'
