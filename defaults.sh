@@ -101,8 +101,17 @@ export REMOTE_DATA_PATH_LETSENCRYPT="$REMOTE_DATA_PATH/letsencrypt"
 export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups"
 export BTCPAY_SERVER_APPPATH="$REMOTE_DATA_PATH/btcpayserver-docker"
 
-# this space is for OS, docker images, etc. DOES NOT INCLUDE USER DATA.
-export ROOT_DISK_SIZE_GB=20
+# this space is for OS, docker images, etc
+# values here are fine for regtest generally. Later scripts adjust
+# these values based on testnet/mainnet
+export WWW_SSDATA_DISK_SIZE_GB=20
+export WWW_BACKUP_DISK_SIZE_GB=50
+export WWW_DOCKER_DISK_SIZE_GB=30
+
+export BTCPAYSERVER_SSDATA_DISK_SIZE_GB=20
+export BTCPAYSERVER_BACKUP_DISK_SIZE_GB=5
+export BTCPAYSERVER_DOCKER_DISK_SIZE_GB=30
+
 export REGISTRY_URL="https://index.docker.io/v1"
 export PRIMARY_DOMAIN=
 
