@@ -90,13 +90,15 @@ export BASE_LXC_IMAGE="ubuntu/$LXD_UBUNTU_BASE_VERSION/cloud"
 WEEK_NUMBER=$(date +%U)
 export UBUNTU_BASE_IMAGE_NAME="ss-ubuntu-${LXD_UBUNTU_BASE_VERSION//./-}"
 
-export DOCKER_BASE_IMAGE_NAME="ss-docker-${LXD_UBUNTU_BASE_VERSION//./-}-$WEEK_NUMBER-A"
+export DOCKER_BASE_IMAGE_NAME="ss-docker-${LXD_UBUNTU_BASE_VERSION//./-}-$WEEK_NUMBER"
 
 export OTHER_SITES_LIST=
 export BTCPAY_ALT_NAMES=
 export BITCOIN_CHAIN=regtest
 export REMOTE_HOME="/home/ubuntu"
-export REMOTE_DATA_PATH="/home/ubuntu/ss-data"
+export REMOTE_DATA_PATH="$REMOTE_HOME/ss-data"
+export REMOTE_DATA_PATH_LETSENCRYPT="$REMOTE_DATA_PATH/letsencrypt"
+export REMOTE_BACKUP_PATH="$REMOTE_HOME/backups"
 export BTCPAY_SERVER_APPPATH="$REMOTE_DATA_PATH/btcpayserver-docker"
 
 # this space is for OS, docker images, etc. DOES NOT INCLUDE USER DATA.
