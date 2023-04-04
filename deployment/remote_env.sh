@@ -48,9 +48,9 @@ for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
     # create the lxc project as specified by PROJECT_NAME
     if ! lxc project list | grep -q "$PROJECT_NAME"; then
         lxc project create "$PROJECT_NAME"
-        lxc project set "$PROJECT_NAME" features.networks=true features.images=false features.storage.volumes=false
+        lxc project set "$PROJECT_NAME" features.networks=true features.images=false features.storage.volumes=true
+        lxc project switch "$PROJECT_NAME"
     fi
-
 
     # default values are already at regtest mode.
     if [ "$BITCOIN_CHAIN" = testnet ]; then
