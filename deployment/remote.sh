@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 cd "$(dirname "$0")"
 
 # This script is meant to be executed on the management machine.
@@ -88,13 +88,15 @@ if ! lxc remote list | grep -q "$REMOTE_NAME"; then
     ssh-copy-id -i "$HOME/.ssh/id_rsa.pub" "ubuntu@$FQDN"
 
     if [ -z "$DISK_TO_USE" ]; then
-        echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
-        echo ""
+        if ! ssh "ubuntu@$FQDN" lxc storage list -q | grep -q ss-base; then
+            echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
+            echo ""
 
-        ssh "ubuntu@$FQDN" lsblk --paths
+            ssh "ubuntu@$FQDN" lsblk --paths
 
-        echo "Please enter the disk or partition that Sovereign Stack will use to store data:  "
-        read -r DISK_TO_USE
+            echo "Please enter the disk or partition that Sovereign Stack will use to store data:  "
+            read -r DISK_TO_USE
+        fi
     fi
 
 else
@@ -150,9 +152,7 @@ if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
 fi
 
 # install OVN for the project-specific bridge networks
-ssh -t "ubuntu@$FQDN" "sudo apt-get install -y ovn-host ovn-central"
-
-ssh -t "ubuntu@$FQDN" "sudo ovs-vsctl set open_vswitch . external_ids:ovn-remote=unix:/var/run/ovn/ovnsb_db.sock external_ids:ovn-encap-type=geneve external_ids:ovn-encap-ip=127.0.0.1"
+ssh -t "ubuntu@$FQDN" "sudo apt-get install -y ovn-host ovn-central && sudo ovs-vsctl set open_vswitch . external_ids:ovn-remote=unix:/var/run/ovn/ovnsb_db.sock external_ids:ovn-encap-type=geneve external_ids:ovn-encap-ip=127.0.0.1"
 
 # if the user did not specify the interface, we just use whatever is used for the default route.
 if [ -z "$DATA_PLANE_MACVLAN_INTERFACE" ]; then
