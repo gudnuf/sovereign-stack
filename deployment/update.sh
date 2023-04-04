@@ -1,14 +1,14 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 # check if there are any uncommited changes. It's dangerous to 
 # alter production systems when you have commits to make or changes to stash.
-# if git update-index --refresh | grep -q "needs update"; then
-#     echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
-#     exit 1
-# fi
+if git update-index --refresh | grep -q "needs update"; then
+    echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
+    exit 1
+fi
 
 echo "WARNING: this script backs up your existing remote and saves all data locally in the SSME."
 echo "         Then, all your VMs are destroyed on the remote resulting is destruction of user data."
@@ -68,10 +68,10 @@ git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
 cd -
 
 # run deploy which backups up everything, but doesnt restart any services.
-bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
+bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver"
 
 # call the destroy script. This brings down the existing deployment. Does NOT destroy docker data.
-bash -c "./destroy.sh"
+./down.sh
      
 cd project/
 echo "INFO: switching the 'project' repo back to the most recent commit '$TARGET_PROJECT_GIT_COMMIT'"
@@ -79,5 +79,12 @@ echo "      That way new deployments will be instantiated using the latest codeb
 git checkout "$TARGET_PROJECT_GIT_COMMIT"
 cd -
 
-# Then we can run a restore operation and specify the backup archive at the CLI.
-bash -c "./project/deploy.sh -y --restore-www --restore-btcpay --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH"
+
+# TODO we can do some additional logic here. FOr example if the user wants to provide a source/target project/remote,
+# we can backup the source remote+project and restore it to the target remote+project. This will facilitate cross-device migrations
+
+# However, if the source and target project/remote are the same, we don't really
+# need to do any restorations (or backups for that matter, though we still grab one);
+# we simply mount the existing data. That's the more common case where the user is simply upgrading the system in-place.
+
+./project/deploy.sh

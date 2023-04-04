@@ -23,7 +23,7 @@ done
 
 source ../defaults.sh
 
-./destroy.sh
+./down.sh
 
 # these only get initialzed upon creation, so we MUST delete here so they get recreated.
 if lxc profile list | grep -q "$BASE_IMAGE_VM_NAME"; then
