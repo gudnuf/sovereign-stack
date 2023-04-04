@@ -55,12 +55,12 @@ if [ "$PURGE_LXD" = true ]; then
         lxc profile device remove default eth0
     fi
 
-    if lxc network list --format csv | grep -q lxdbr0; then
-        lxc network delete lxdbr0
+    if lxc network list --format csv -q --project default | grep -q lxdbr0; then
+        lxc network delete lxdbr0 --project default
     fi
 
-    if lxc network list --format csv | grep -q lxdbr1; then
-        lxc network delete lxdbr1
+    if lxc network list --format csv -q --project default | grep -q lxdbr1; then
+        lxc network delete lxdbr1 --project default
     fi
 
     # create the testnet/mainnet blocks/chainstate subvolumes.

@@ -1,7 +1,19 @@
 #!/bin/bash
 
 set -eu
-cd "$(dirname "$0")"
+
+export PROJECT_NAME="$(lxc info | grep "project:" | awk '{print $2}')"
+
+if [ "$PROJECT_NAME" = default ]; then
+    echo "ERROR: You are on the default project. Use 'lxc project list' and 'lxc project switch <project>'."
+    exit 1
+fi
+
+PROJECT_PREFIX=$(echo "$PROJECT_NAME" | cut -d'-' -f1)
+BITCOIN_CHAIN=$(echo "$PROJECT_NAME" | cut -d'-' -f2)
+
+export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
+export BITCOIN_CHAIN="$BITCOIN_CHAIN"
 
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project.conf"
 
@@ -25,12 +37,6 @@ if [ -z "$PRIMARY_DOMAIN" ]; then
 fi
 
 source "$PRIMARY_SITE_DEFINITION_PATH"
-
-if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
-    if lxc project list | grep -q "$PROJECT_NAME"; then
-        lxc project switch "$PROJECT_NAME"
-    fi
-fi
 
 SHASUM_OF_PRIMARY_DOMAIN="$(echo -n "$PRIMARY_DOMAIN" | sha256sum | awk '{print $1;}' )"
 export PRIMARY_DOMAIN_IDENTIFIER="${SHASUM_OF_PRIMARY_DOMAIN: -6}"

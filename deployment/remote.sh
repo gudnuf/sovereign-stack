@@ -129,14 +129,14 @@ if ! command -v lxc >/dev/null 2>&1; then
         sleep 1
     fi
 
-    if lxc network list --format csv | grep -q lxdbr0; then
-        lxc network delete lxdbr0
+    if lxc network list --format csv -q --project default | grep -q lxdbr0; then
+        lxc network delete lxdbr0 --project default
         sleep 1
     fi
 
 
-    if lxc network list --format csv | grep -q lxdbr1; then
-        lxc network delete lxdbr1
+    if lxc network list --format csv -q project default | grep -q lxdbr1; then
+        lxc network delete lxdbr1 --project default
         sleep 1
     fi
 

@@ -38,3 +38,50 @@ if [ ! -f "$REMOTE_DEFINITION" ]; then
 fi
 
 source "$REMOTE_DEFINITION"
+
+# ensure our projects are provisioned according to DEPLOYMENT_STRING
+for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
+    NO_PARENS="${PROJECT_CHAIN:1:${#PROJECT_CHAIN}-2}"
+    PROJECT_PREFIX=$(echo "$NO_PARENS" | cut -d'|' -f1)
+    BITCOIN_CHAIN=$(echo "$NO_PARENS" | cut -d'|' -f2)
+    PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
+
+    # create the lxc project as specified by PROJECT_NAME
+    if ! lxc project list | grep -q "$PROJECT_NAME"; then
+        lxc project create "$PROJECT_NAME"
+        lxc project set "$PROJECT_NAME" features.networks=true features.images=false features.storage.volumes=false
+    fi
+
+
+    # default values are already at regtest mode.
+    if [ "$BITCOIN_CHAIN" = testnet ]; then
+
+        WWW_SSDATA_DISK_SIZE_GB=30
+        WWW_BACKUP_DISK_SIZE_GB=80
+        WWW_DOCKER_DISK_SIZE_GB=50
+
+        BTCPAYSERVER_SSDATA_DISK_SIZE_GB=30
+        BTCPAYSERVER_BACKUP_DISK_SIZE_GB=5
+        BTCPAYSERVER_DOCKER_DISK_SIZE_GB=50
+
+    elif [ "$BITCOIN_CHAIN" = mainnet ]; then
+        
+        WWW_SSDATA_DISK_SIZE_GB=40
+        WWW_BACKUP_DISK_SIZE_GB=80
+        WWW_DOCKER_DISK_SIZE_GB=40
+
+        BTCPAYSERVER_SSDATA_DISK_SIZE_GB=30
+        BTCPAYSERVER_BACKUP_DISK_SIZE_GB=10
+        BTCPAYSERVER_DOCKER_DISK_SIZE_GB=300
+
+    fi
+
+    export WWW_SSDATA_DISK_SIZE_GB="$WWW_SSDATA_DISK_SIZE_GB"
+    export WWW_BACKUP_DISK_SIZE_GB="$WWW_BACKUP_DISK_SIZE_GB"
+    export WWW_DOCKER_DISK_SIZE_GB="$WWW_DOCKER_DISK_SIZE_GB"
+
+    export BTCPAYSERVER_SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
+    export BTCPAYSERVER_BACKUP_DISK_SIZE_GB="$BTCPAYSERVER_BACKUP_DISK_SIZE_GB"
+    export BTCPAYSERVER_DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
+
+done
