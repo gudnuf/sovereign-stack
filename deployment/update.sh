@@ -68,7 +68,7 @@ git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
 cd -
 
 # run deploy which backups up everything, but doesnt restart any services.
-bash -c "./project/deploy.sh --stop --no-cert-renew --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver"
+bash -c "./project/deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver"
 
 # call the destroy script. This brings down the existing deployment. Does NOT destroy docker data.
 ./down.sh

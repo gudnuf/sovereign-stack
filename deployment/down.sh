@@ -40,13 +40,12 @@ export SITE_PATH="$SITES_PATH/$PRIMARY_DOMAIN"
 source "$SITE_PATH/site.conf"
 source ./project/domain_env.sh
 
-
 SKIP=btcpayserver
 for VIRTUAL_MACHINE in www btcpayserver; do
     LXD_NAME="$VIRTUAL_MACHINE-${PRIMARY_DOMAIN//./-}"
 
     if lxc list | grep -q "$LXD_NAME"; then
-        bash -c "./project/deploy.sh --stop --no-cert-renew --skip-$SKIP"
+        bash -c "./project/deploy.sh --stop --skip-$SKIP"
 
         lxc stop "$LXD_NAME"
 
