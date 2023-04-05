@@ -70,9 +70,11 @@ cd -
 # run deploy which backups up everything, but doesnt restart any services.
 bash -c "./project/deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver"
 
-# call the destroy script. This brings down the existing deployment. Does NOT destroy docker data.
+# call the down script (be default it is non-destructuve of user data.)
 ./down.sh
-     
+
+
+# next we switch back to the current version of Sovereign Stack scripts for bringin up the new version.
 cd project/
 echo "INFO: switching the 'project' repo back to the most recent commit '$TARGET_PROJECT_GIT_COMMIT'"
 echo "      That way new deployments will be instantiated using the latest codebase."
