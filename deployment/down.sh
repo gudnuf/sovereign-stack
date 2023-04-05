@@ -48,7 +48,9 @@ for VIRTUAL_MACHINE in www btcpayserver; do
     if lxc list | grep -q "$LXD_NAME"; then
         bash -c "./project/deploy.sh --stop --no-cert-renew --skip-$SKIP"
 
-        lxc delete -f "$LXD_NAME"
+        lxc stop "$LXD_NAME"
+
+        lxc delete "$LXD_NAME"
 
         # remove the ssh known endpoint else we get warnings.
         ssh-keygen -f "$SSH_HOME/known_hosts" -R "$LXD_NAME"
