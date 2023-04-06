@@ -71,7 +71,7 @@ export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 export NOSTR_RELAY_IMAGE="scsibug/nostr-rs-relay"
 
-export WWW_SERVER_MAC_A DDRESS=
+export WWW_SERVER_MAC_ADDRESS=
 export BTCPAYSERVER_MAC_ADDRESS=
 
 export SS_ROOT_PATH="$HOME/ss"
