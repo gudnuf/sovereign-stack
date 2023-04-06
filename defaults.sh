@@ -71,10 +71,10 @@ export GITEA_DB_IMAGE="$DEFAULT_DB_IMAGE"
 
 export NOSTR_RELAY_IMAGE="scsibug/nostr-rs-relay"
 
-export WWW_SERVER_MAC_ADDRESS=
+export WWW_SERVER_MAC_A DDRESS=
 export BTCPAYSERVER_MAC_ADDRESS=
 
-export SS_ROOT_PATH="$HOME/.ss"
+export SS_ROOT_PATH="$HOME/ss"
 
 export REMOTES_PATH="$SS_ROOT_PATH/remotes"
 export PROJECTS_PATH="$SS_ROOT_PATH/projects"
@@ -118,7 +118,7 @@ export PRIMARY_DOMAIN=
 # this is the git commit of the project/ sub git repo.
 # used in the migration script to switch into past for backup
 # then back to present (TARGET_PROJECT_GIT_COMMIT) for restore.
-export TARGET_PROJECT_GIT_COMMIT=9a15ada7e30eb0211399657a9ce25ccc18f47981
+export TARGET_PROJECT_GIT_COMMIT=f05daa9bfb11242eab920fdc4dd490d9bfdd6fbb
 
 # 
 export TESTNET_BLOCK_HASH=00000000d8277ba1ca66b40b3e3476629e6f0f97c5b8cfaeabfe402e55db223a

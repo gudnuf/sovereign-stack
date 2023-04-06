@@ -96,7 +96,7 @@ fi
 if ! lxc config device show ss-mgmt | grep -q ss-code; then
     lxc config device add ss-mgmt ss-code disk source="$(pwd)" path=/home/ubuntu/sovereign-stack
 fi
-# create the ~/.ss path and mount it into the vm.
+# create the ~/ss path and mount it into the vm.
 mkdir -p "$SS_ROOT_PATH"
 
 if ! lxc config device show ss-mgmt | grep -q ss-root; then
