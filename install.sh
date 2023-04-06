@@ -96,16 +96,17 @@ fi
 if ! lxc config device show ss-mgmt | grep -q ss-code; then
     lxc config device add ss-mgmt ss-code disk source="$(pwd)" path=/home/ubuntu/sovereign-stack
 fi
+
 # create the ~/ss path and mount it into the vm.
 mkdir -p "$SS_ROOT_PATH"
 
 if ! lxc config device show ss-mgmt | grep -q ss-root; then
-    lxc config device add ss-mgmt ss-root disk source="$SS_ROOT_PATH" path=/home/ubuntu/.ss
+    lxc config device add ss-mgmt ss-root disk source="$SS_ROOT_PATH" path=/home/ubuntu/ss
 fi
 
 # # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
 # BITCOIN_DIR="$HOME/.bitcoin"
-# REMOTE_BITCOIN_CACHE_PATH="/home/ubuntu/.ss/cache/bitcoin"
+# REMOTE_BITCOIN_CACHE_PATH="/home/ubuntu/ss/cache/bitcoin"
 # BITCOIN_TESTNET_BLOCKS_PATH="$BITCOIN_DIR/testnet3/blocks"
 # if [ -d "$BITCOIN_TESTNET_BLOCKS_PATH" ]; then
 #     if ! lxc config device show ss-mgmt | grep -q ss-testnet-blocks; then
