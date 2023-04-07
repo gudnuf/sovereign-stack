@@ -19,10 +19,10 @@ TARGET_PROJECT_GIT_COMMIT=2e68e93303196fd57b1b473b149b5a82c9faa4f0
 
 # check if there are any uncommited changes. It's dangerous to 
 # alter production systems when you have commits to make or changes to stash.
-# if git update-index --refresh | grep -q "needs update"; then
-#     echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
-#     exit 1
-# fi
+if git update-index --refresh | grep -q "needs update"; then
+    echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
+    exit 1
+fi
 
 echo "WARNING: this script backs up your existing remote and saves all data locally in the SSME."
 echo "         Then, all your VMs are destroyed on the remote resulting is destruction of user data."
@@ -83,7 +83,7 @@ bash -c "./up.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --bac
 ./down.sh
 
 
-next we switch back to the current version of Sovereign Stack scripts for bringin up the new version.
+# next we switch back to the current version of Sovereign Stack scripts for bringin up the new version.
 cd project/
 echo "INFO: switching the 'project' repo back to the most recent commit '$TARGET_PROJECT_GIT_COMMIT'"
 echo "      That way new deployments will be instantiated using the latest codebase."
