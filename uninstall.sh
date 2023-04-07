@@ -24,8 +24,6 @@ if ! command -v lxc >/dev/null 2>&1; then
     exit 1
 fi
 
-. ./defaults.sh
-
 if lxc list --format csv | grep -q "ss-mgmt"; then
 
     if lxc list --format csv -q | grep -q "ss-mgmt,RUNNING"; then
@@ -61,6 +59,8 @@ if [ "$PURGE_LXD" = true ]; then
         lxc network delete lxdbr0
     fi
 
+    # this file contains the BASE_IMAGE_NAME
+    . ./deployment/base.sh
     if lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
         lxc image delete "$UBUNTU_BASE_IMAGE_NAME"
     fi

@@ -11,8 +11,6 @@ if [ "$(hostname)" = ss-mgmt ]; then
     exit 1
 fi
 
-. ./defaults.sh
-
 # the DISK variable here tells us which disk (partition) the admin wants to use for 
 # lxd resources. By default, we provision the disk under / as a loop device. Admin
 # can override with CLI modifications.
@@ -61,22 +59,6 @@ EOF
 
 fi
 
-
-# we need to get the base image. IMport it if it's cached, else download it then cache it.
-if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
-    # if the image if cached locally, import it from disk, otherwise download it from ubuntu
-    IMAGE_IDENTIFIER=$(find "$SS_JAMMY_PATH" | grep ".qcow2" | head -n1 | cut -d "." -f1)
-    METADATA_FILE="$SS_JAMMY_PATH/meta-$IMAGE_IDENTIFIER.tar.xz"
-    IMAGE_FILE="$SS_JAMMY_PATH/$IMAGE_IDENTIFIER.qcow2"
-    if [ -d "$SS_JAMMY_PATH" ] && [ -f "$METADATA_FILE" ] && [ -f "$IMAGE_FILE" ]; then
-        lxc image import "$METADATA_FILE" "$IMAGE_FILE" --alias "$UBUNTU_BASE_IMAGE_NAME"
-    else
-        lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
-        mkdir -p "$SS_JAMMY_PATH"
-        lxc image export "$UBUNTU_BASE_IMAGE_NAME" "$SS_JAMMY_PATH" --vm
-    fi
-fi
-
 # if the ss-mgmt doesn't exist, create it.
 SSH_PUBKEY_PATH="$HOME/.ssh/id_rsa.pub"
 FROM_BUILT_IMAGE=false
@@ -98,6 +80,9 @@ if ! lxc config device show ss-mgmt | grep -q ss-code; then
 fi
 
 # create the ~/ss path and mount it into the vm.
+source ./deployment/deployment_defaults.sh
+source ./deployment/base.sh
+
 mkdir -p "$SS_ROOT_PATH"
 
 if ! lxc config device show ss-mgmt | grep -q ss-root; then
@@ -204,18 +189,4 @@ fi
 
 if [ "$ADDED_COMMAND" = true ]; then
     echo "NOTICE! You need to run 'source ~/.bashrc' before continuing. After that, type 'ss-manage' to enter your management environment."
-fi
-
-. ./defaults.sh
-
-# As part of the install script, we pull down any other sovereign-stack git repos
-PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
-PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
-if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
-    git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
-else
-    cd "$PROJECTS_SCRIPTS_PATH"
-    git -c advice.detachedHead=false pull origin main
-    git checkout "$TARGET_PROJECT_GIT_COMMIT"
-    cd -
 fi

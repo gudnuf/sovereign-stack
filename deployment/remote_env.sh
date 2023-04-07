@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -exu
 
 CURRENT_REMOTE="$(lxc remote get-default)"
 
@@ -24,6 +24,8 @@ if echo "$CURRENT_REMOTE" | grep -q "production"; then
     fi
 
 fi
+
+. ./deployment_defaults.sh
 
 export REMOTE_PATH="$REMOTES_PATH/$CURRENT_REMOTE"
 REMOTE_DEFINITION="$REMOTE_PATH/remote.conf"

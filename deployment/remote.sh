@@ -19,7 +19,7 @@ if [ -z "$REMOTE_NAME" ]; then
 fi
 
 #shellcheck disable=SC1091
-source ../defaults.sh
+source ./deployment_defaults.sh
 
 export REMOTE_PATH="$REMOTES_PATH/$REMOTE_NAME"
 REMOTE_DEFINITION="$REMOTE_PATH/remote.conf"

@@ -45,7 +45,7 @@ for VIRTUAL_MACHINE in www btcpayserver; do
     LXD_NAME="$VIRTUAL_MACHINE-${PRIMARY_DOMAIN//./-}"
 
     if lxc list | grep -q "$LXD_NAME"; then
-        bash -c "./project/deploy.sh --stop --skip-$SKIP"
+        bash -c "./deploy.sh --stop --skip-$SKIP"
 
         lxc stop "$LXD_NAME"
 

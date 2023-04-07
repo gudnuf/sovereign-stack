@@ -54,6 +54,7 @@ fi
 
 
 # if an SSH pubkey does not exist, we create one.
+# TODO convert this to Trezor-backed SSH
 if [ ! -f /home/ubuntu/.ssh/id_rsa.pub ]; then
     # generate a new SSH key for the base vm image.
     ssh-keygen -f /home/ubuntu/.ssh/id_rsa -t ecdsa -b 521 -N ""

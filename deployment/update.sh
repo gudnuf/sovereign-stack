@@ -1,7 +1,21 @@
 #!/bin/bash
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
+
+TARGET_PROJECT_GIT_COMMIT=d536b85d51adce90894d7e066e5a967ff066e041
+
+# As part of the install script, we pull down any other sovereign-stack git repos
+PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
+PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
+if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
+    git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
+else
+    cd "$PROJECTS_SCRIPTS_PATH" || exit 1
+    git -c advice.detachedHead=false pull origin main
+    git checkout "$TARGET_PROJECT_GIT_COMMIT"
+    cd - || exit 1
+fi
 
 # check if there are any uncommited changes. It's dangerous to 
 # alter production systems when you have commits to make or changes to stash.
@@ -68,7 +82,7 @@ git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
 cd -
 
 # run deploy which backups up everything, but doesnt restart any services.
-bash -c "./project/deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver"
+bash -c "./deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver"
 
 # call the down script (be default it is non-destructuve of user data.)
 ./down.sh

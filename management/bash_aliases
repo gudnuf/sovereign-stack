@@ -1,6 +1,6 @@
 #!/bin/bash
 
-alias ss-deploy='/home/ubuntu/sovereign-stack/deployment/project/deploy.sh $@'
+alias ss-deploy='/home/ubuntu/sovereign-stack/deployment/deploy.sh $@'
 alias ss-remote='/home/ubuntu/sovereign-stack/deployment/remote.sh $@'
 alias ss-show='/home/ubuntu/sovereign-stack/deployment/show.sh $@'
 alias ss-reset='/home/ubuntu/sovereign-stack/deployment/reset.sh $@'
