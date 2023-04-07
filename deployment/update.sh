@@ -3,26 +3,26 @@
 set -exu
 cd "$(dirname "$0")"
 
-TARGET_PROJECT_GIT_COMMIT=d536b85d51adce90894d7e066e5a967ff066e041
+TARGET_PROJECT_GIT_COMMIT=9576b56ae8ac90ac4d68429a63e8f6ab843cd4e4
 
-# As part of the install script, we pull down any other sovereign-stack git repos
-PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
-PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
-if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
-    git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
-else
-    cd "$PROJECTS_SCRIPTS_PATH" || exit 1
-    git -c advice.detachedHead=false pull origin main
-    git checkout "$TARGET_PROJECT_GIT_COMMIT"
-    cd - || exit 1
-fi
+# # As part of the install script, we pull down any other sovereign-stack git repos
+# PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
+# PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
+# if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
+#     git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
+# else
+#     cd "$PROJECTS_SCRIPTS_PATH" || exit 1
+#     git -c advice.detachedHead=false pull origin main
+#     git checkout "$TARGET_PROJECT_GIT_COMMIT"
+#     cd - || exit 1
+# fi
 
 # check if there are any uncommited changes. It's dangerous to 
 # alter production systems when you have commits to make or changes to stash.
-if git update-index --refresh | grep -q "needs update"; then
-    echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
-    exit 1
-fi
+# if git update-index --refresh | grep -q "needs update"; then
+#     echo "ERROR: You have uncommited changes! You MUST commit or stash all changes to continue."
+#     exit 1
+# fi
 
 echo "WARNING: this script backs up your existing remote and saves all data locally in the SSME."
 echo "         Then, all your VMs are destroyed on the remote resulting is destruction of user data."
@@ -36,7 +36,7 @@ if [ "$RESPONSE" != "y" ]; then
     exit 0
 fi
 
-. ../defaults.sh
+. ./deployment_defaults.sh
 
 . ./remote_env.sh
 
@@ -57,17 +57,12 @@ done
 BTCPAY_RESTORE_ARCHIVE_PATH="$SITES_PATH/$PRIMARY_DOMAIN/backups/btcpayserver/$(date +%s).tar.gz"
 echo "INFO: The BTCPAY_RESTORE_ARCHIVE_PATH for this migration will be: $BTCPAY_RESTORE_ARCHIVE_PATH" 
 
-# first we run ss-deploy --stop
-# this grabs a backup of all data (backups are on by default) and saves them to the management machine
-# the --stop flag ensures that services do NOT come back online.
-# by default, we grab a backup. 
 
 # first, let's grab the GIT commit from the remote machine.
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$PRIMARY_DOMAIN"
 
 # source the site path so we know what features it has.
-source ../defaults.sh
 source "$SITE_PATH/site.conf"
 source ./project/domain_env.sh
 
