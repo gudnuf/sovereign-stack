@@ -41,3 +41,10 @@ export NOSTR_HOSTNAME="relay"
 export CLAMS_HOSTNAME="clams"
 
 export REGISTRY_URL="https://index.docker.io/v1"
+
+
+export BTCPAY_SERVER_CPU_COUNT="4"
+export BTCPAY_SERVER_MEMORY_MB="4096"
+export WWW_SERVER_CPU_COUNT="4"
+export WWW_SERVER_MEMORY_MB="4096"
+export DOCKER_IMAGE_CACHE_FQDN="registry-1.docker.io"
