@@ -3,6 +3,8 @@
 set -eu
 cd "$(dirname "$0")"
 
+. ./base.sh
+
 ## This is a weird if clause since we need to LEFT-ALIGN the statement below.
 SSH_STRING="Host ${FQDN}"
 if ! grep -q "$SSH_STRING" "$SSH_HOME/config"; then

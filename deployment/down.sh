@@ -26,12 +26,11 @@ for i in "$@"; do
     esac
 done
 
-. ../defaults.sh
+. ./deployment_defaults.sh
 
 . ./remote_env.sh
 
 . ./project_env.sh
-
 
 # let's bring down services on the remote deployment if necessary.
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
@@ -45,15 +44,15 @@ for VIRTUAL_MACHINE in www btcpayserver; do
     LXD_NAME="$VIRTUAL_MACHINE-${PRIMARY_DOMAIN//./-}"
 
     if lxc list | grep -q "$LXD_NAME"; then
-        bash -c "./deploy.sh --stop --skip-$SKIP"
+        bash -c "./up.sh --stop --skip-$SKIP"
 
         lxc stop "$LXD_NAME"
 
         lxc delete "$LXD_NAME"
-
-        # remove the ssh known endpoint else we get warnings.
-        ssh-keygen -f "$SSH_HOME/known_hosts" -R "$LXD_NAME"
     fi
+
+    # remove the ssh known endpoint else we get warnings.
+    ssh-keygen -f "$SSH_HOME/known_hosts" -R "$VIRTUAL_MACHINE.$PRIMARY_DOMAIN" | exit
 
     if lxc profile list | grep -q "$LXD_NAME"; then
         lxc profile delete "$LXD_NAME"
@@ -85,11 +84,4 @@ done
 
 if lxc network list -q | grep -q ss-ovn; then
     lxc network delete ss-ovn
-fi
-
-# delete the base image so it can be created.
-if lxc list | grep -q "$BASE_IMAGE_VM_NAME"; then
-    lxc delete -f "$BASE_IMAGE_VM_NAME" --project default
-    # remove the ssh known endpoint else we get warnings.
-    ssh-keygen -f "$SSH_HOME/known_hosts" -R "$BASE_IMAGE_VM_NAME"
 fi

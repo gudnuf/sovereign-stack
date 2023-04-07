@@ -1,9 +1,9 @@
 #!/bin/bash
 
-set -eu
+set -e
 cd "$(dirname "$0")"
 
-. ../defaults.sh
+. ./deployment_defaults.sh
 
 . ./remote_env.sh
 

@@ -3,7 +3,7 @@
 set -exu
 cd "$(dirname "$0")"
 
-TARGET_PROJECT_GIT_COMMIT=9576b56ae8ac90ac4d68429a63e8f6ab843cd4e4
+TARGET_PROJECT_GIT_COMMIT=2e68e93303196fd57b1b473b149b5a82c9faa4f0
 
 # # As part of the install script, we pull down any other sovereign-stack git repos
 # PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
@@ -77,13 +77,13 @@ git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
 cd -
 
 # run deploy which backups up everything, but doesnt restart any services.
-bash -c "./deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver --skip-base-image"
+bash -c "./up.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver --skip-base-image"
 
 # call the down script (be default it is non-destructuve of user data.)
 ./down.sh
 
 
-# next we switch back to the current version of Sovereign Stack scripts for bringin up the new version.
+next we switch back to the current version of Sovereign Stack scripts for bringin up the new version.
 cd project/
 echo "INFO: switching the 'project' repo back to the most recent commit '$TARGET_PROJECT_GIT_COMMIT'"
 echo "      That way new deployments will be instantiated using the latest codebase."
@@ -98,4 +98,4 @@ cd -
 # need to do any restorations (or backups for that matter, though we still grab one);
 # we simply mount the existing data. That's the more common case where the user is simply upgrading the system in-place.
 
-./project/deploy.sh
+./up.sh
