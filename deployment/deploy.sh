@@ -35,8 +35,10 @@ if lxc remote get-default | grep -q "production"; then
 
 fi
 
+
 PRIMARY_DOMAIN=
 RUN_CERT_RENEWAL=true
+SKIP_BASE_IMAGE_CREATION=false
 SKIP_WWW=false
 RESTORE_WWW=false
 RESTORE_CERTS=false
@@ -99,6 +101,10 @@ for i in "$@"; do
         ;;
         --skip-btcpayserver)
             SKIP_BTCPAY=true
+            shift
+        ;;
+        --skip-base-image)
+            SKIP_BASE_IMAGE_CREATION=true
             shift
         ;;
         --no-cert-renew)
@@ -303,7 +309,9 @@ VPS_HOSTNAME=
 
 if ! lxc image list --format csv | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
     # create the lxd base image.
-    ./create_lxc_base.sh
+    if [ "$SKIP_BASE_IMAGE_CREATION" = false ]; then
+        ./create_lxc_base.sh
+    fi
 fi
 
 for VIRTUAL_MACHINE in www btcpayserver; do
@@ -322,7 +330,6 @@ for VIRTUAL_MACHINE in www btcpayserver; do
 
     export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
-    source ./project/project_defaults.sh
     source "$SITE_PATH/site.conf"
     source ./project/domain_env.sh
 

@@ -77,7 +77,7 @@ git checkout "$GIT_COMMIT_ON_REMOTE_HOST"
 cd -
 
 # run deploy which backups up everything, but doesnt restart any services.
-bash -c "./deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver"
+bash -c "./deploy.sh --stop --backup-archive-path=$BTCPAY_RESTORE_ARCHIVE_PATH --backup-www --backup-btcpayserver --skip-base-image"
 
 # call the down script (be default it is non-destructuve of user data.)
 ./down.sh
