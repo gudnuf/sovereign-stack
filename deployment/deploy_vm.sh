@@ -106,10 +106,4 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
     ssh "$FQDN" "sudo chown ubuntu:ubuntu $REMOTE_DATA_PATH"
     ssh "$FQDN" "sudo chown -R ubuntu:ubuntu $REMOTE_BACKUP_PATH"
 
-    if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
-        # send an updated ~/.bashrc so we have quicker access to cli tools
-        scp ./btcpayserver/bashrc.txt "ubuntu@$FQDN:$REMOTE_HOME/.bashrc"
-        ssh "$BTCPAY_FQDN" "chown ubuntu:ubuntu $REMOTE_HOME/.bashrc"
-        ssh "$BTCPAY_FQDN" "chmod 0664 $REMOTE_HOME/.bashrc"
-    fi
 fi
