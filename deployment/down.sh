@@ -2,7 +2,7 @@
 
 # https://www.sovereign-stack.org/ss-down/
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 if lxc remote get-default -q | grep -q "local"; then

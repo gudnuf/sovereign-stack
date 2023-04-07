@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 TARGET_PROJECT_GIT_COMMIT=2e68e93303196fd57b1b473b149b5a82c9faa4f0

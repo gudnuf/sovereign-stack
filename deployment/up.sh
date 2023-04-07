@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -exu
+set -eu
 cd "$(dirname "$0")"
 
 LATEST_GIT_COMMIT="$(cat ./project/.git/refs/heads/main)"
