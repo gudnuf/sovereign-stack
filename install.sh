@@ -204,6 +204,7 @@ if [ "$FROM_BUILT_IMAGE" = false ]; then
     lxc stop ss-mgmt
 
     if ! lxc image list | grep -q "ss-mgmt"; then
+        echo "Publishing image. Please wait, this may take a while..."
         lxc publish ss-mgmt --alias=ss-mgmt
     fi
 

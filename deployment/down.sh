@@ -85,3 +85,5 @@ done
 if lxc network list -q | grep -q ss-ovn; then
     lxc network delete ss-ovn
 fi
+
+# TODO make a snapshot on all the zfs storage volumes.
