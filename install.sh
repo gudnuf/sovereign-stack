@@ -59,6 +59,23 @@ EOF
 
 fi
 
+
+# we need to get the base image. IMport it if it's cached, else download it then cache it.
+if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
+        # if the image if cached locally, import it from disk, otherwise download it from ubuntu
+    IMAGE_PATH="$HOME/ss/cache/ss-ubuntu-jammy"
+    IMAGE_IDENTIFIER=$(find "$IMAGE_PATH" | grep ".qcow2" | head -n1 | cut -d "." -f1)
+    METADATA_FILE="$IMAGE_PATH/meta-$IMAGE_IDENTIFIER.tar.xz"
+    IMAGE_FILE="$IMAGE_PATH/$IMAGE_IDENTIFIER.qcow2"
+    if [ -d "$IMAGE_PATH" ] && [ -f "$METADATA_FILE" ] && [ -f "$IMAGE_FILE" ]; then
+        lxc image import "$METADATA_FILE" "$IMAGE_FILE" --alias "$UBUNTU_BASE_IMAGE_NAME"
+    else
+        lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
+        mkdir -p "$IMAGE_PATH"
+        lxc image export "$UBUNTU_BASE_IMAGE_NAME" "$IMAGE_PATH" --vm
+    fi
+fi
+
 # if the ss-mgmt doesn't exist, create it.
 SSH_PATH="$HOME/.ssh"
 SSH_PRIVKEY_PATH="$SSH_PATH/id_rsa"
