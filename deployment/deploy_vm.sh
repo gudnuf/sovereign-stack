@@ -10,7 +10,7 @@ SSH_STRING="Host ${FQDN}"
 if ! grep -q "$SSH_STRING" "$SSH_HOME/config"; then
 
 ########## BEGIN
-cat >> "$SSH_HOME/config" <<-EOF
+    cat >> "$SSH_HOME/config" <<-EOF
 
 ${SSH_STRING}
     HostName ${FQDN}

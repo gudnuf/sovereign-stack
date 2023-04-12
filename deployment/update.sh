@@ -49,7 +49,7 @@ for VM in www btcpayserver; do
 
     # if the VM doesn't exist, the we emit an error message and hard quit.
     if ! lxc list --format csv | grep -q "$LXD_NAME"; then
-        echo "ERROR: there is no VM named '$LXD_NAME'. You probably need to run ss-deploy again."
+        echo "ERROR: there is no VM named '$LXD_NAME'. You probably need to run ss-up again."
         exit 1
     fi
 done

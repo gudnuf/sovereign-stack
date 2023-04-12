@@ -1,0 +1,3 @@
+#!/bin/bash
+
+export TARGET_PROJECT_GIT_COMMIT=7da3f29f42d20fe56f67362fac210dcd1ab863b0

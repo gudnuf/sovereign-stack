@@ -222,7 +222,7 @@ if wait-for-it -t 20 "$FQDN:8443"; then
     lxc remote add "$REMOTE_NAME" "$FQDN" --password="$LXD_REMOTE_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
     lxc remote switch "$REMOTE_NAME"
 
-    echo "INFO: You have create a new remote named '$REMOTE_NAME'. Your lxc client is now target it."
+    echo "INFO: A new remote named '$REMOTE_NAME' has been created. Your LXC client has been switched to it."
 else
     echo "ERROR: Could not detect the LXD endpoint. Something went wrong."
     exit 1
@@ -251,5 +251,7 @@ if ! lxc storage list --format csv | grep -q ss-base; then
     # done
 
 else
-    echo "WARNING! The host '$FQDN' appears to have Sovereign Stack worksloads already provisioned. Proceed with care."
+    echo "WARNING! The host '$FQDN' appears to have Sovereign Stack worksloads already provisioned."
+    echo "INFO: Here are your current Deployments."
+    lxc project list -q
 fi

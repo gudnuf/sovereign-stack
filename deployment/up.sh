@@ -34,7 +34,7 @@ if lxc remote get-default | grep -q "production"; then
 
 fi
 
-
+OTHER_SITES_LIST=
 PRIMARY_DOMAIN=
 RUN_CERT_RENEWAL=true
 SKIP_BASE_IMAGE_CREATION=false
@@ -151,10 +151,6 @@ export RESTORE_CERTS="$RESTORE_CERTS"
 # todo convert this to Trezor-T
 SSH_PUBKEY_PATH="$SSH_HOME/id_rsa.pub"
 export SSH_PUBKEY_PATH="$SSH_PUBKEY_PATH"
-if [ ! -f "$SSH_PUBKEY_PATH" ]; then
-    # generate a new SSH key for the base vm image.
-    ssh-keygen -f "$SSH_HOME/id_rsa" -t ecdsa -b 521 -N ""
-fi
 
 # ensure our remote path is created.
 mkdir -p "$REMOTE_PATH"
@@ -192,7 +188,7 @@ function stub_site_definition {
 
             # stub out a site.conf with new passwords.
             cat >"$SITE_DEFINITION_PATH" <<EOL
-# https://www.sovereign-stack.org/ss-deploy/#siteconf
+# https://www.sovereign-stack.org/ss-up/#siteconf
 
 DOMAIN_NAME="${DOMAIN_NAME}"
 # BTCPAY_ALT_NAMES="tip,store,pay,send"
@@ -240,7 +236,7 @@ if [ ! -f "$PROJECT_DEFINITION_PATH" ]; then
 
         # stub out a project.conf
     cat >"$PROJECT_DEFINITION_PATH" <<EOL
-# see https://www.sovereign-stack.org/ss-deploy/#projectconf for more info.
+# see https://www.sovereign-stack.org/ss-up/#projectconf for more info.
 
 PRIMARY_DOMAIN="domain0.tld"
 # OTHER_SITES_LIST="domain1.tld,domain2.tld,domain3.tld"
@@ -258,7 +254,7 @@ EOL
 
     chmod 0744 "$PROJECT_DEFINITION_PATH"
     echo "INFO: we stubbed a new project.conf for you at '$PROJECT_DEFINITION_PATH'. Go update it!"
-    echo "INFO: Learn more at https://www.sovereign-stack.org/ss-deploy/"
+    echo "INFO: Learn more at https://www.sovereign-stack.org/ss-up/"
 
     exit 1
 fi
@@ -423,7 +419,6 @@ done
 # now let's run the www and btcpay-specific provisioning scripts.
 if [ "$SKIP_WWW" = false ]; then
     ./project/www/go.sh
-    ssh ubuntu@"$PRIMARY_WWW_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"
 else
     echo "INFO: Skipping www VM."
 fi
@@ -432,8 +427,6 @@ export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 if [ "$SKIP_BTCPAY" = false ]; then    
     ./project/btcpayserver/go.sh
-
-    ssh ubuntu@"$BTCPAY_FQDN" "echo $LATEST_GIT_COMMIT > /home/ubuntu/.ss-githead"
 else
     echo "INFO: Skipping the btcpayserver VM."
 fi

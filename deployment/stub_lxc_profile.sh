@@ -135,6 +135,9 @@ EOF
             {
                 "registry-mirrors": [
                   "${REGISTRY_URL}"
+                ],
+                "labels": [
+                    "PROJECT_COMMIT=${PROJECT_GIT_COMMIT}"
                 ]
             }
 
