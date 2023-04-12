@@ -35,7 +35,5 @@ fi
 
 . ./management/wait_for_lxc_ip.sh
 
-wait-for-it -t 300 "$IP_V4_ADDRESS:22" > /dev/null 2>&1
-
 # let's ensure ~/.ssh/ssh_config is using the correct IP address for ss-mgmt.
 ssh ubuntu@"$IP_V4_ADDRESS"

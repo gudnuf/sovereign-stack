@@ -139,11 +139,6 @@ fi
 # wait for the vm to have an IP address
 . ./management/wait_for_lxc_ip.sh
 
-# wait for the VM to complete its default cloud-init.
-while lxc exec ss-mgmt -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
-    sleep 1
-done
-
 # do some other preparations for user experience
 lxc file push ./management/bash_aliases ss-mgmt/home/ubuntu/.bash_aliases
 lxc file push ./management/bash_profile ss-mgmt/home/ubuntu/.bash_profile
@@ -162,8 +157,6 @@ if ! < "$HOME/.bashrc" grep -q "ss-manage"; then
     echo "alias ss-manage='$(pwd)/manage.sh \$@'" >> "$HOME/.bashrc"
     ADDED_COMMAND=true
 fi
-
-wait-for-it -t 300 "$IP_V4_ADDRESS:22" > /dev/null 2>&1
 
 # Let's remove any entry in our known_hosts, then add it back.
 # we are using IP address here so we don't have to rely on external DNS 

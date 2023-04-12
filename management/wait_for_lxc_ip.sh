@@ -25,3 +25,8 @@ done
 
 
 export IP_V4_ADDRESS="$IP_V4_ADDRESS"
+
+# wait for the VM to complete its default cloud-init.
+while lxc exec ss-mgmt -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
+    sleep 1
+done
