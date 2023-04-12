@@ -75,6 +75,8 @@ EOF
 
 fi
 
+. ./target.sh
+
 # if VIRTUAL_MACHINE=base, then we doing the base image.
 if [ "$VIRTUAL_MACHINE" = base ]; then
     # this is for the base image only...

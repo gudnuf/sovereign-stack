@@ -3,7 +3,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-TARGET_PROJECT_GIT_COMMIT=2e68e93303196fd57b1b473b149b5a82c9faa4f0
+. ./target.sh
 
 # # As part of the install script, we pull down any other sovereign-stack git repos
 # PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"

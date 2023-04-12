@@ -59,6 +59,11 @@ EOF
 
 fi
 
+. ./deployment/deployment_defaults.sh
+
+. ./deployment/base.sh
+
+
 
 # we need to get the base image. IMport it if it's cached, else download it then cache it.
 if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then

@@ -3,8 +3,7 @@
 set -eu
 cd "$(dirname "$0")"
 
-LATEST_GIT_COMMIT="$(cat ./project/.git/refs/heads/main)"
-export LATEST_GIT_COMMIT="$LATEST_GIT_COMMIT"
+. ./target.sh
 
 # check to ensure dependencies are met.
 for cmd in wait-for-it dig rsync sshfs lxc; do
