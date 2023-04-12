@@ -44,20 +44,9 @@ fi
 # run a lxd command so we don't we a warning upon first invocation
 lxc list > /dev/null 2>&1
 
-
 # add groups for docker and lxd
 if ! groups ubuntu | grep -q docker; then
     sudo addgroup docker
     sudo usermod -aG docker ubuntu
     sudo usermod -aG lxd ubuntu
 fi
-
-
-# if an SSH pubkey does not exist, we create one.
-# TODO convert this to Trezor-backed SSH
-if [ ! -f /home/ubuntu/.ssh/id_rsa.pub ]; then
-    # generate a new SSH key for the base vm image.
-    ssh-keygen -f /home/ubuntu/.ssh/id_rsa -t ecdsa -b 521 -N ""
-fi
-
-echo "Your management machine has been provisioned!"

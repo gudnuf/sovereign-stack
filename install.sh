@@ -60,7 +60,20 @@ EOF
 fi
 
 # if the ss-mgmt doesn't exist, create it.
-SSH_PUBKEY_PATH="$HOME/.ssh/id_rsa.pub"
+SSH_PATH="$HOME/.ssh"
+SSH_PRIVKEY_PATH="$SSH_PATH/id_rsa"
+SSH_PUBKEY_PATH="$SSH_PRIVKEY_PATH.pub"
+
+if [ ! -f "$SSH_PRIVKEY_PATH" ]; then
+    ssh-keygen -f "$SSH_PRIVKEY_PATH" -t rsa -b 4096
+fi
+
+chmod 700 "$HOME/.ssh"
+chmod 600 "$HOME/.ssh/config"
+
+# add SSH_PUBKEY_PATH to authorized_keys
+grep -qxF "$(cat $SSH_PUBKEY_PATH)" "$SSH_PATH/authorized_keys" || cat "$SSH_PUBKEY_PATH" >> "$SSH_PATH/authorized_keys"
+
 FROM_BUILT_IMAGE=false
 if ! lxc list --format csv | grep -q ss-mgmt; then
 
@@ -163,7 +176,7 @@ fi
 # configuration for the base image preparataion.
 ssh-keygen -R "$IP_V4_ADDRESS"
 
-ssh-keyscan -H -t ecdsa "$IP_V4_ADDRESS" >> "$SSH_HOME/known_hosts"
+ssh-keyscan -H "$IP_V4_ADDRESS" >> "$SSH_HOME/known_hosts"
 
 ssh "ubuntu@$IP_V4_ADDRESS" sudo chown -R ubuntu:ubuntu /home/ubuntu
 

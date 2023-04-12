@@ -103,7 +103,7 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
     bash -c "./wait_for_lxc_ip.sh --lxd-name=$LXD_VM_NAME"
 
     # scan the remote machine and install it's identity in our SSH known_hosts file.
-    ssh-keyscan -H -t ecdsa "$FQDN" >> "$SSH_HOME/known_hosts"
+    ssh-keyscan -H "$FQDN" >> "$SSH_HOME/known_hosts"
 
     ssh "$FQDN" "sudo chown ubuntu:ubuntu $REMOTE_DATA_PATH"
     ssh "$FQDN" "sudo chown -R ubuntu:ubuntu $REMOTE_BACKUP_PATH"
