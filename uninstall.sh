@@ -24,6 +24,21 @@ if ! command -v lxc >/dev/null 2>&1; then
     exit 1
 fi
 
+
+if ! lxc remote get-default | grep -q "local"; then
+    echo "ERROR: You MUST be on the local remote when uninstalling the SSME."
+    echo "INFO: You can use 'lxc remote switch local' to do this."
+    exit 1
+fi
+
+
+if ! lxc project list | grep -q "default (current)"; then
+    echo "ERROR: You MUST be on the default project when uninstalling the SSME."
+    echo "INFO: You can use 'lxc project switch default' to do this."
+    exit 1
+fi
+
+
 if lxc list --format csv | grep -q "ss-mgmt"; then
 
     if lxc list --format csv -q | grep -q "ss-mgmt,RUNNING"; then
