@@ -28,7 +28,7 @@ fi
 
 # if the machine does exist, let's make sure it's RUNNING.
 if lxc list --format csv | grep -q "ss-mgmt,STOPPED"; then
-    echo "INFO: The management machine was in a STOPPED state. Starting the environment. Please wait."
+    echo "INFO: The SSME was in a STOPPED state. Starting the environment. Please wait."
     lxc start ss-mgmt
     sleep 30
 fi
