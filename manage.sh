@@ -2,7 +2,7 @@
 
 # https://www.sovereign-stack.org/ss-manage/
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
 
 # check to ensure dependencies are met.

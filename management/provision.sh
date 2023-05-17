@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 # NOTE! This script MUST be executed as root.
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg lsb-release htop
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
 
 sudo mkdir -m 0755 -p /etc/apt/keyrings
 
@@ -34,6 +34,7 @@ sleep 10
 
 # install snap
 if ! snap list | grep -q lxd; then
+    sudo snap install htop
     sudo snap install lxd --channel=latest/candidate
     sleep 6
 

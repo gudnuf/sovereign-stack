@@ -419,14 +419,10 @@ done
 # now let's run the www and btcpay-specific provisioning scripts.
 if [ "$SKIP_WWW" = false ]; then
     ./project/www/go.sh
-else
-    echo "INFO: Skipping www VM."
 fi
 
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-if [ "$SKIP_BTCPAY" = false ]; then    
+if [ "$SKIP_BTCPAY" = false ]; then
     ./project/btcpayserver/go.sh
-else
-    echo "INFO: Skipping the btcpayserver VM."
 fi

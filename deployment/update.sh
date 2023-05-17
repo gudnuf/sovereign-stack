@@ -68,7 +68,7 @@ source ./project/domain_env.sh
 
 # now we want to switch the git HEAD of the project subdirectory to the 
 # version of code that was last used
-GIT_COMMIT_ON_REMOTE_HOST="$(ssh ubuntu@$BTCPAY_FQDN cat /home/ubuntu/.ss-githead)"
+GIT_COMMIT_ON_REMOTE_HOST="$(ssh ubuntu@$WWW_FQDN docker info | grep PROJECT_COMMIT)"
 cd project/
 echo "INFO: switch the 'project' repo to commit prior commit '$GIT_COMMIT_ON_REMOTE_HOST'"
 echo "      This allows Sovereign Stack to can grab a backup using the version of the code"

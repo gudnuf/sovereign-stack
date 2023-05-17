@@ -137,7 +137,7 @@ EOF
                   "${REGISTRY_URL}"
                 ],
                 "labels": [
-                    "PROJECT_COMMIT=${PROJECT_GIT_COMMIT}"
+                    "PROJECT_COMMIT=${TARGET_PROJECT_GIT_COMMIT}"
                 ]
             }
 
