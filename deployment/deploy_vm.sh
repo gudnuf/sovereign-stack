@@ -48,6 +48,13 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
         SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
         DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
     fi
+
+    if [ "$VIRTUAL_MACHINE" = clamsserver ]; then
+        VM_ID="c"
+        BACKUP_DISK_SIZE_GB="$BTCPAYSERVER_BACKUP_DISK_SIZE_GB"
+        SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
+        DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
+    fi
     
     DOCKER_VOLUME_NAME="$PRIMARY_DOMAIN_IDENTIFIER-$VM_ID""d"
     if ! lxc storage volume list ss-base | grep -q "$DOCKER_VOLUME_NAME"; then

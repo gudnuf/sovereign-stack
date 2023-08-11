@@ -250,6 +250,11 @@ BTCPAYSERVER_MAC_ADDRESS=
 # BTCPAY_SERVER_CPU_COUNT="4"
 # BTCPAY_SERVER_MEMORY_MB="4096"
 
+CLAMS_SERVER_MAC_ADDRESS=
+# CLAMS_SERVER_CPU_COUNT="4"
+# CLAMS_SERVER_MEMORY_MB="4096"
+
+
 EOL
 
     chmod 0744 "$PROJECT_DEFINITION_PATH"
@@ -277,10 +282,9 @@ if [ -z "$BTCPAYSERVER_MAC_ADDRESS" ]; then
     exit 1
 fi
 
-# the DOMAIN_LIST is a complete list of all our domains. We often iterate over this list.
-DOMAIN_LIST="${PRIMARY_DOMAIN}"
-if [ -n "$OTHER_SITES_LIST" ]; then
-    DOMAIN_LIST="${DOMAIN_LIST},${OTHER_SITES_LIST}"
+
+if [ -z "$CLAMS_SERVER_MAC_ADDRESS" ]; then
+    echo "WARNING: the CLAMS_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
 fi
 
 export DOMAIN_LIST="$DOMAIN_LIST"
@@ -310,9 +314,10 @@ if ! lxc image list --format csv | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
     fi
 fi
 
-for VIRTUAL_MACHINE in www btcpayserver; do
+for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
 
-    if [ "$VIRTUAL_MACHINE" = btcpayserver ] && [ "$SKIP_BTCPAY" = true ]; then
+
+    if [ "$VIRTUAL_MACHINE" = clamsserver ] && [ -z "$CLAMS_SERVER_MAC_ADDRESS" ]; then
         continue
     fi
 
@@ -375,10 +380,10 @@ for VIRTUAL_MACHINE in www btcpayserver; do
         VPS_HOSTNAME="$WWW_HOSTNAME"
         MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
 
-    elif [ "$VIRTUAL_MACHINE" = btcpayserver ] || [ "$SKIP_BTCPAY" = true ]; then
-        FQDN="$BTCPAY_HOSTNAME.$DOMAIN_NAME"
-        VPS_HOSTNAME="$BTCPAY_HOSTNAME"
-        MAC_ADDRESS_TO_PROVISION="$BTCPAYSERVER_MAC_ADDRESS"
+    elif [ "$VIRTUAL_MACHINE" = clamsserver ] && [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
+        FQDN="$CLAMS_SERVER_HOSTNAME.$DOMAIN_NAME"
+        VPS_HOSTNAME="$CLAMS_SERVER_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$CLAMS_SERVER_MAC_ADDRESS"
 
     elif [ "$VIRTUAL_MACHINE" = "$BASE_IMAGE_VM_NAME" ]; then
         export FQDN="$BASE_IMAGE_VM_NAME"
@@ -417,12 +422,26 @@ done
 
 
 # now let's run the www and btcpay-specific provisioning scripts.
-if [ "$SKIP_WWW" = false ]; then
-    ./project/www/go.sh
-fi
+if [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
+    export DOCKER_HOST="ssh://ubuntu@$CLAMS_SERVER_FQDN"
 
-export DOMAIN_NAME="$PRIMARY_DOMAIN"
-export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-if [ "$SKIP_BTCPAY" = false ]; then
-    ./project/btcpayserver/go.sh
+    # enable docker swarm mode so we can support docker stacks.
+    if docker info | grep -q "Swarm: inactive"; then
+        docker swarm init
+    fi
+
+    # set the active env to our CLAMS_FQDN
+    cat >./project/clams-server/active_env.txt <<EOL
+${CLAMS_SERVER_FQDN}
+EOL
+
+    # and we have to set our environment file as well.
+    cat > ./project/clams-server/environments/"$CLAMS_SERVER_FQDN" <<EOL
+DOCKER_HOST=ssh://ubuntu@$CLAMS_SERVER_FQDN
+DOMAIN_NAME=${PRIMARY_DOMAIN}
+ENABLE_TLS=true
+CLN_COUNT=1
+EOL
+
+    bash -c "./project/clams-server/up.sh -y"
 fi
