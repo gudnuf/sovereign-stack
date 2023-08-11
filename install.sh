@@ -47,7 +47,7 @@ export DISK="$DISK"
 
 # install lxd snap and initialize it
 if ! snap list | grep -q lxd; then
-    sudo snap install lxd --channel=latest/candidate
+    sudo snap install lxd --channel=5.16/stable
     sleep 5
 
     # run lxd init

@@ -148,7 +148,7 @@ fi
 # install dependencies.
 ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano -y'
 if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
-    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=latest/candidate'
+    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=5.16/stable'
     sleep 5
 fi
 
