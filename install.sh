@@ -11,10 +11,31 @@ if [ "$(hostname)" = ss-mgmt ]; then
     exit 1
 fi
 
-# the DISK variable here tells us which disk (partition) the admin wants to use for 
-# lxd resources. By default, we provision the disk under / as a loop device. Admin
-# can override with CLI modifications.
-DISK="rpool/lxd"
+DISK_OR_PARTITION=
+DISK=loop
+
+# grab any modifications from the command line.
+for i in "$@"; do
+    case $i in
+        --disk-or-partition=*)
+            DISK_OR_PARTITION="${i#*=}"
+            shift
+        ;;
+        *)
+        echo "Unexpected option: $1"
+        exit 1
+        ;;
+    esac
+done
+
+
+# if the user didn't specify the disk or partition, we create a loop device under
+# the user's home directory. If the user does specify a disk or partition, we will
+# create the ZFS pool there.
+if [ -z "$DISK_OR_PARTITION" ]; then
+    DISK="$DISK_OR_PARTITION"
+fi
+
 export DISK="$DISK"
 
 # install lxd snap and initialize it
