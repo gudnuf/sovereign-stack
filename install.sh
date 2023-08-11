@@ -29,6 +29,13 @@ for i in "$@"; do
 done
 
 
+# ensure the iptables forward policy is set to ACCEPT so your host can act as a router
+# Note this is necessary if docker is running (or has been previuosly installed) on the
+# same host running LXD.
+sudo iptables -F FORWARD
+sudo iptables -P FORWARD ACCEPT
+
+
 # if the user didn't specify the disk or partition, we create a loop device under
 # the user's home directory. If the user does specify a disk or partition, we will
 # create the ZFS pool there.
