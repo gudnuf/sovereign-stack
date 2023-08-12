@@ -1,3 +1,0 @@
-[submodule "deployment/project/clams-server"]
-	path = deployment/project/clams-server
-	url = https://github.com/farscapian/roygbiv-stack
