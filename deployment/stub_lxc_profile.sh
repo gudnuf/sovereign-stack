@@ -227,8 +227,17 @@ if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
           - 10.10.10.66/24
 
 EOF
-
 fi
+
+if [ "$VIRTUAL_MACHINE" = www ]; then
+    cat >> "$YAML_PATH" <<EOF
+      enp6s0:
+        addresses:
+          - 10.10.10.65/24
+
+EOF
+fi
+
 
 # All profiles get a root disk and cloud-init config.
 cat >> "$YAML_PATH" <<EOF
@@ -275,11 +284,18 @@ else
     nictype: macvlan
     parent: ${DATA_PLANE_MACVLAN_INTERFACE}
     type: nic
+EOF
+
+    if [ "$VIRTUAL_MACHINE" = www ] || [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
+        cat >> "$YAML_PATH" <<EOF
   enp6s0:
     name: enp6s0
     network: ss-ovn
     type: nic
+EOF
+    fi
 
+    cat >> "$YAML_PATH" <<EOF
 name: ${PRIMARY_DOMAIN}
 EOF
 

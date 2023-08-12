@@ -38,19 +38,20 @@ OTHER_SITES_LIST=
 PRIMARY_DOMAIN=
 RUN_CERT_RENEWAL=true
 SKIP_BASE_IMAGE_CREATION=false
-SKIP_WWW=false
-RESTORE_WWW=false
 RESTORE_CERTS=false
+BACKUP_CERTS=true
 BACKUP_BTCPAY=true
 SKIP_BTCPAYSERVER=false
+SKIP_WWW=false
 SKIP_CLAMSSERVER=false
+BACKUP_WWW_APPS=true
 BACKUP_BTCPAY_ARCHIVE_PATH= 
 RESTORE_BTCPAY=false
-SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 REMOTE_NAME="$(lxc remote get-default)"
-STOP_SERVICES=false
 USER_SAYS_YES=false
+
+WWW_SERVER_MAC_ADDRESS=
 BTCPAY_SERVER_MAC_ADDRESS=
 CLAMS_SERVER_MAC_ADDRESS=
 
@@ -61,12 +62,6 @@ for i in "$@"; do
             RESTORE_CERTS=true
             shift
         ;;
-        --restore-www)
-            RESTORE_WWW=true
-            RESTORE_CERTS=true
-
-            shift
-        ;;
         --restore-btcpay)
             RESTORE_BTCPAY=true
             shift
@@ -75,15 +70,16 @@ for i in "$@"; do
             SKIP_BTCPAYSERVER=true
             shift
         ;;
+        --skip-wwwserver)
+            SKIP_WWW=true
+            shift
+        ;;
+        --skip-clamsserver)
+            SKIP_CLAMSSERVER=true
             shift
         ;;
         --backup-btcpayserver)
             BACKUP_BTCPAY=true
-            shift
-        ;;
-        --stop)
-            STOP_SERVICES=true
-            RESTART_FRONT_END=false
             shift
         ;;
         --backup-archive-path=*)
@@ -92,14 +88,6 @@ for i in "$@"; do
         ;;
         --update-btcpay)
             UPDATE_BTCPAY=true
-            shift
-        ;;
-        --skip-www)
-            SKIP_WWW=true
-            shift
-        ;;
-        --skip-btcpayserver)
-            SKIP_BTCPAY=true
             shift
         ;;
         --skip-base-image)
@@ -134,10 +122,7 @@ fi
 . ./remote_env.sh
 
 export REGISTRY_DOCKER_IMAGE="registry:2"
-export RESTORE_WWW="$RESTORE_WWW"
-export STOP_SERVICES="$STOP_SERVICES"
 export BACKUP_CERTS="$BACKUP_CERTS"
-export BACKUP_APPS="$BACKUP_APPS"
 export RESTORE_BTCPAY="$RESTORE_BTCPAY"
 export BACKUP_BTCPAY="$BACKUP_BTCPAY"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
@@ -145,8 +130,8 @@ export REMOTE_NAME="$REMOTE_NAME"
 export REMOTE_PATH="$REMOTES_PATH/$REMOTE_NAME"
 export USER_SAYS_YES="$USER_SAYS_YES"
 export BACKUP_BTCPAY_ARCHIVE_PATH="$BACKUP_BTCPAY_ARCHIVE_PATH"
-export RESTART_FRONT_END="$RESTART_FRONT_END"
 export RESTORE_CERTS="$RESTORE_CERTS"
+export BACKUP_WWW_APPS="$BACKUP_WWW_APPS"
 
 # todo convert this to Trezor-T
 SSH_PUBKEY_PATH="$SSH_HOME/id_rsa.pub"
@@ -170,7 +155,6 @@ export DEPLOYMENT_STRING="$DEPLOYMENT_STRING"
 function new_pass {
     gpg --gen-random --armor 1 25
 }
-
 
 function stub_site_definition {
     mkdir -p "$SITE_PATH" "$PROJECT_PATH/sites"
@@ -206,6 +190,12 @@ NEXTCLOUD_MYSQL_PASSWORD="$(new_pass)"
 NEXTCLOUD_MYSQL_ROOT_PASSWORD="$(new_pass)"
 GITEA_MYSQL_PASSWORD="$(new_pass)"
 GITEA_MYSQL_ROOT_PASSWORD="$(new_pass)"
+
+
+#GHOST_DEPLOY_SMTP=true
+#MAILGUN_FROM_ADDRESS=false
+#MAILGUN_SMTP_USERNAME=
+#MAILGUN_SMTP_PASSWORD=
 
 EOL
 
@@ -276,8 +266,7 @@ if [ -z "$PRIMARY_DOMAIN" ]; then
 fi
 
 if [ -z "$WWW_SERVER_MAC_ADDRESS" ]; then
-    echo "ERROR: the WWW_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
-    exit 1
+    echo "WARNING: the WWW_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
 fi
 
 
@@ -290,14 +279,12 @@ if [ -z "$CLAMS_SERVER_MAC_ADDRESS" ]; then
     echo "WARNING: the CLAMS_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
 fi
 
-export DOMAIN_LIST="$DOMAIN_LIST"
-export DOMAIN_COUNT=$(("$(echo "$DOMAIN_LIST" | tr -cd , | wc -c)"+1))
+source ./domain_list.sh
 
 # let's provision our primary domain first.
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export PRIMARY_DOMAIN="$PRIMARY_DOMAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
-export PRIMARY_WWW_FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
 
 stub_site_definition
 
@@ -327,7 +314,7 @@ for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
         continue
     fi
 
-    if [ "$VIRTUAL_MACHINE" = www ] && [ "$SKIP_WWW" = true ]; then
+    if [ "$VIRTUAL_MACHINE" = www ] && [ -z "$WWW_SERVER_MAC_ADDRESS" ]; then
         continue
     fi
 
@@ -376,12 +363,7 @@ for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
     export VPS_HOSTNAME="$VPS_HOSTNAME"
     export FQDN="$VPS_HOSTNAME.$DOMAIN_NAME"
 
-    if [ "$VIRTUAL_MACHINE" = www ]; then
-        if [ "$SKIP_WWW" = true ]; then
-            echo "INFO: Skipping WWW due to command line argument."
-            continue
-        fi
-        
+    if [ "$VIRTUAL_MACHINE" = www ] && [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
         FQDN="$WWW_HOSTNAME.$DOMAIN_NAME"
         VPS_HOSTNAME="$WWW_HOSTNAME"
         MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
@@ -409,16 +391,6 @@ for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
     export PROJECT_PATH="$PROJECT_PATH"
 
     ./deploy_vm.sh
-
-    if [ "$VIRTUAL_MACHINE" = www ]; then
-        # this tells our local docker client to target the remote endpoint via SSH
-        export DOCKER_HOST="ssh://ubuntu@$PRIMARY_WWW_FQDN"
-
-        # enable docker swarm mode so we can support docker stacks.
-        if docker info | grep -q "Swarm: inactive"; then
-            docker swarm init --advertise-addr enp6s0
-        fi
-    fi
 
 done
 

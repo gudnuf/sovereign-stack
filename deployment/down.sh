@@ -11,6 +11,7 @@ if lxc remote get-default -q | grep -q "local"; then
 fi
 
 KEEP_DOCKER_VOLUME=true
+OTHER_SITES_LIST=
 SKIP_BTCPAYSERVER=false
 SKIP_WWW=false
 SKIP_CLAMSSERVER=false
@@ -18,7 +19,7 @@ SKIP_CLAMSSERVER=false
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
-        --destroy)
+        --purge)
             KEEP_DOCKER_VOLUME=false
             shift
         ;;
@@ -109,6 +110,7 @@ for VIRTUAL_MACHINE in $SERVERS; do
                 fi
             fi
         done
+    else
         # we maintain the volumes
         # TODO make a snapshot on all the zfs storage volumes.
         echo "TODO: create snapshot of ZFS volumes and pull them to mgmt machine."
@@ -118,5 +120,3 @@ done
 if lxc network list -q | grep -q ss-ovn; then
     lxc network delete ss-ovn
 fi
-
-# TODO make a snapshot on all the zfs storage volumes.
