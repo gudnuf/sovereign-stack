@@ -247,17 +247,3 @@ fi
 if [ "$ADDED_COMMAND" = true ]; then
     echo "NOTICE! You need to run 'source ~/.bashrc' before continuing. After that, type 'ss-manage' to enter your management environment."
 fi
-
-. ./deployment/target.sh
-
-# As part of the install script, we pull down any other sovereign-stack git repos
-PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
-PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
-if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
-    git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
-else
-    cd "$PROJECTS_SCRIPTS_PATH"
-    git -c advice.detachedHead=false pull origin main
-    git checkout "$TARGET_PROJECT_GIT_COMMIT"
-    cd -
-fi

@@ -5,18 +5,6 @@ cd "$(dirname "$0")"
 
 . ./target.sh
 
-# # As part of the install script, we pull down any other sovereign-stack git repos
-# PROJECTS_SCRIPTS_REPO_URL="https://git.sovereign-stack.org/ss/project"
-# PROJECTS_SCRIPTS_PATH="$(pwd)/deployment/project"
-# if [ ! -d "$PROJECTS_SCRIPTS_PATH" ]; then
-#     git clone "$PROJECTS_SCRIPTS_REPO_URL" "$PROJECTS_SCRIPTS_PATH"
-# else
-#     cd "$PROJECTS_SCRIPTS_PATH" || exit 1
-#     git -c advice.detachedHead=false pull origin main
-#     git checkout "$TARGET_PROJECT_GIT_COMMIT"
-#     cd - || exit 1
-# fi
-
 # check if there are any uncommited changes. It's dangerous to 
 # alter production systems when you have commits to make or changes to stash.
 if git update-index --refresh | grep -q "needs update"; then
