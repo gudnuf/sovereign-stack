@@ -25,7 +25,7 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
 
     # create a base image if needed and instantiate a VM.
     if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
-        echo "ERROR: You MUST define a MAC Address for all your machines by setting WWW_SERVER_MAC_ADDRESS, BTCPAYSERVER_MAC_ADDRESS in your site definition."
+        echo "ERROR: You MUST define a MAC Address for all your machines in your project definition."
         echo "INFO: IMPORTANT! You MUST have DHCP Reservations for these MAC addresses. You also need records established the DNS."
         exit 1
     fi

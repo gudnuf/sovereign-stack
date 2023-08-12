@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 # NOTE! This script MUST be executed as root.
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg lsb-release
+sudo apt-get install -y ca-certificates curl gnupg lsb-release jq bc
 
 sudo mkdir -m 0755 -p /etc/apt/keyrings
 
