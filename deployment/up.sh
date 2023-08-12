@@ -41,19 +41,16 @@ SKIP_BASE_IMAGE_CREATION=false
 SKIP_WWW=false
 RESTORE_WWW=false
 RESTORE_CERTS=false
-BACKUP_CERTS=false
-BACKUP_BTCPAY=false
-BACKUP_CERTS=false
-BACKUP_APPS=false
-BACKUP_BTCPAY=false
-BACKUP_BTCPAY_ARCHIVE_PATH=
+BACKUP_BTCPAY=true
+SKIP_BTCPAYSERVER=false
+BACKUP_BTCPAY_ARCHIVE_PATH= 
 RESTORE_BTCPAY=false
 SKIP_BTCPAY=false
 UPDATE_BTCPAY=false
 REMOTE_NAME="$(lxc remote get-default)"
 STOP_SERVICES=false
 USER_SAYS_YES=false
-RESTART_FRONT_END=true
+BTCPAY_SERVER_MAC_ADDRESS=
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -72,9 +69,10 @@ for i in "$@"; do
             RESTORE_BTCPAY=true
             shift
         ;;
-        --backup-www)
-            BACKUP_CERTS=true
-            BACKUP_APPS=true
+        --skip-btcpayserver)
+            SKIP_BTCPAYSERVER=true
+            shift
+        ;;
             shift
         ;;
         --backup-btcpayserver)
@@ -250,7 +248,7 @@ WWW_SERVER_MAC_ADDRESS=
 # WWW_SERVER_CPU_COUNT="6"
 # WWW_SERVER_MEMORY_MB="4096"
 
-BTCPAYSERVER_MAC_ADDRESS=
+BTCPAY_SERVER_MAC_ADDRESS=
 # BTCPAY_SERVER_CPU_COUNT="4"
 # BTCPAY_SERVER_MEMORY_MB="4096"
 
@@ -281,9 +279,8 @@ if [ -z "$WWW_SERVER_MAC_ADDRESS" ]; then
 fi
 
 
-if [ -z "$BTCPAYSERVER_MAC_ADDRESS" ]; then
-    echo "ERROR: the BTCPAYSERVER_MAC_ADDRESS is not specified. Check your project.conf."
-    exit 1
+if [ -z "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
+    echo "WARNING: the BTCPAY_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
 fi
 
 
@@ -320,6 +317,9 @@ fi
 
 for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
 
+    if [ "$VIRTUAL_MACHINE" = btcpayserver ] && [ -z "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
+        continue
+    fi
 
     if [ "$VIRTUAL_MACHINE" = clamsserver ] && [ -z "$CLAMS_SERVER_MAC_ADDRESS" ]; then
         continue
@@ -384,6 +384,11 @@ for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
         VPS_HOSTNAME="$WWW_HOSTNAME"
         MAC_ADDRESS_TO_PROVISION="$WWW_SERVER_MAC_ADDRESS"
 
+    elif [ "$VIRTUAL_MACHINE" = btcpayserver ] && [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
+        FQDN="$BTCPAY_SERVER_HOSTNAME.$DOMAIN_NAME"
+        VPS_HOSTNAME="$BTCPAY_SERVER_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$BTCPAY_SERVER_MAC_ADDRESS"
+    
     elif [ "$VIRTUAL_MACHINE" = clamsserver ] && [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
         FQDN="$CLAMS_SERVER_HOSTNAME.$DOMAIN_NAME"
         VPS_HOSTNAME="$CLAMS_SERVER_HOSTNAME"
@@ -424,6 +429,26 @@ for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
     stub_site_definition
 done
 
+if [ "$SKIP_BTCPAYSERVER" = false ]; then
+    if [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
+        export DOCKER_HOST="ssh://ubuntu@$BTCPAY_SERVER_FQDN"
+        ./project/btcpayserver/go.sh
+    fi
+fi
+
+if [ "$SKIP_WWW" = false ]; then
+    # now let's run the www and btcpay-specific provisioning scripts.
+    if [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
+        export DOCKER_HOST="ssh://ubuntu@$WWW_FQDN"
+
+        # enable docker swarm mode so we can support docker stacks.
+        if docker info | grep -q "Swarm: inactive"; then
+            docker swarm init --advertise-addr enp6s0
+        fi
+
+        ./project/www/go.sh
+    fi
+fi
 
 # now let's run the www and btcpay-specific provisioning scripts.
 if [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then

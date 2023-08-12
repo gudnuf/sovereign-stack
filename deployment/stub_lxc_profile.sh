@@ -209,9 +209,15 @@ if [ "$VIRTUAL_MACHINE" != base ]; then
         match:
           macaddress: ${MAC_ADDRESS_TO_PROVISION}
         set-name: enp5s0
+EOF
+fi
 
+# TODO try to get DHCP working reliably.
+if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
+    cat >> "$YAML_PATH" <<EOF
       enp6s0:
-        dhcp4: true
+        addresses:
+          - 10.10.10.66/24
 
 EOF
 
