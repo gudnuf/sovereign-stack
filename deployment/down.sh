@@ -11,6 +11,9 @@ if lxc remote get-default -q | grep -q "local"; then
 fi
 
 KEEP_DOCKER_VOLUME=true
+SKIP_BTCPAYSERVER=false
+SKIP_WWW=false
+SKIP_CLAMSSERVER=false
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -19,12 +22,37 @@ for i in "$@"; do
             KEEP_DOCKER_VOLUME=false
             shift
         ;;
+        --skip-btcpayserver)
+            SKIP_BTCPAYSERVER=true
+            shift
+        ;;
+        --skip-wwwserver)
+            SKIP_WWW=true
+            shift
+        ;;
+        --skip-clamsserver)
+            SKIP_CLAMSSERVER=true
+            shift
+        ;;
         *)
         echo "Unexpected option: $1"
         exit 1
         ;;
     esac
 done
+
+SERVERS=
+if [ "$SKIP_BTCPAYSERVER" = false ]; then
+    SERVERS="btcpayserver"
+fi
+
+if [ "$SKIP_WWW" = false ]; then
+    SERVERS="www $SERVERS"
+fi
+
+if [ "$SKIP_CLAMSSERVER" = false ]; then
+    SERVERS="clamsserver $SERVERS"
+fi
 
 . ./deployment_defaults.sh
 
@@ -77,9 +105,10 @@ for VIRTUAL_MACHINE in www btcpayserver; do
                 fi
             fi
         done
+        # we maintain the volumes
+        # TODO make a snapshot on all the zfs storage volumes.
+        echo "TODO: create snapshot of ZFS volumes and pull them to mgmt machine."
     fi
-
-    SKIP=www
 done
 
 if lxc network list -q | grep -q ss-ovn; then

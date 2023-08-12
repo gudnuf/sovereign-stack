@@ -221,6 +221,10 @@ EOL
 PROJECT_NAME="$(lxc info | grep "project:" | awk '{print $2}')"
 export PROJECT_NAME="$PROJECT_NAME"
 export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
+export SKIP_BTCPAYSERVER="$SKIP_BTCPAYSERVER"
+export SKIP_WWW="$SKIP_WWW"
+export SKIP_CLAMSSERVER="$SKIP_CLAMSSERVER"
+
 
 mkdir -p "$PROJECT_PATH" "$REMOTE_PATH/projects"
 

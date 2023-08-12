@@ -36,6 +36,10 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
     SSDATA_DISK_SIZE_GB=
     DOCKER_DISK_SIZE_GB=
     if [ "$VIRTUAL_MACHINE" = www ]; then
+        if [ "$SKIP_WWW" = true ]; then
+            exit 0
+        fi
+
         VM_ID="w"
         BACKUP_DISK_SIZE_GB="$WWW_BACKUP_DISK_SIZE_GB"
         SSDATA_DISK_SIZE_GB="$WWW_SSDATA_DISK_SIZE_GB"
@@ -43,6 +47,10 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
     fi
 
     if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
+        if [ "$SKIP_BTCPAYSERVER" = true ]; then
+            exit 0
+        fi
+
         VM_ID="b"
         BACKUP_DISK_SIZE_GB="$BTCPAYSERVER_BACKUP_DISK_SIZE_GB"
         SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
@@ -50,6 +58,10 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
     fi
 
     if [ "$VIRTUAL_MACHINE" = clamsserver ]; then
+        if [ "$SKIP_CLAMSSERVER" = true ]; then
+            exit 0
+        fi
+
         VM_ID="c"
         BACKUP_DISK_SIZE_GB="$BTCPAYSERVER_BACKUP_DISK_SIZE_GB"
         SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
