@@ -73,6 +73,13 @@ if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
 
 EOF
 
+elif [ "$VIRTUAL_MACHINE" = clamsserver ]; then
+    cat >> "$YAML_PATH" <<EOF
+  limits.cpu: "${CLAMS_SERVER_CPU_COUNT}"
+  limits.memory: "${CLAMS_SERVER_MEMORY_MB}MB"
+
+EOF
+
 fi
 
 . ./target.sh

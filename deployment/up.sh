@@ -43,6 +43,7 @@ RESTORE_WWW=false
 RESTORE_CERTS=false
 BACKUP_BTCPAY=true
 SKIP_BTCPAYSERVER=false
+SKIP_CLAMSSERVER=false
 BACKUP_BTCPAY_ARCHIVE_PATH= 
 RESTORE_BTCPAY=false
 SKIP_BTCPAY=false
@@ -51,6 +52,7 @@ REMOTE_NAME="$(lxc remote get-default)"
 STOP_SERVICES=false
 USER_SAYS_YES=false
 BTCPAY_SERVER_MAC_ADDRESS=
+CLAMS_SERVER_MAC_ADDRESS=
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -193,7 +195,7 @@ DOMAIN_NAME="${DOMAIN_NAME}"
 SITE_LANGUAGE_CODES="en"
 DUPLICITY_BACKUP_PASSPHRASE="$(new_pass)"
 DEPLOY_GHOST=true
-DEPLOY_CLAMS=false
+
 DEPLOY_NEXTCLOUD=false
 DEPLOY_NOSTR=false
 NOSTR_ACCOUNT_PUBKEY=
@@ -450,27 +452,31 @@ if [ "$SKIP_WWW" = false ]; then
     fi
 fi
 
-# now let's run the www and btcpay-specific provisioning scripts.
-if [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
-    export DOCKER_HOST="ssh://ubuntu@$CLAMS_SERVER_FQDN"
+# don't run clams stuff if user specifies --skip-btcpayserver
+if [ "$SKIP_CLAMSSERVER" = false ]; then
+    # now let's run the www and btcpay-specific provisioning scripts.
+    if [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
+        export DOCKER_HOST="ssh://ubuntu@$CLAMS_SERVER_FQDN"
 
-    # enable docker swarm mode so we can support docker stacks.
-    if docker info | grep -q "Swarm: inactive"; then
-        docker swarm init
-    fi
+        # enable docker swarm mode so we can support docker stacks.
+        if docker info | grep -q "Swarm: inactive"; then
+            docker swarm init
+        fi
 
     # set the active env to our CLAMS_FQDN
-    cat >./project/clams-server/active_env.txt <<EOL
+        cat >./project/clams-server/active_env.txt <<EOL
 ${CLAMS_SERVER_FQDN}
 EOL
 
     # and we have to set our environment file as well.
     cat > ./project/clams-server/environments/"$CLAMS_SERVER_FQDN" <<EOL
-DOCKER_HOST=ssh://ubuntu@$CLAMS_SERVER_FQDN
+DOCKER_HOST=ssh://ubuntu@${CLAMS_SERVER_FQDN}
 DOMAIN_NAME=${PRIMARY_DOMAIN}
 ENABLE_TLS=true
+BTC_CHAIN=${BITCOIN_CHAIN}
 CLN_COUNT=1
 EOL
 
-    bash -c "./project/clams-server/up.sh -y"
+        bash -c "./project/clams-server/up.sh -y"
+    fi
 fi

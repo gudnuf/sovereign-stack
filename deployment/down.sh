@@ -91,6 +91,8 @@ for VIRTUAL_MACHINE in www btcpayserver; do
         VM_ID=w
         if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
             VM_ID="b"
+        elif [ "$VIRTUAL_MACHINE" = clamsserver ]; then
+            VM_ID="c"
         fi
 
         # d for docker; b for backup; s for ss-data
