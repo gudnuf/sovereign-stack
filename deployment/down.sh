@@ -67,12 +67,14 @@ export SITE_PATH="$SITES_PATH/$PRIMARY_DOMAIN"
 source "$SITE_PATH/site.conf"
 source ./project/domain_env.sh
 
-SKIP=btcpayserver
-for VIRTUAL_MACHINE in www btcpayserver; do
+source ./domain_list.sh
+
+for VIRTUAL_MACHINE in $SERVERS; do
+
     LXD_NAME="$VIRTUAL_MACHINE-${PRIMARY_DOMAIN//./-}"
 
     if lxc list | grep -q "$LXD_NAME"; then
-        bash -c "./up.sh --stop --skip-$SKIP"
+        bash -c "./stop.sh --server=$VIRTUAL_MACHINE"
 
         lxc stop "$LXD_NAME"
 
