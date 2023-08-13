@@ -439,14 +439,15 @@ if [ "$SKIP_CLAMSSERVER" = false ]; then
         cat >./project/clams-server/active_env.txt <<EOL
 ${CLAMS_SERVER_FQDN}
 EOL
-
-    # and we have to set our environment file as well.
-    cat > ./project/clams-server/environments/"$CLAMS_SERVER_FQDN" <<EOL
+        # and we have to set our environment file as well.
+        cat > ./project/clams-server/environments/"$CLAMS_SERVER_FQDN" <<EOL
 DOCKER_HOST=ssh://ubuntu@${CLAMS_SERVER_FQDN}
 DOMAIN_NAME=${PRIMARY_DOMAIN}
 ENABLE_TLS=true
 BTC_CHAIN=${BITCOIN_CHAIN}
-CLN_COUNT=1
+CLN_COUNT=5
+CHANNEL_SETUP=prism
+CLAMS_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/clamsserver
 EOL
 
         bash -c "./project/clams-server/up.sh -y"
