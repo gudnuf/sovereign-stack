@@ -4,7 +4,6 @@
 set -e
 cd "$(dirname "$0")"
 
-
 PURGE_LXD=false
 
 # grab any modifications from the command line.
@@ -72,9 +71,10 @@ if [ "$PURGE_LXD" = true ]; then
     #     done
     # done
 
-    if lxc storage list --format csv | grep -q ss-base; then
-        lxc storage delete ss-base
-    fi
+    echo "WARNING: ss-basae NOT DELETED. NEED TO TEST THIS SCRIPT"
+    # if lxc storage list --format csv | grep -q ss-base; then
+    #     lxc storage delete ss-base
+    # fi
 
     CURRENT_REMOTE="$(lxc remote get-default)"
     if ! lxc remote get-default | grep -q "local"; then

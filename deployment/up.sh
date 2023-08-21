@@ -38,13 +38,13 @@ OTHER_SITES_LIST=
 PRIMARY_DOMAIN=
 RUN_CERT_RENEWAL=true
 SKIP_BASE_IMAGE_CREATION=false
+RESTORE_WWW=false
 RESTORE_CERTS=false
 BACKUP_CERTS=true
 BACKUP_BTCPAY=true
 SKIP_BTCPAYSERVER=false
 SKIP_WWW=false
 SKIP_CLAMSSERVER=false
-BACKUP_WWW_APPS=true
 BACKUP_BTCPAY_ARCHIVE_PATH= 
 RESTORE_BTCPAY=false
 UPDATE_BTCPAY=false
@@ -60,6 +60,10 @@ for i in "$@"; do
     case $i in
         --restore-certs)
             RESTORE_CERTS=true
+            shift
+        ;;
+        --restore-wwwserver)
+            RESTORE_WWW=true
             shift
         ;;
         --restore-btcpay)
@@ -124,6 +128,7 @@ fi
 export REGISTRY_DOCKER_IMAGE="registry:2"
 export BACKUP_CERTS="$BACKUP_CERTS"
 export RESTORE_BTCPAY="$RESTORE_BTCPAY"
+export RESTORE_WWW="$RESTORE_WWW"
 export BACKUP_BTCPAY="$BACKUP_BTCPAY"
 export RUN_CERT_RENEWAL="$RUN_CERT_RENEWAL"
 export REMOTE_NAME="$REMOTE_NAME"
@@ -131,7 +136,6 @@ export REMOTE_PATH="$REMOTES_PATH/$REMOTE_NAME"
 export USER_SAYS_YES="$USER_SAYS_YES"
 export BACKUP_BTCPAY_ARCHIVE_PATH="$BACKUP_BTCPAY_ARCHIVE_PATH"
 export RESTORE_CERTS="$RESTORE_CERTS"
-export BACKUP_WWW_APPS="$BACKUP_WWW_APPS"
 
 # todo convert this to Trezor-T
 SSH_PUBKEY_PATH="$SSH_HOME/id_rsa.pub"
@@ -430,25 +434,26 @@ if [ "$SKIP_CLAMSSERVER" = false ]; then
     if [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
         export DOCKER_HOST="ssh://ubuntu@$CLAMS_SERVER_FQDN"
 
-        # enable docker swarm mode so we can support docker stacks.
-        if docker info | grep -q "Swarm: inactive"; then
-            docker swarm init
-        fi
-
     # set the active env to our CLAMS_FQDN
         cat >./project/clams-server/active_env.txt <<EOL
 ${CLAMS_SERVER_FQDN}
 EOL
-        # and we have to set our environment file as well.
-        cat > ./project/clams-server/environments/"$CLAMS_SERVER_FQDN" <<EOL
+
+        CLAMS_ENV_FILE=./project/clams-server/environments/"$CLAMS_SERVER_FQDN"
+
+        # only stub out the file if it doesn't exist. otherwise we leave it be.
+        if [ ! -f "$CLAMS_ENV_FILE" ]; then
+            # and we have to set our environment file as well.
+            cat > "$CLAMS_ENV_FILE" <<EOL
 DOCKER_HOST=ssh://ubuntu@${CLAMS_SERVER_FQDN}
 DOMAIN_NAME=${PRIMARY_DOMAIN}
 ENABLE_TLS=true
 BTC_CHAIN=${BITCOIN_CHAIN}
-CLN_COUNT=5
-CHANNEL_SETUP=prism
+CLN_COUNT=200
+CHANNEL_SETUP=none
 CLAMS_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/clamsserver
 EOL
+        fi
 
         bash -c "./project/clams-server/up.sh -y"
     fi

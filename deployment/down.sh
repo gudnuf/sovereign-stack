@@ -2,7 +2,7 @@
 
 # https://www.sovereign-stack.org/ss-down/
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
 
 if lxc remote get-default -q | grep -q "local"; then
@@ -15,6 +15,7 @@ OTHER_SITES_LIST=
 SKIP_BTCPAYSERVER=false
 SKIP_WWW=false
 SKIP_CLAMSSERVER=false
+BACKUP_WWW_APPS=true
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -76,6 +77,14 @@ for VIRTUAL_MACHINE in $SERVERS; do
 
     if lxc list | grep -q "$LXD_NAME"; then
         bash -c "./stop.sh --server=$VIRTUAL_MACHINE"
+
+        if [ "$VIRTUAL_MACHINE" = www ] && [ "$BACKUP_WWW_APPS" = true ]; then
+            APP_LIST="letsencrypt ghost nextcloud gitea nostr"
+            echo "INFO: Backing up WWW apps."
+            for APP in $APP_LIST; do
+                bash -c "$(pwd)/project/www/backup_www.sh --app=$APP"
+            done
+        fi
 
         lxc stop "$LXD_NAME"
 

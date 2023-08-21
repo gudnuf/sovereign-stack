@@ -53,7 +53,12 @@ if [ "$SERVER_TO_STOP" = www ]; then
 fi
 
 if [ "$SERVER_TO_STOP" = btcpayserver ]; then
-    ssh "$BTCPAY_SERVER_FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
+    if wait-for-it -t 5 "$BTCPAY_SERVER_FQDN":22; then
+        ssh "$BTCPAY_SERVER_FQDN" "bash -c $BTCPAY_SERVER_APPPATH/btcpay-down.sh"
+    else
+        echo "ERROR: the remote BTCPAY Server is not available on ssh."
+        exit 1
+    fi
 fi
 
 if [ "$SERVER_TO_STOP" = clamsserver ]; then
