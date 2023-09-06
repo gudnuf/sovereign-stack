@@ -47,3 +47,5 @@ done
 while lxc exec "$LXC_INSTANCE_NAME" -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
     sleep 1
 done
+
+sleep 1

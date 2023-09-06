@@ -61,6 +61,6 @@ if [ "$SERVER_TO_STOP" = btcpayserver ]; then
     fi
 fi
 
-if [ "$SERVER_TO_STOP" = clamsserver ]; then
-    DOCKER_HOST="ssh://ubuntu@$CLAMS_SERVER_FQDN" ./project/clams-server/down.sh
+if [ "$SERVER_TO_STOP" = lnplayserver ]; then
+    DOCKER_HOST="ssh://ubuntu@$LNPLAY_SERVER_FQDN" ./project/lnplay/down.sh
 fi

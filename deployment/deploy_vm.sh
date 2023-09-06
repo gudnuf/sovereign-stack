@@ -57,8 +57,8 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
         DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
     fi
 
-    if [ "$VIRTUAL_MACHINE" = clamsserver ]; then
-        if [ "$SKIP_CLAMSSERVER" = true ]; then
+    if [ "$VIRTUAL_MACHINE" = lnplayserver ]; then
+        if [ "$SKIP_LNPLAY_SERVER" = true ]; then
             exit 0
         fi
 

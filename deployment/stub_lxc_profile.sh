@@ -73,10 +73,10 @@ if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
 
 EOF
 
-elif [ "$VIRTUAL_MACHINE" = clamsserver ]; then
+elif [ "$VIRTUAL_MACHINE" = lnplayserver ]; then
     cat >> "$YAML_PATH" <<EOF
-  limits.cpu: "${CLAMS_SERVER_CPU_COUNT}"
-  limits.memory: "${CLAMS_SERVER_MEMORY_MB}MB"
+  limits.cpu: "${LNPLAY_SERVER_CPU_COUNT}"
+  limits.memory: "${LNPLAY_SERVER_MEMORY_MB}MB"
 
 EOF
 
@@ -301,7 +301,6 @@ EOF
 
 fi
 
-# let's create a profile for the BCM TYPE-1 VMs. This is per VM.
 if [ "$VIRTUAL_MACHINE" = base ]; then
     if ! lxc profile list --format csv --project default | grep -q "$LXD_HOSTNAME"; then
         lxc profile create "$LXD_HOSTNAME" --project default

@@ -13,8 +13,8 @@ DISK_TO_USE=
 # override the remote name.
 REMOTE_NAME="${1:-}"
 if [ -z "$REMOTE_NAME" ]; then
-    echo "ERROR: The remote name was not provided. Syntax is: 'ss-remote REMOTE_NAME SSH_HOST_FQDN'"
-    echo "  for example: 'ss-remote dev host01.domain.tld"
+    echo "ERROR: The remote name was not provided. Syntax is: 'ss-remote <remote_name> <remote01.domain.tld>'"
+    echo "  for example: 'ss-remote development clusterhost00.domain.tld"
     exit 1
 fi
 
@@ -148,7 +148,7 @@ fi
 # install dependencies.
 ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano -y'
 if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
-    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=5.16/stable'
+    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=5.17/stable'
     sleep 5
 fi
 

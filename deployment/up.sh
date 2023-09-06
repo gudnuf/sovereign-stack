@@ -44,7 +44,7 @@ BACKUP_CERTS=true
 BACKUP_BTCPAY=true
 SKIP_BTCPAYSERVER=false
 SKIP_WWW=false
-SKIP_CLAMSSERVER=false
+SKIP_LNPLAY_SERVER=false
 BACKUP_BTCPAY_ARCHIVE_PATH= 
 RESTORE_BTCPAY=false
 UPDATE_BTCPAY=false
@@ -53,7 +53,7 @@ USER_SAYS_YES=false
 
 WWW_SERVER_MAC_ADDRESS=
 BTCPAY_SERVER_MAC_ADDRESS=
-CLAMS_SERVER_MAC_ADDRESS=
+LNPLAY_SERVER_MAC_ADDRESS=
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -78,8 +78,8 @@ for i in "$@"; do
             SKIP_WWW=true
             shift
         ;;
-        --skip-clamsserver)
-            SKIP_CLAMSSERVER=true
+        --skip-lnplayserver)
+            SKIP_LNPLAY_SERVER=true
             shift
         ;;
         --backup-btcpayserver)
@@ -217,7 +217,7 @@ export PROJECT_NAME="$PROJECT_NAME"
 export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
 export SKIP_BTCPAYSERVER="$SKIP_BTCPAYSERVER"
 export SKIP_WWW="$SKIP_WWW"
-export SKIP_CLAMSSERVER="$SKIP_CLAMSSERVER"
+export SKIP_LNPLAY_SERVER="$SKIP_LNPLAY_SERVER"
 
 
 mkdir -p "$PROJECT_PATH" "$REMOTE_PATH/projects"
@@ -248,9 +248,9 @@ BTCPAY_SERVER_MAC_ADDRESS=
 # BTCPAY_SERVER_CPU_COUNT="4"
 # BTCPAY_SERVER_MEMORY_MB="4096"
 
-CLAMS_SERVER_MAC_ADDRESS=
-# CLAMS_SERVER_CPU_COUNT="4"
-# CLAMS_SERVER_MEMORY_MB="4096"
+LNPLAY_SERVER_MAC_ADDRESS=
+# LNPLAY_SERVER_CPU_COUNT="4"
+# LNPLAY_SERVER_MEMORY_MB="4096"
 
 
 EOL
@@ -279,8 +279,8 @@ if [ -z "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
 fi
 
 
-if [ -z "$CLAMS_SERVER_MAC_ADDRESS" ]; then
-    echo "WARNING: the CLAMS_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
+if [ -z "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
+    echo "WARNING: the LNPLAY_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
 fi
 
 source ./domain_list.sh
@@ -308,13 +308,13 @@ if ! lxc image list --format csv | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
     fi
 fi
 
-for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
+for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
 
     if [ "$VIRTUAL_MACHINE" = btcpayserver ] && [ -z "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
         continue
     fi
 
-    if [ "$VIRTUAL_MACHINE" = clamsserver ] && [ -z "$CLAMS_SERVER_MAC_ADDRESS" ]; then
+    if [ "$VIRTUAL_MACHINE" = lnplayserver ] && [ -z "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
         continue
     fi
 
@@ -377,10 +377,10 @@ for VIRTUAL_MACHINE in www btcpayserver clamsserver; do
         VPS_HOSTNAME="$BTCPAY_SERVER_HOSTNAME"
         MAC_ADDRESS_TO_PROVISION="$BTCPAY_SERVER_MAC_ADDRESS"
     
-    elif [ "$VIRTUAL_MACHINE" = clamsserver ] && [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
-        FQDN="$CLAMS_SERVER_HOSTNAME.$DOMAIN_NAME"
-        VPS_HOSTNAME="$CLAMS_SERVER_HOSTNAME"
-        MAC_ADDRESS_TO_PROVISION="$CLAMS_SERVER_MAC_ADDRESS"
+    elif [ "$VIRTUAL_MACHINE" = lnplayserver ] && [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
+        FQDN="$LNPLAY_SERVER_HOSTNAME.$DOMAIN_NAME"
+        VPS_HOSTNAME="$LNPLAY_SERVER_HOSTNAME"
+        MAC_ADDRESS_TO_PROVISION="$LNPLAY_SERVER_MAC_ADDRESS"
 
     elif [ "$VIRTUAL_MACHINE" = "$BASE_IMAGE_VM_NAME" ]; then
         export FQDN="$BASE_IMAGE_VM_NAME"
@@ -428,33 +428,33 @@ if [ "$SKIP_WWW" = false ]; then
     fi
 fi
 
-# don't run clams stuff if user specifies --skip-btcpayserver
-if [ "$SKIP_CLAMSSERVER" = false ]; then
+# don't run lnplay stuff if user specifies --skip-lnplay
+if [ "$SKIP_LNPLAY_SERVER" = false ]; then
     # now let's run the www and btcpay-specific provisioning scripts.
-    if [ -n "$CLAMS_SERVER_MAC_ADDRESS" ]; then
-        export DOCKER_HOST="ssh://ubuntu@$CLAMS_SERVER_FQDN"
+    if [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
+        export DOCKER_HOST="ssh://ubuntu@$LNPLAY_SERVER_FQDN"
 
-    # set the active env to our CLAMS_FQDN
-        cat >./project/clams-server/active_env.txt <<EOL
-${CLAMS_SERVER_FQDN}
+        # set the active env to our LNPLAY_SERVER_FQDN
+        cat >./project/lnplay/active_env.txt <<EOL
+${LNPLAY_SERVER_FQDN}
 EOL
 
-        CLAMS_ENV_FILE=./project/clams-server/environments/"$CLAMS_SERVER_FQDN"
+        LNPLAY_ENV_FILE=./project/lnplay/environments/"$LNPLAY_SERVER_FQDN"
 
         # only stub out the file if it doesn't exist. otherwise we leave it be.
-        if [ ! -f "$CLAMS_ENV_FILE" ]; then
+        if [ ! -f "$LNPLAY_ENV_FILE" ]; then
             # and we have to set our environment file as well.
-            cat > "$CLAMS_ENV_FILE" <<EOL
-DOCKER_HOST=ssh://ubuntu@${CLAMS_SERVER_FQDN}
+            cat > "$LNPLAY_ENV_FILE" <<EOL
+DOCKER_HOST=ssh://ubuntu@${LNPLAY_SERVER_FQDN}
 DOMAIN_NAME=${PRIMARY_DOMAIN}
 ENABLE_TLS=true
 BTC_CHAIN=${BITCOIN_CHAIN}
 CLN_COUNT=200
 CHANNEL_SETUP=none
-CLAMS_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/clamsserver
+LNPLAY_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/lnplayserver
 EOL
         fi
 
-        bash -c "./project/clams-server/up.sh -y"
+        bash -c "./project/lnplay/up.sh -y"
     fi
 fi

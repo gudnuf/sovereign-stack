@@ -14,7 +14,7 @@ KEEP_DOCKER_VOLUME=true
 OTHER_SITES_LIST=
 SKIP_BTCPAYSERVER=false
 SKIP_WWW=false
-SKIP_CLAMSSERVER=false
+SKIP_LNPLAY_SERVER=false
 BACKUP_WWW_APPS=true
 
 # grab any modifications from the command line.
@@ -32,8 +32,8 @@ for i in "$@"; do
             SKIP_WWW=true
             shift
         ;;
-        --skip-clamsserver)
-            SKIP_CLAMSSERVER=true
+        --skip-lnplayserver)
+            SKIP_LNPLAY_SERVER=true
             shift
         ;;
         *)
@@ -52,8 +52,8 @@ if [ "$SKIP_WWW" = false ]; then
     SERVERS="www $SERVERS"
 fi
 
-if [ "$SKIP_CLAMSSERVER" = false ]; then
-    SERVERS="clamsserver $SERVERS"
+if [ "$SKIP_LNPLAY_SERVER" = false ]; then
+    SERVERS="lnplayserver $SERVERS"
 fi
 
 . ./deployment_defaults.sh
@@ -103,7 +103,7 @@ for VIRTUAL_MACHINE in $SERVERS; do
         VM_ID=w
         if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
             VM_ID="b"
-        elif [ "$VIRTUAL_MACHINE" = clamsserver ]; then
+        elif [ "$VIRTUAL_MACHINE" = lnplayserver ]; then
             VM_ID="c"
         fi
 
