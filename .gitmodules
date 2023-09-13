@@ -1,0 +1,3 @@
+[submodule "deployment/project"]
+	path = deployment/project
+	url = https://git.sovereign-stack.org/ss/project
