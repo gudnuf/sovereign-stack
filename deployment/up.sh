@@ -153,7 +153,7 @@ fi
 export REMOTE_DEFINITION="$REMOTE_DEFINITION"
 source "$REMOTE_DEFINITION"
 export LXD_REMOTE_PASSWORD="$LXD_REMOTE_PASSWORD"
-export DEPLOYMENT_STRING="$DEPLOYMENT_STRING"
+
 
 # this is our password generation mechanism. Relying on GPG for secure password generation
 function new_pass {
