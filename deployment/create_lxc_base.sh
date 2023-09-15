@@ -26,7 +26,7 @@ if lxc list --format csv -q | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
     fi
 else
     # the base image is ubuntu:22.04.
-    lxc init -q --profile="$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" "$BASE_IMAGE_VM_NAME" --vm --project=default
+    lxc init --profile="$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" "$BASE_IMAGE_VM_NAME" --vm --project=default
 
     # TODO move this sovereign-stack-base construction VM to separate dedicated IP
     lxc config set "$BASE_IMAGE_VM_NAME" --project=default
