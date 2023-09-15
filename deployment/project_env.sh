@@ -27,11 +27,12 @@ source "$PROJECT_DEFINITION_PATH"
 
 export PRIMARY_SITE_DEFINITION_PATH="$SITES_PATH/$PRIMARY_DOMAIN/site.conf"
 
-if [ ! -f "$PRIMARY_SITE_DEFINITION_PATH" ]; then
-    echo "ERROR: the site definition does not exist."
-    exit 1
+if [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
+    if [ ! -f "$PRIMARY_SITE_DEFINITION_PATH" ]; then
+        echo "ERROR: the site definition does not exist."
+        exit 1
+    fi
 fi
-
 if [ -z "$PRIMARY_DOMAIN" ]; then
     echo "ERROR: The PRIMARY_DOMAIN is not specified. Check your remote definition at '$PRIMARY_SITE_DEFINITION_PATH'."
     exit 1
