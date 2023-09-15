@@ -269,20 +269,6 @@ if [ -z "$PRIMARY_DOMAIN" ]; then
     exit 1
 fi
 
-if [ -z "$WWW_SERVER_MAC_ADDRESS" ]; then
-    echo "WARNING: the WWW_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
-fi
-
-
-if [ -z "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
-    echo "WARNING: the BTCPAY_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
-fi
-
-
-if [ -z "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
-    echo "WARNING: the LNPLAY_SERVER_MAC_ADDRESS is not specified. Check your project.conf."
-fi
-
 source ./domain_list.sh
 
 # let's provision our primary domain first.
