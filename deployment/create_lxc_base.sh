@@ -14,7 +14,7 @@ fi
 # let's download our base image.
 if ! lxc image list --format csv --columns l | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
     # copy the image down from canonical.
-    lxc image copy "images:$BASE_LXC_IMAGE" "$REMOTE_NAME": --alias "$UBUNTU_BASE_IMAGE_NAME" --public --vm --auto-update
+    lxc image copy "images:$BASE_LXC_IMAGE" "$REMOTE_NAME": --alias "$UBUNTU_BASE_IMAGE_NAME" --public --vm --auto-update --target-project default
 fi
 
 # If the lxc VM does exist, then we will delete it (so we can start fresh) 
