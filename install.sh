@@ -130,9 +130,9 @@ if ! lxc list --format csv | grep -q ss-mgmt; then
     # TODO check to see if there's an existing ss-mgmt image to spawn from, otherwise do this.
     if lxc image list | grep -q ss-mgmt; then
         FROM_BUILT_IMAGE=true
-        lxc init ss-mgmt ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
+        lxc init -q ss-mgmt ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
     else
-        lxc init "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
+        lxc init -q "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
     fi
 
 fi

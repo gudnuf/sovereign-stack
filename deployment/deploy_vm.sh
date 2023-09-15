@@ -96,8 +96,8 @@ if ! lxc list --format csv | grep -q "$LXD_VM_NAME"; then
     bash -c "./stub_lxc_profile.sh --vm=$VIRTUAL_MACHINE --lxd-hostname=$LXD_VM_NAME --ss-volume-name=$SSDATA_VOLUME_NAME --backup-volume-name=$BACKUP_VOLUME_NAME"
 
     # now let's create a new VM to work with.
-    #lxc init --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME" "$LXD_VM_NAME" --vm
-    lxc init "$DOCKER_BASE_IMAGE_NAME" "$LXD_VM_NAME" --vm --profile="$LXD_VM_NAME"
+    #lxc init -q --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME" "$LXD_VM_NAME" --vm
+    lxc init -q "$DOCKER_BASE_IMAGE_NAME" "$LXD_VM_NAME" --vm --profile="$LXD_VM_NAME"
 
     # let's PIN the HW address for now so we don't exhaust IP
     # and so we can set DNS internally.
