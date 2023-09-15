@@ -12,16 +12,16 @@ if lxc list -q --project default | grep -q "$BASE_IMAGE_VM_NAME" ; then
 fi
 
 # let's download our base image.
-if ! lxc image list --format csv --columns l | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
+if ! lxc image list --format csv --columns l --project default | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
     # copy the image down from canonical.
     lxc image copy "images:$BASE_LXC_IMAGE" "$REMOTE_NAME": --alias "$UBUNTU_BASE_IMAGE_NAME" --public --vm --auto-update --target-project default
 fi
 
 # If the lxc VM does exist, then we will delete it (so we can start fresh) 
-if lxc list --format csv -q | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
+if lxc list --format csv -q --project default | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
     # if there's no snapshot, we dispense with the old image and try again.
-    if ! lxc info "$BASE_IMAGE_VM_NAME" | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
-        lxc delete "$BASE_IMAGE_VM_NAME" --force
+    if ! lxc info "$BASE_IMAGE_VM_NAME"  --project default | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
+        lxc delete "$BASE_IMAGE_VM_NAME" --force --project default
         ssh-keygen -f "$SSH_HOME/known_hosts" -R "$BASE_IMAGE_VM_NAME"
     fi
 else
@@ -45,7 +45,7 @@ else
     #     done
     # done
 
-    if lxc info "$BASE_IMAGE_VM_NAME" | grep -q "Status: RUNNING"; then
+    if lxc info "$BASE_IMAGE_VM_NAME" --project default | grep -q "Status: RUNNING"; then
 
         while lxc exec "$BASE_IMAGE_VM_NAME" --project default -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
             sleep 1
