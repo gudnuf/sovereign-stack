@@ -25,11 +25,19 @@ if lxc list --format csv -q | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
         ssh-keygen -f "$SSH_HOME/known_hosts" -R "$BASE_IMAGE_VM_NAME"
     fi
 else
-    # the base image is ubuntu:22.04.
-    lxc init --profile="$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" "$BASE_IMAGE_VM_NAME" --vm --project=default
 
-    # TODO move this sovereign-stack-base construction VM to separate dedicated IP
-    lxc config set "$BASE_IMAGE_VM_NAME" --project=default
+    if ! lxc list --project default | grep -q "$BASE_IMAGE_VM_NAME"; then
+        # the base image is ubuntu:22.04.
+        lxc init -q --profile="$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" "$BASE_IMAGE_VM_NAME" --vm --project=default
+    fi
+
+
+    if lxc info "$BASE_IMAGE_VM_NAME" | grep -q "Status: STOPPED"; then
+        # TODO move this sovereign-stack-base construction VM to separate dedicated IP
+        lxc config set "$BASE_IMAGE_VM_NAME" --project=default
+        lxc start "$BASE_IMAGE_VM_NAME" --project=default
+        sleep 15
+    fi
 
     # for CHAIN in mainnet testnet; do
     #     for DATA in blocks chainstate; do
@@ -37,40 +45,41 @@ else
     #     done
     # done
 
-    lxc start "$BASE_IMAGE_VM_NAME" --project=default
+    if lxc info "$BASE_IMAGE_VM_NAME" | grep -q "Status: RUNNING"; then
 
-    sleep 15
-    while lxc exec "$BASE_IMAGE_VM_NAME" --project=default -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
-        sleep 1
-    done
+        while lxc exec "$BASE_IMAGE_VM_NAME" --project=default -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
+            sleep 1
+        done
 
-    # ensure the ssh service is listening at localhost
-    lxc exec "$BASE_IMAGE_VM_NAME" --project=default -- wait-for-it -t 100 127.0.0.1:22
+        # ensure the ssh service is listening at localhost
+        lxc exec "$BASE_IMAGE_VM_NAME" --project=default -- wait-for-it -t 100 127.0.0.1:22
 
-    # # If we have any chaninstate or blocks in our SSME, let's push them to the
-    # # remote host as a zfs volume that way deployments can share a common history
-    # # of chainstate/blocks.
-    # for CHAIN in testnet mainnet; do
-    #     for DATA in blocks chainstate; do
-    #         # if the storage snapshot doesn't yet exist, create it.
-    #         if ! lxc storage volume list ss-base -q --format csv -c n | grep -q "$CHAIN-$DATA/snap0"; then
-    #             DATA_PATH="/home/ubuntu/.ss/cache/bitcoin/$CHAIN/$DATA"
-    #             if [ -d "$DATA_PATH" ]; then
-    #                 COMPLETE_FILE_PATH="$DATA_PATH/complete"
-    #                 if lxc exec "$BASE_IMAGE_VM_NAME" -- [ ! -f "$COMPLETE_FILE_PATH" ]; then
-    #                     lxc file push --recursive --project=default "$DATA_PATH/" "$BASE_IMAGE_VM_NAME""$DATA_PATH/"
-    #                     lxc exec "$BASE_IMAGE_VM_NAME" -- su ubuntu - bash -c "echo $(date) > $COMPLETE_FILE_PATH"
-    #                     lxc exec "$BASE_IMAGE_VM_NAME" -- chown -R 999:999 "$DATA_PATH/$DATA"
-    #                 else
-    #                     echo "INFO: it appears as though $CHAIN/$DATA has already been initialized. Continuing."
-    #                 fi
-    #             fi
-    #         fi
-    #     done
-    # done
+        # # If we have any chaninstate or blocks in our SSME, let's push them to the
+        # # remote host as a zfs volume that way deployments can share a common history
+        # # of chainstate/blocks.
+        # for CHAIN in testnet mainnet; do
+        #     for DATA in blocks chainstate; do
+        #         # if the storage snapshot doesn't yet exist, create it.
+        #         if ! lxc storage volume list ss-base -q --format csv -c n | grep -q "$CHAIN-$DATA/snap0"; then
+        #             DATA_PATH="/home/ubuntu/.ss/cache/bitcoin/$CHAIN/$DATA"
+        #             if [ -d "$DATA_PATH" ]; then
+        #                 COMPLETE_FILE_PATH="$DATA_PATH/complete"
+        #                 if lxc exec "$BASE_IMAGE_VM_NAME" -- [ ! -f "$COMPLETE_FILE_PATH" ]; then
+        #                     lxc file push --recursive --project=default "$DATA_PATH/" "$BASE_IMAGE_VM_NAME""$DATA_PATH/"
+        #                     lxc exec "$BASE_IMAGE_VM_NAME" -- su ubuntu - bash -c "echo $(date) > $COMPLETE_FILE_PATH"
+        #                     lxc exec "$BASE_IMAGE_VM_NAME" -- chown -R 999:999 "$DATA_PATH/$DATA"
+        #                 else
+        #                     echo "INFO: it appears as though $CHAIN/$DATA has already been initialized. Continuing."
+        #                 fi
+        #             fi
+        #         fi
+        #     done
+        # done
 
-    # stop the VM and get a snapshot.
-    lxc stop "$BASE_IMAGE_VM_NAME" --project=default
+        # stop the VM and get a snapshot.
+        lxc stop "$BASE_IMAGE_VM_NAME" --project=default
+    fi
+    
     lxc snapshot "$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" --project=default
 
 fi
