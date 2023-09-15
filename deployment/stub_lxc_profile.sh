@@ -37,7 +37,7 @@ done
 # generate the custom cloud-init file. Cloud init installs and configures sshd
 SSH_AUTHORIZED_KEY=$(<"$SSH_PUBKEY_PATH")
 eval "$(ssh-agent -s)"
-ssh-add "$SSH_HOME/id_rsa"
+ssh-add "$SSH_HOME/id_rsa" >> /dev/null
 export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
 
 export FILENAME="$LXD_HOSTNAME.yml"
