@@ -8,7 +8,7 @@ cd "$(dirname "$0")"
 bash -c "./stub_lxc_profile.sh --lxd-hostname=$BASE_IMAGE_VM_NAME"
 
 if lxc list -q --project default | grep -q "$BASE_IMAGE_VM_NAME" ; then
-    lxc delete -f "$BASE_IMAGE_VM_NAME" --project=default
+    lxc delete -f "$BASE_IMAGE_VM_NAME" --project default
 fi
 
 # let's download our base image.
@@ -28,14 +28,14 @@ else
 
     if ! lxc list --project default | grep -q "$BASE_IMAGE_VM_NAME"; then
         # the base image is ubuntu:22.04.
-        lxc init -q --profile="$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" "$BASE_IMAGE_VM_NAME" --vm --project=default
+        lxc init -q --profile="$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" "$BASE_IMAGE_VM_NAME" --vm --project default || true
     fi
 
 
-    if lxc info "$BASE_IMAGE_VM_NAME" | grep -q "Status: STOPPED"; then
+    if lxc info "$BASE_IMAGE_VM_NAME" --project default | grep -q "Status: STOPPED"; then
         # TODO move this sovereign-stack-base construction VM to separate dedicated IP
-        lxc config set "$BASE_IMAGE_VM_NAME" --project=default
-        lxc start "$BASE_IMAGE_VM_NAME" --project=default
+        lxc config set "$BASE_IMAGE_VM_NAME" --project default
+        lxc start "$BASE_IMAGE_VM_NAME" --project default
         sleep 15
     fi
 
@@ -47,12 +47,12 @@ else
 
     if lxc info "$BASE_IMAGE_VM_NAME" | grep -q "Status: RUNNING"; then
 
-        while lxc exec "$BASE_IMAGE_VM_NAME" --project=default -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
+        while lxc exec "$BASE_IMAGE_VM_NAME" --project default -- [ ! -f /var/lib/cloud/instance/boot-finished ]; do
             sleep 1
         done
 
         # ensure the ssh service is listening at localhost
-        lxc exec "$BASE_IMAGE_VM_NAME" --project=default -- wait-for-it -t 100 127.0.0.1:22
+        lxc exec "$BASE_IMAGE_VM_NAME" --project default -- wait-for-it -t 100 127.0.0.1:22
 
         # # If we have any chaninstate or blocks in our SSME, let's push them to the
         # # remote host as a zfs volume that way deployments can share a common history
@@ -65,7 +65,7 @@ else
         #             if [ -d "$DATA_PATH" ]; then
         #                 COMPLETE_FILE_PATH="$DATA_PATH/complete"
         #                 if lxc exec "$BASE_IMAGE_VM_NAME" -- [ ! -f "$COMPLETE_FILE_PATH" ]; then
-        #                     lxc file push --recursive --project=default "$DATA_PATH/" "$BASE_IMAGE_VM_NAME""$DATA_PATH/"
+        #                     lxc file push --recursive --project default "$DATA_PATH/" "$BASE_IMAGE_VM_NAME""$DATA_PATH/"
         #                     lxc exec "$BASE_IMAGE_VM_NAME" -- su ubuntu - bash -c "echo $(date) > $COMPLETE_FILE_PATH"
         #                     lxc exec "$BASE_IMAGE_VM_NAME" -- chown -R 999:999 "$DATA_PATH/$DATA"
         #                 else
@@ -77,25 +77,25 @@ else
         # done
 
         # stop the VM and get a snapshot.
-        lxc stop "$BASE_IMAGE_VM_NAME" --project=default
+        lxc stop "$BASE_IMAGE_VM_NAME" --project default
     fi
     
-    lxc snapshot "$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" --project=default
+    lxc snapshot "$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" --project default
 
 fi
 
 echo "INFO: Publishing '$BASE_IMAGE_VM_NAME' as image '$DOCKER_BASE_IMAGE_NAME'. Please wait."
-lxc publish --public "$BASE_IMAGE_VM_NAME/$UBUNTU_BASE_IMAGE_NAME" --project=default --alias="$DOCKER_BASE_IMAGE_NAME" --compression none
+lxc publish --public "$BASE_IMAGE_VM_NAME/$UBUNTU_BASE_IMAGE_NAME" --project default --alias="$DOCKER_BASE_IMAGE_NAME" --compression none
 
 echo "INFO: Success creating the base image. Deleting artifacts from the build process."
-lxc delete -f "$BASE_IMAGE_VM_NAME" --project=default
+lxc delete -f "$BASE_IMAGE_VM_NAME" --project default
 
 # # now let's get a snapshot of each of the blocks/chainstate directories.
 # for CHAIN in testnet mainnet; do
 #     for DATA in blocks chainstate; do
 #         if ! lxc storage volume list ss-base -q --format csv -c n | grep -q "$CHAIN-$DATA/snap0"; then
 #             echo "INFO: Creating a snapshot 'ss-base/$CHAIN-$DATA/snap0'."
-#             lxc storage volume snapshot ss-base --project=default "$CHAIN-$DATA"
+#             lxc storage volume snapshot ss-base --project default "$CHAIN-$DATA"
 #         fi
 #     done
 # done
