@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
 
 # https://www.sovereign-stack.org/install/
@@ -35,7 +35,6 @@ done
 sudo iptables -F FORWARD
 sudo iptables -P FORWARD ACCEPT
 
-
 # if the user didn't specify the disk or partition, we create a loop device under
 # the user's home directory. If the user does specify a disk or partition, we will
 # create the ZFS pool there.
@@ -45,23 +44,23 @@ fi
 
 export DISK="$DISK"
 
-# install lxd snap and initialize it
-if ! snap list | grep -q lxd; then
-    sudo snap install lxd --channel=5.17/stable
-    sleep 5
+# this script undoes install.sh
+if ! command -v incus >/dev/null 2>&1; then
+    bash -c ./install_incus.sh
+
 
     # run lxd init
-    cat <<EOF | lxd init --preseed
+    cat <<EOF | sudo incus admin init --preseed
 config: {}
 networks:
 - config:
     ipv4.address: auto
     ipv4.dhcp: true
-    ipv4.nat: true
     ipv6.address: none
   description: "Default network bridge for ss-mgmt outbound network access."
-  name: lxdbr0
+  name: incusbr0
   type: bridge
+  project: default
 storage_pools:
 - config:
     source: ${DISK}
@@ -74,7 +73,7 @@ profiles:
   devices:
     enp5s0:
       name: enp5s0
-      network: lxdbr0
+      network: incusbr0
       type: nic
     root:
       path: /
@@ -82,30 +81,32 @@ profiles:
       type: disk
   name: default
 projects: []
+cluster: null
 
 EOF
 
 fi
+
+
 
 . ./deployment/deployment_defaults.sh
 
 . ./deployment/base.sh
 
 
-
 # we need to get the base image. IMport it if it's cached, else download it then cache it.
-if ! lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
+if ! incus image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
         # if the image if cached locally, import it from disk, otherwise download it from ubuntu
     IMAGE_PATH="$HOME/ss/cache/ss-ubuntu-jammy"
     IMAGE_IDENTIFIER=$(find "$IMAGE_PATH" | grep ".qcow2" | head -n1 | cut -d "." -f1)
     METADATA_FILE="$IMAGE_PATH/meta-$IMAGE_IDENTIFIER.tar.xz"
     IMAGE_FILE="$IMAGE_PATH/$IMAGE_IDENTIFIER.qcow2"
     if [ -d "$IMAGE_PATH" ] && [ -f "$METADATA_FILE" ] && [ -f "$IMAGE_FILE" ]; then
-        lxc image import "$METADATA_FILE" "$IMAGE_FILE" --alias "$UBUNTU_BASE_IMAGE_NAME"
+        incus image import "$METADATA_FILE" "$IMAGE_FILE" --alias "$UBUNTU_BASE_IMAGE_NAME"
     else
-        lxc image copy "images:$BASE_LXC_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
+        incus image copy "images:$BASE_INCUS_IMAGE" local: --alias "$UBUNTU_BASE_IMAGE_NAME" --vm --auto-update
         mkdir -p "$IMAGE_PATH"
-        lxc image export "$UBUNTU_BASE_IMAGE_NAME" "$IMAGE_PATH" --vm
+        incus image export "$UBUNTU_BASE_IMAGE_NAME" "$IMAGE_PATH" --vm
     fi
 fi
 
@@ -118,28 +119,25 @@ if [ ! -f "$SSH_PRIVKEY_PATH" ]; then
     ssh-keygen -f "$SSH_PRIVKEY_PATH" -t rsa -b 4096
 fi
 
-chmod 700 "$HOME/.ssh"
-chmod 600 "$HOME/.ssh/config"
-
 # add SSH_PUBKEY_PATH to authorized_keys
-grep -qxF "$(cat $SSH_PUBKEY_PATH)" "$SSH_PATH/authorized_keys" || cat "$SSH_PUBKEY_PATH" >> "$SSH_PATH/authorized_keys"
+grep -qxF "$(cat "$SSH_PUBKEY_PATH")" "$SSH_PATH/authorized_keys" || cat "$SSH_PUBKEY_PATH" >> "$SSH_PATH/authorized_keys"
 
 FROM_BUILT_IMAGE=false
-if ! lxc list --format csv | grep -q ss-mgmt; then
+if ! incus list --format csv | grep -q ss-mgmt; then
 
     # TODO check to see if there's an existing ss-mgmt image to spawn from, otherwise do this.
-    if lxc image list | grep -q ss-mgmt; then
+    if incus image list | grep -q ss-mgmt; then
         FROM_BUILT_IMAGE=true
-        lxc init -q ss-mgmt ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
+        incus init ss-mgmt ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
     else
-        lxc init -q "images:$BASE_LXC_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
+        incus init "images:$BASE_INCUS_IMAGE" ss-mgmt --vm -c limits.cpu=4 -c limits.memory=4GiB --profile=default
     fi
 
 fi
 
 # mount the pre-verified sovereign stack git repo into the new vm
-if ! lxc config device show ss-mgmt | grep -q ss-code; then
-    lxc config device add ss-mgmt ss-code disk source="$(pwd)" path=/home/ubuntu/sovereign-stack
+if ! incus config device show ss-mgmt | grep -q ss-code; then
+    incus config device add ss-mgmt ss-code disk source="$(pwd)" path=/home/ubuntu/sovereign-stack
 fi
 
 # create the ~/ss path and mount it into the vm.
@@ -148,8 +146,8 @@ source ./deployment/base.sh
 
 mkdir -p "$SS_ROOT_PATH"
 
-if ! lxc config device show ss-mgmt | grep -q ss-root; then
-    lxc config device add ss-mgmt ss-root disk source="$SS_ROOT_PATH" path=/home/ubuntu/ss
+if ! incus config device show ss-mgmt | grep -q ss-root; then
+    incus config device add ss-mgmt ss-root disk source="$SS_ROOT_PATH" path=/home/ubuntu/ss
 fi
 
 # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
@@ -157,62 +155,62 @@ BITCOIN_DIR="$HOME/.bitcoin"
 REMOTE_BITCOIN_CACHE_PATH="/home/ubuntu/ss/cache/bitcoin"
 BITCOIN_TESTNET_BLOCKS_PATH="$BITCOIN_DIR/testnet3/blocks"
 if [ -d "$BITCOIN_TESTNET_BLOCKS_PATH" ]; then
-    if ! lxc config device show ss-mgmt | grep -q ss-testnet-blocks; then
-        lxc config device add ss-mgmt ss-testnet-blocks disk source="$BITCOIN_TESTNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/testnet/blocks
+    if ! incus config device show ss-mgmt | grep -q ss-testnet-blocks; then
+        incus config device add ss-mgmt ss-testnet-blocks disk source="$BITCOIN_TESTNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/testnet/blocks
     fi
 fi
 
 # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
 BITCOIN_TESTNET_CHAINSTATE_PATH="$BITCOIN_DIR/testnet3/chainstate"
 if [ -d "$BITCOIN_TESTNET_CHAINSTATE_PATH" ]; then
-    if ! lxc config device show ss-mgmt | grep -q ss-testnet-chainstate; then
-        lxc config device add ss-mgmt ss-testnet-chainstate disk source="$BITCOIN_TESTNET_CHAINSTATE_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/testnet/chainstate
+    if ! incus config device show ss-mgmt | grep -q ss-testnet-chainstate; then
+        incus config device add ss-mgmt ss-testnet-chainstate disk source="$BITCOIN_TESTNET_CHAINSTATE_PATH" path="$REMOTE_BITCOIN_CACHE_PATH/testnet/chainstate"
     fi
 fi
 
 # if a ~/.bitcoin/blocks dir exists, mount it in.
 BITCOIN_MAINNET_BLOCKS_PATH="$BITCOIN_DIR/blocks"
 if [ -d "$BITCOIN_MAINNET_BLOCKS_PATH" ]; then
-    if ! lxc config device show ss-mgmt | grep -q ss-mainnet-blocks; then
-        lxc config device add ss-mgmt ss-mainnet-blocks disk source="$BITCOIN_MAINNET_BLOCKS_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/blocks
+    if ! incus config device show ss-mgmt | grep -q ss-mainnet-blocks; then
+        incus config device add ss-mgmt ss-mainnet-blocks disk source="$BITCOIN_MAINNET_BLOCKS_PATH" path="$REMOTE_BITCOIN_CACHE_PATH/mainnet/blocks"
     fi
 fi
 
     # if a ~/.bitcoin/testnet3/blocks direrectory exists, mount it in.
 BITCOIN_MAINNET_CHAINSTATE_PATH="$BITCOIN_DIR/chainstate"
 if [ -d "$BITCOIN_MAINNET_CHAINSTATE_PATH" ]; then
-    if ! lxc config device show ss-mgmt | grep -q ss-mainnet-blocks; then
-        lxc config device add ss-mgmt ss-mainnet-chainstate disk source="$BITCOIN_MAINNET_CHAINSTATE_PATH" path=$REMOTE_BITCOIN_CACHE_PATH/mainnet/chainstate
+    if ! incus config device show ss-mgmt | grep -q ss-mainnet-blocks; then
+        incus config device add ss-mgmt ss-mainnet-chainstate disk source="$BITCOIN_MAINNET_CHAINSTATE_PATH" path="$REMOTE_BITCOIN_CACHE_PATH/mainnet/chainstate"
     fi
 fi
 
 # mount the ssh directory in there.
 if [ -f "$SSH_PUBKEY_PATH" ]; then
-    if ! lxc config device show ss-mgmt | grep -q ss-ssh; then
-        lxc config device add ss-mgmt ss-ssh disk source="$HOME/.ssh" path=/home/ubuntu/.ssh
+    if ! incus config device show ss-mgmt | grep -q ss-ssh; then
+        incus config device add ss-mgmt ss-ssh disk source="$HOME/.ssh" path=/home/ubuntu/.ssh
     fi
 fi
 
 # start the vm if it's not already running
-if lxc list --format csv | grep -q "ss-mgmt,STOPPED"; then
-    lxc start ss-mgmt
+if incus list --format csv | grep -q "ss-mgmt,STOPPED"; then
+    incus start ss-mgmt
     sleep 10
 fi
 
 # wait for the vm to have an IP address
-. ./management/wait_for_lxc_ip.sh
+. ./management/wait_for_ip.sh
 
 # do some other preparations for user experience
-lxc file push ./management/bash_aliases ss-mgmt/home/ubuntu/.bash_aliases
-lxc file push ./management/bash_profile ss-mgmt/home/ubuntu/.bash_profile
-lxc file push ./management/bashrc ss-mgmt/home/ubuntu/.bashrc
-lxc file push ./management/motd ss-mgmt/etc/update-motd.d/sovereign-stack
+incus file push ./management/bash_aliases ss-mgmt/home/ubuntu/.bash_aliases
+incus file push ./management/bash_profile ss-mgmt/home/ubuntu/.bash_profile
+incus file push ./management/bashrc ss-mgmt/home/ubuntu/.bashrc
+incus file push ./management/motd ss-mgmt/etc/update-motd.d/sovereign-stack
 
 # install SSH
-lxc exec ss-mgmt apt-get update
-lxc exec ss-mgmt -- apt-get install -y openssh-server
-lxc file push ./management/sshd_config ss-mgmt/etc/ssh/sshd_config
-lxc exec ss-mgmt -- sudo systemctl restart sshd
+incus exec ss-mgmt apt-get update
+incus exec ss-mgmt -- apt-get install -y openssh-server
+incus file push ./management/sshd_config ss-mgmt/etc/ssh/sshd_config
+incus exec ss-mgmt -- sudo systemctl restart sshd
 
 # add 'ss-manage' to the bare metal ~/.bashrc
 ADDED_COMMAND=false
@@ -234,14 +232,14 @@ ssh "ubuntu@$IP_V4_ADDRESS" sudo chown -R ubuntu:ubuntu /home/ubuntu
 if [ "$FROM_BUILT_IMAGE" = false ]; then
     ssh "ubuntu@$IP_V4_ADDRESS" /home/ubuntu/sovereign-stack/management/provision.sh
 
-    lxc stop ss-mgmt
+    incus stop ss-mgmt
 
-    if ! lxc image list | grep -q "ss-mgmt"; then
+    if ! incus image list | grep -q "ss-mgmt"; then
         echo "Publishing image. Please wait, this may take a while..."
-        lxc publish ss-mgmt --alias=ss-mgmt
+        incus publish ss-mgmt --alias=ss-mgmt
     fi
 
-    lxc start ss-mgmt
+    incus start ss-mgmt
 fi
 
 if [ "$ADDED_COMMAND" = true ]; then

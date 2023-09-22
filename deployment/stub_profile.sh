@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+set -exu
 cd "$(dirname "$0")"
 
 VIRTUAL_MACHINE=base
@@ -36,8 +36,8 @@ done
 
 # generate the custom cloud-init file. Cloud init installs and configures sshd
 SSH_AUTHORIZED_KEY=$(<"$SSH_PUBKEY_PATH")
-eval "$(ssh-agent -s)"
-ssh-add "$SSH_HOME/id_rsa" >> /dev/null
+eval "$(ssh-agent -s)" > /dev/null
+ssh-add "$SSH_HOME/id_rsa" > /dev/null
 export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
 
 export FILENAME="$LXD_HOSTNAME.yml"
@@ -302,18 +302,18 @@ EOF
 fi
 
 if [ "$VIRTUAL_MACHINE" = base ]; then
-    if ! lxc profile list --format csv --project default | grep -q "$LXD_HOSTNAME"; then
-        lxc profile create "$LXD_HOSTNAME" --project default
+    if ! incus profile list --format csv --project default | grep -q "$LXD_HOSTNAME"; then
+        incus profile create "$LXD_HOSTNAME" --project default
     fi
 
     # configure the profile with our generated cloud-init.yml file.
-    cat "$YAML_PATH" | lxc profile edit "$LXD_HOSTNAME" --project default
+    incus profile edit "$LXD_HOSTNAME" --project default < "$YAML_PATH"
 else
-    if ! lxc profile list --format csv | grep -q "$LXD_HOSTNAME"; then
-        lxc profile create "$LXD_HOSTNAME"
+    if ! incus profile list --format csv | grep -q "$LXD_HOSTNAME"; then
+        incus profile create "$LXD_HOSTNAME"
     fi
 
     # configure the profile with our generated cloud-init.yml file.
-    cat "$YAML_PATH" | lxc profile edit "$LXD_HOSTNAME"
+    incus profile edit "$LXD_HOSTNAME" < "$YAML_PATH"
 fi
 

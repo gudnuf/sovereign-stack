@@ -4,13 +4,13 @@
 set -e
 cd "$(dirname "$0")"
 
-PURGE_LXD=false
+PURGE_INCUS=false
 
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
         --purge)
-            PURGE_LXD=true
+            PURGE_INCUS=true
             shift
         ;;
         *)
@@ -25,61 +25,61 @@ source ../defaults.sh
 ./down.sh
 
 # these only get initialzed upon creation, so we MUST delete here so they get recreated.
-if lxc profile list | grep -q "$BASE_IMAGE_VM_NAME"; then
-    lxc profile delete "$BASE_IMAGE_VM_NAME"
+if incus profile list | grep -q "$BASE_IMAGE_VM_NAME"; then
+    incus profile delete "$BASE_IMAGE_VM_NAME"
 fi
 
-if lxc image list | grep -q "$BASE_IMAGE_VM_NAME"; then
-    lxc image rm "$BASE_IMAGE_VM_NAME"
+if incus image list | grep -q "$BASE_IMAGE_VM_NAME"; then
+    incus image rm "$BASE_IMAGE_VM_NAME"
 fi
 
-if lxc image list | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
-    lxc image rm "$DOCKER_BASE_IMAGE_NAME"
+if incus image list | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
+    incus image rm "$DOCKER_BASE_IMAGE_NAME"
 fi
 
-CURRENT_PROJECT="$(lxc info | grep "project:" | awk '{print $2}')"
-if ! lxc info | grep -q "project: default"; then
-    lxc project switch default
-    lxc project delete "$CURRENT_PROJECT"
+CURRENT_PROJECT="$(incus info | grep "project:" | awk '{print $2}')"
+if ! incus info | grep -q "project: default"; then
+    incus project switch default
+    incus project delete "$CURRENT_PROJECT"
 fi
 
 
-if [ "$PURGE_LXD" = true ]; then
+if [ "$PURGE_INCUS" = true ]; then
 
-    if lxc profile show default | grep -q "root:"; then
-        lxc profile device remove default root
+    if incus profile show default | grep -q "root:"; then
+        incus profile device remove default root
     fi
 
-    if lxc profile show default| grep -q "eth0:"; then
-        lxc profile device remove default eth0
+    if incus profile show default| grep -q "eth0:"; then
+        incus profile device remove default eth0
     fi
 
-    if lxc network list --format csv -q --project default | grep -q lxdbr0; then
-        lxc network delete lxdbr0 --project default
+    if incus network list --format csv -q --project default | grep -q lxdbr0; then
+        incus network delete lxdbr0 --project default
     fi
 
-    if lxc network list --format csv -q --project default | grep -q lxdbr1; then
-        lxc network delete lxdbr1 --project default
+    if incus network list --format csv -q --project default | grep -q lxdbr1; then
+        incus network delete lxdbr1 --project default
     fi
 
     # # create the testnet/mainnet blocks/chainstate subvolumes.
     # for CHAIN in mainnet testnet; do
     #     for DATA in blocks chainstate; do
-    #         if lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
-    #             lxc storage volume delete ss-base "$CHAIN-$DATA"
+    #         if incus storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
+    #             incus storage volume delete ss-base "$CHAIN-$DATA"
     #         fi
     #     done
     # done
 
     echo "WARNING: ss-basae NOT DELETED. NEED TO TEST THIS SCRIPT"
-    # if lxc storage list --format csv | grep -q ss-base; then
-    #     lxc storage delete ss-base
+    # if incus storage list --format csv | grep -q ss-base; then
+    #     incus storage delete ss-base
     # fi
 
-    CURRENT_REMOTE="$(lxc remote get-default)"
-    if ! lxc remote get-default | grep -q "local"; then
-        lxc remote switch local
-        lxc remote remove "$CURRENT_REMOTE"
+    CURRENT_REMOTE="$(incus remote get-default)"
+    if ! incus remote get-default | grep -q "local"; then
+        incus remote switch local
+        incus remote remove "$CURRENT_REMOTE"
 
         echo "INFO: The remote '$CURRENT_REMOTE' has been removed! You are now controlling your local instance."
     fi

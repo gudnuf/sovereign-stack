@@ -47,7 +47,7 @@ fi
 
 source "$REMOTE_DEFINITION"
 
-if ! lxc remote list | grep -q "$REMOTE_NAME"; then
+if ! incus remote list | grep -q "$REMOTE_NAME"; then
     FQDN="${2:-}"
 
     if [ -z "$FQDN" ]; then
@@ -89,7 +89,7 @@ if ! lxc remote list | grep -q "$REMOTE_NAME"; then
     ssh-copy-id -i "$HOME/.ssh/id_rsa.pub" "ubuntu@$FQDN"
 
     if [ -z "$DISK_TO_USE" ]; then
-        if ! ssh "ubuntu@$FQDN" lxc storage list -q | grep -q ss-base; then
+        if ! ssh "ubuntu@$FQDN" incus storage list -q | grep -q ss-base; then
             echo "INFO: It looks like the DISK_TO_USE has not been set. Enter it now."
             echo ""
 
@@ -126,20 +126,20 @@ if [ -z "$LXD_REMOTE_PASSWORD" ]; then
     exit 1
 fi
 
-if ! command -v lxc >/dev/null 2>&1; then
-    if lxc profile list --format csv | grep -q "$BASE_IMAGE_VM_NAME"; then
-        lxc profile delete "$BASE_IMAGE_VM_NAME"
+if ! command -v incus >/dev/null 2>&1; then
+    if incus profile list --format csv | grep -q "$BASE_IMAGE_VM_NAME"; then
+        incus profile delete "$BASE_IMAGE_VM_NAME"
         sleep 1
     fi
 
-    if lxc network list --format csv -q --project default | grep -q lxdbr0; then
-        lxc network delete lxdbr0 --project default
+    if incus network list --format csv -q --project default | grep -q lxdbr0; then
+        incus network delete lxdbr0 --project default
         sleep 1
     fi
 
 
-    if lxc network list --format csv -q project default | grep -q lxdbr1; then
-        lxc network delete lxdbr1 --project default
+    if incus network list --format csv -q project default | grep -q lxdbr1; then
+        incus network delete lxdbr1 --project default
         sleep 1
     fi
 
@@ -148,7 +148,7 @@ fi
 # install dependencies.
 ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano -y'
 if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
-    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=5.17/stable'
+    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=5.18/candidate'
     sleep 5
 fi
 
@@ -215,37 +215,37 @@ cluster:
   cluster_token: ""
 EOF
 
-# ensure the lxd service is available over the network, then add a lxc remote, then switch the active remote to it.
+# ensure the lxd service is available over the network, then add a incus remote, then switch the active remote to it.
 if wait-for-it -t 20 "$FQDN:8443"; then
-    # now create a remote on your local LXC client and switch to it.
+    # now create a remote on your local incus client and switch to it.
     # the software will now target the new remote.
-    lxc remote add "$REMOTE_NAME" "$FQDN" --password="$LXD_REMOTE_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
-    lxc remote switch "$REMOTE_NAME"
+    incus remote add "$REMOTE_NAME" "$FQDN" --password="$LXD_REMOTE_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
+    incus remote switch "$REMOTE_NAME"
 
-    echo "INFO: A new remote named '$REMOTE_NAME' has been created. Your LXC client has been switched to it."
+    echo "INFO: A new remote named '$REMOTE_NAME' has been created. Your incus client has been switched to it."
 else
     echo "ERROR: Could not detect the LXD endpoint. Something went wrong."
     exit 1
 fi
 
 # create the default storage pool if necessary
-if ! lxc storage list --format csv | grep -q ss-base; then
+if ! incus storage list --format csv | grep -q ss-base; then
 
     if [ "$DISK_TO_USE" != loop ]; then
         # we omit putting a size here so, so LXD will consume the entire disk if '/dev/sdb' or partition if '/dev/sdb1'.
         # TODO do some sanity/resource checking on DISK_TO_USE. Impelment full-disk encryption?
-        lxc storage create ss-base zfs source="$DISK_TO_USE"
+        incus storage create ss-base zfs source="$DISK_TO_USE"
     else
         # if a disk is the default 'loop', then we create a zfs storage pool 
         # on top of the existing filesystem using a loop device, per LXD docs
-        lxc storage create ss-base zfs
+        incus storage create ss-base zfs
     fi
 
     # # create the testnet/mainnet blocks/chainstate subvolumes.
     # for CHAIN in mainnet testnet; do
     #     for DATA in blocks chainstate; do
-    #         if ! lxc storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
-    #             lxc storage volume create ss-base "$CHAIN-$DATA" --type=filesystem
+    #         if ! incus storage volume list ss-base | grep -q "$CHAIN-$DATA"; then
+    #             incus storage volume create ss-base "$CHAIN-$DATA" --type=filesystem
     #         fi
     #     done
     # done
@@ -253,5 +253,5 @@ if ! lxc storage list --format csv | grep -q ss-base; then
 else
     echo "WARNING! The host '$FQDN' appears to have Sovereign Stack worksloads already provisioned."
     echo "INFO: Here are your current Deployments."
-    lxc project list -q
+    incus project list -q
 fi

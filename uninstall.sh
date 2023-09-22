@@ -1,14 +1,14 @@
 #!/bin/bash
 
-set -eu
+set -exu
 
-PURGE_LXD=false
+PURGE_INCUS=false
 
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
         --purge)
-            PURGE_LXD=true
+            PURGE_INCUS=true
             shift
         ;;
         *)
@@ -19,72 +19,70 @@ for i in "$@"; do
 done
 
 # this script undoes install.sh
-if ! command -v lxc >/dev/null 2>&1; then
-    echo "This script requires 'lxc' to be installed. Please run 'install.sh'."
+if ! command -v incus >/dev/null 2>&1; then
+    echo "This script requires incus to be installed. Please run 'install.sh'."
     exit 1
 fi
 
-
-if ! lxc remote get-default | grep -q "local"; then
+if ! incus remote get-default | grep -q "local"; then
     echo "ERROR: You MUST be on the local remote when uninstalling the SSME."
-    echo "INFO: You can use 'lxc remote switch local' to do this."
+    echo "INFO: You can use 'incus remote switch local' to do this."
     exit 1
 fi
 
 
-if ! lxc project list | grep -q "default (current)"; then
+if ! incus project list | grep -q "default (current)"; then
     echo "ERROR: You MUST be on the default project when uninstalling the SSME."
-    echo "INFO: You can use 'lxc project switch default' to do this."
+    echo "INFO: You can use 'incus project switch default' to do this."
     exit 1
 fi
 
 
-if lxc list --format csv | grep -q "ss-mgmt"; then
+if incus list --format csv | grep -q "ss-mgmt"; then
 
-    if lxc list --format csv -q | grep -q "ss-mgmt,RUNNING"; then
-        lxc stop ss-mgmt
+    if incus list --format csv -q | grep -q "ss-mgmt,RUNNING"; then
+        incus stop ss-mgmt
     fi
 
-    if lxc config device list ss-mgmt -q | grep -q "ss-code"; then
-        lxc config device remove ss-mgmt ss-code
+    if incus config device list ss-mgmt -q | grep -q "ss-code"; then
+        incus config device remove ss-mgmt ss-code
     fi
 
-    if lxc config device list ss-mgmt -q | grep -q "ss-root"; then
-        lxc config device remove ss-mgmt ss-root
+    if incus config device list ss-mgmt -q | grep -q "ss-root"; then
+        incus config device remove ss-mgmt ss-root
     fi
 
-    if lxc config device list ss-mgmt -q | grep -q "ss-ssh"; then
-        lxc config device remove ss-mgmt ss-ssh
+    if incus config device list ss-mgmt -q | grep -q "ss-ssh"; then
+        incus config device remove ss-mgmt ss-ssh
     fi
 
-    lxc delete ss-mgmt
+    incus delete ss-mgmt
 fi
 
-if [ "$PURGE_LXD" = true ]; then
+if [ "$PURGE_INCUS" = true ]; then
 
-    if lxc profile device list default | grep -q root; then
-        lxc profile device remove default root
+    if incus profile device list default | grep -q root; then
+        incus profile device remove default root
     fi
 
-    if lxc profile device list default | grep -q enp5s0; then
-        lxc profile device remove default enp5s0
+    if incus profile device list default | grep -q enp5s0; then
+        incus profile device remove default enp5s0
     fi
 
-    if lxc network list --project default | grep -q lxdbr0; then
-        lxc network delete lxdbr0
+    if incus network list --project default | grep -q lxdbr0; then
+        incus network delete lxdbr0
     fi
 
     # this file contains the BASE_IMAGE_NAME
     . ./deployment/base.sh
-    if lxc image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
-        lxc image delete "$UBUNTU_BASE_IMAGE_NAME"
+    if incus image list | grep -q "$UBUNTU_BASE_IMAGE_NAME"; then
+        incus image delete "$UBUNTU_BASE_IMAGE_NAME"
     fi
 
-    if lxc storage list --format csv | grep -q sovereign-stack; then
-        lxc storage delete sovereign-stack
+    if incus storage list --format csv | grep -q sovereign-stack; then
+        incus storage delete sovereign-stack
     fi
 
-    if snap list | grep -q lxd; then
-        sudo snap remove lxd
-    fi
+    sudo apt purge incus
+
 fi

@@ -35,7 +35,7 @@ sleep 10
 # install snap
 if ! snap list | grep -q lxd; then
     sudo snap install htop
-    sudo snap install lxd --channel=5.17/stable
+    sudo snap install lxd --channel=5.18/candidate
     sleep 6
 
     # We just do an auto initialization. All we are using is the LXD client inside the management environment.
@@ -43,7 +43,7 @@ if ! snap list | grep -q lxd; then
 fi
 
 # run a lxd command so we don't we a warning upon first invocation
-lxc list > /dev/null 2>&1
+incus list > /dev/null 2>&1
 
 # add groups for docker and lxd
 if ! groups ubuntu | grep -q docker; then

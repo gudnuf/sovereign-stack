@@ -6,7 +6,7 @@ cd "$(dirname "$0")"
 . ./target.sh
 
 # check to ensure dependencies are met.
-for cmd in wait-for-it dig rsync sshfs lxc; do
+for cmd in wait-for-it dig rsync sshfs incus; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         echo "This script requires \"${cmd}\" to be installed. Please run 'install.sh'."
         exit 1
@@ -14,7 +14,7 @@ for cmd in wait-for-it dig rsync sshfs lxc; do
 done
 
 # do a spot check; if we are on production warn.
-if lxc remote get-default | grep -q "production"; then
+if incus remote get-default | grep -q "production"; then
     echo "WARNING: You are running command against a production system!"
     echo ""
 
@@ -48,7 +48,7 @@ SKIP_LNPLAY_SERVER=false
 BACKUP_BTCPAY_ARCHIVE_PATH= 
 RESTORE_BTCPAY=false
 UPDATE_BTCPAY=false
-REMOTE_NAME="$(lxc remote get-default)"
+REMOTE_NAME="$(incus remote get-default)"
 USER_SAYS_YES=false
 
 WWW_SERVER_MAC_ADDRESS=
@@ -212,7 +212,7 @@ EOL
 
 }
 
-PROJECT_NAME="$(lxc info | grep "project:" | awk '{print $2}')"
+PROJECT_NAME="$(incus info | grep "project:" | awk '{print $2}')"
 export PROJECT_NAME="$PROJECT_NAME"
 export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
 export SKIP_BTCPAYSERVER="$SKIP_BTCPAYSERVER"
@@ -287,10 +287,10 @@ export UPDATE_BTCPAY="$UPDATE_BTCPAY"
 VPS_HOSTNAME=
 
 . ./base.sh
-if ! lxc image list --format csv | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
+if ! incus image list --format csv | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
     # create the lxd base image.
     if [ "$SKIP_BASE_IMAGE_CREATION" = false ]; then
-        ./create_lxc_base.sh
+        ./create_base.sh
     fi
 fi
 
@@ -325,8 +325,8 @@ for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
 
     # Goal is to get the macvlan interface.
     LXD_SS_CONFIG_LINE=
-    if lxc network list --format csv --project default | grep lxdbr0 | grep -q "ss-config"; then
-        LXD_SS_CONFIG_LINE="$(lxc network list --format csv --project default | grep lxdbr0 | grep ss-config)"
+    if incus network list --format csv --project default | grep lxdbr0 | grep -q "ss-config"; then
+        LXD_SS_CONFIG_LINE="$(incus network list --format csv --project default | grep lxdbr0 | grep ss-config)"
     fi
 
     if [ -z "$LXD_SS_CONFIG_LINE" ]; then
@@ -340,13 +340,13 @@ for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
 
 
     # Now let's switch to the new project to ensure new resources are created under the project scope.
-    if ! lxc info | grep "project:" | grep -q "$PROJECT_NAME"; then
-        lxc project switch "$PROJECT_NAME"
+    if ! incus info | grep "project:" | grep -q "$PROJECT_NAME"; then
+        incus project switch "$PROJECT_NAME"
     fi
 
     # check if the OVN network exists in this project.
-    if ! lxc network list | grep -q "ss-ovn"; then
-        lxc network create ss-ovn --type=ovn network=lxdbr1 ipv6.address=none
+    if ! incus network list | grep -q "ss-ovn"; then
+        incus network create ss-ovn --type=ovn network=lxdbr1 ipv6.address=none
     fi
 
     export MAC_ADDRESS_TO_PROVISION=
@@ -421,25 +421,21 @@ if [ "$SKIP_LNPLAY_SERVER" = false ]; then
         export DOCKER_HOST="ssh://ubuntu@$LNPLAY_SERVER_FQDN"
 
         # set the active env to our LNPLAY_SERVER_FQDN
-        cat >./project/lnplay/active_env.txt <<EOL
+        cat > ./project/lnplay/active_env.txt <<EOL
 ${LNPLAY_SERVER_FQDN}
 EOL
 
         LNPLAY_ENV_FILE=./project/lnplay/environments/"$LNPLAY_SERVER_FQDN"
 
-        # only stub out the file if it doesn't exist. otherwise we leave it be.
-        if [ ! -f "$LNPLAY_ENV_FILE" ]; then
-            # and we have to set our environment file as well.
-            cat > "$LNPLAY_ENV_FILE" <<EOL
+        # and we have to set our environment file as well.
+        cat > "$LNPLAY_ENV_FILE" <<EOL
 DOCKER_HOST=ssh://ubuntu@${LNPLAY_SERVER_FQDN}
 DOMAIN_NAME=${PRIMARY_DOMAIN}
 ENABLE_TLS=true
 BTC_CHAIN=${BITCOIN_CHAIN}
-CLN_COUNT=200
 CHANNEL_SETUP=none
 LNPLAY_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/lnplayserver
 EOL
-        fi
 
         bash -c "./project/lnplay/up.sh -y"
     fi

@@ -5,8 +5,8 @@
 set -eu
 cd "$(dirname "$0")"
 
-if lxc remote get-default -q | grep -q "local"; then
-    echo "ERROR: you are on the local lxc remote. Nothing to take down"
+if incus remote get-default -q | grep -q "local"; then
+    echo "ERROR: you are on the local incus remote. Nothing to take down"
     exit 1
 fi
 

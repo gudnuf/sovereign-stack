@@ -9,14 +9,14 @@ cd "$(dirname "$0")"
 
 echo "Global Settings:"
 
-lxc image list
-lxc storage list
+incus image list
+incus storage list
 
 
 echo
 echo
 
-PROJECT_NAME="$(lxc info | grep "project:" | awk '{print $2}')"
+PROJECT_NAME="$(incus info | grep "project:" | awk '{print $2}')"
 export export="$PROJECT_NAME"
 export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
 
@@ -26,17 +26,17 @@ echo "Active project: $PROJECT_NAME"
 echo "----------------------------------------------------------"
 
 echo "  Networks:"
-lxc network list
+incus network list
 
 echo
 echo "  Storage Volumes:"
-lxc storage volume list ss-base
+incus storage volume list ss-base
 
 echo
 echo "  Profiles:"
-lxc profile list
+incus profile list
 
 
 echo
 echo "  Instances (VMs):"
-lxc list
+incus list

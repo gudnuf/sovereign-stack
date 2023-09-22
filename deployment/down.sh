@@ -5,8 +5,8 @@
 set -exu
 cd "$(dirname "$0")"
 
-if lxc remote get-default -q | grep -q "local"; then
-    echo "ERROR: you are on the local lxc remote. Nothing to take down"
+if incus remote get-default -q | grep -q "local"; then
+    echo "ERROR: you are on the local incus remote. Nothing to take down"
     exit 1
 fi
 
@@ -75,7 +75,7 @@ for VIRTUAL_MACHINE in $SERVERS; do
 
     LXD_NAME="$VIRTUAL_MACHINE-${PRIMARY_DOMAIN//./-}"
 
-    if lxc list | grep -q "$LXD_NAME"; then
+    if incus list | grep -q "$LXD_NAME"; then
         bash -c "./stop.sh --server=$VIRTUAL_MACHINE"
 
         if [ "$VIRTUAL_MACHINE" = www ] && [ "$BACKUP_WWW_APPS" = true ]; then
@@ -86,16 +86,16 @@ for VIRTUAL_MACHINE in $SERVERS; do
             done
         fi
 
-        lxc stop "$LXD_NAME"
+        incus stop "$LXD_NAME"
 
-        lxc delete "$LXD_NAME"
+        incus delete "$LXD_NAME"
     fi
 
     # remove the ssh known endpoint else we get warnings.
     ssh-keygen -f "$SSH_HOME/known_hosts" -R "$VIRTUAL_MACHINE.$PRIMARY_DOMAIN" | exit
 
-    if lxc profile list | grep -q "$LXD_NAME"; then
-        lxc profile delete "$LXD_NAME"
+    if incus profile list | grep -q "$LXD_NAME"; then
+        incus profile delete "$LXD_NAME"
     fi
 
     if [ "$KEEP_DOCKER_VOLUME" = false ]; then
@@ -110,12 +110,12 @@ for VIRTUAL_MACHINE in $SERVERS; do
         # d for docker; b for backup; s for ss-data
         for DATA in d b s; do
             VOLUME_NAME="$PRIMARY_DOMAIN_IDENTIFIER-$VM_ID""$DATA"
-            if lxc storage volume list ss-base -q | grep -q "$VOLUME_NAME"; then
+            if incus storage volume list ss-base -q | grep -q "$VOLUME_NAME"; then
                 RESPONSE=
                 read -r -p "Are you sure you want to delete the '$VOLUME_NAME' volume intended for '$LXD_NAME'?": RESPONSE
             
                 if [ "$RESPONSE" = "y" ]; then
-                    lxc storage volume delete ss-base "$VOLUME_NAME"
+                    incus storage volume delete ss-base "$VOLUME_NAME"
                 fi
             fi
         done
@@ -126,6 +126,6 @@ for VIRTUAL_MACHINE in $SERVERS; do
     fi
 done
 
-if lxc network list -q | grep -q ss-ovn; then
-    lxc network delete ss-ovn
+if incus network list -q | grep -q ss-ovn; then
+    incus network delete ss-ovn
 fi

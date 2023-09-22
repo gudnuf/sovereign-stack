@@ -2,7 +2,7 @@
 
 set -eu
 
-CURRENT_REMOTE="$(lxc remote get-default)"
+CURRENT_REMOTE="$(incus remote get-default)"
 
 if echo "$CURRENT_REMOTE" | grep -q "production"; then
     echo "WARNING: You are running a migration procedure on a production system."
@@ -50,11 +50,11 @@ if [ -n "$DEPLOYMENT_STRING" ]; then
         BITCOIN_CHAIN=$(echo "$NO_PARENS" | cut -d'|' -f2)
         PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
 
-        # create the lxc project as specified by PROJECT_NAME
-        if ! lxc project list | grep -q "$PROJECT_NAME"; then
-            lxc project create "$PROJECT_NAME"
-            lxc project set "$PROJECT_NAME" features.networks=true features.images=false features.storage.volumes=true
-            lxc project switch "$PROJECT_NAME"
+        # create the incus project as specified by PROJECT_NAME
+        if ! incus project list | grep -q "$PROJECT_NAME"; then
+            incus project create "$PROJECT_NAME"
+            incus project set "$PROJECT_NAME" features.networks=true features.images=false features.storage.volumes=true
+            incus project switch "$PROJECT_NAME"
         fi
     done
 fi
