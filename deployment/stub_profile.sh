@@ -272,7 +272,7 @@ if [ "$VIRTUAL_MACHINE" = base ]; then
     cat >> "$YAML_PATH" <<EOF
   enp6s0:
     name: enp6s0
-    network: lxdbr0
+    network: incusbr0
     type: nic
 name: ${FILENAME}
 EOF

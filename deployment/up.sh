@@ -325,8 +325,8 @@ for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
 
     # Goal is to get the macvlan interface.
     LXD_SS_CONFIG_LINE=
-    if incus network list --format csv --project default | grep lxdbr0 | grep -q "ss-config"; then
-        LXD_SS_CONFIG_LINE="$(incus network list --format csv --project default | grep lxdbr0 | grep ss-config)"
+    if incus network list --format csv --project default | grep incusbr0 | grep -q "ss-config"; then
+        LXD_SS_CONFIG_LINE="$(incus network list --format csv --project default | grep incusbr0 | grep ss-config)"
     fi
 
     if [ -z "$LXD_SS_CONFIG_LINE" ]; then

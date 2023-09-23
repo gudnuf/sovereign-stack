@@ -69,8 +69,8 @@ if [ "$PURGE_INCUS" = true ]; then
         incus profile device remove default enp5s0
     fi
 
-    if incus network list --project default | grep -q lxdbr0; then
-        incus network delete lxdbr0
+    if incus network list --project default | grep -q incusbr0; then
+        incus network delete incusbr0
     fi
 
     # this file contains the BASE_IMAGE_NAME
@@ -82,7 +82,5 @@ if [ "$PURGE_INCUS" = true ]; then
     if incus storage list --format csv | grep -q sovereign-stack; then
         incus storage delete sovereign-stack
     fi
-
-    sudo apt purge incus
 
 fi

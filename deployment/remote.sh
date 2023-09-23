@@ -132,8 +132,8 @@ if ! command -v incus >/dev/null 2>&1; then
         sleep 1
     fi
 
-    if incus network list --format csv -q --project default | grep -q lxdbr0; then
-        incus network delete lxdbr0 --project default
+    if incus network list --format csv -q --project default | grep -q incusbr0; then
+        incus network delete incusbr0 --project default
         sleep 1
     fi
 
@@ -176,7 +176,7 @@ config:
   images.auto_update_interval: 15
   
 networks:
-- name: lxdbr0
+- name: incusbr0
   description: "ss-config,${DATA_PLANE_MACVLAN_INTERFACE:-error}"
   type: bridge
   config:

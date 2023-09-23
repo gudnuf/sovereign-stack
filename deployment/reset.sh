@@ -54,8 +54,8 @@ if [ "$PURGE_INCUS" = true ]; then
         incus profile device remove default eth0
     fi
 
-    if incus network list --format csv -q --project default | grep -q lxdbr0; then
-        incus network delete lxdbr0 --project default
+    if incus network list --format csv -q --project default | grep -q incusbr0; then
+        incus network delete incusbr0 --project default
     fi
 
     if incus network list --format csv -q --project default | grep -q lxdbr1; then

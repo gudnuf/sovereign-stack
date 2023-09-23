@@ -69,7 +69,7 @@ storage_pools:
   driver: zfs
 profiles:
 - config: {}
-  description: ""
+  description: "Default profile for ss-mgmt."
   devices:
     enp5s0:
       name: enp5s0
