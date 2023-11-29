@@ -83,4 +83,8 @@ if [ "$PURGE_INCUS" = true ]; then
         incus storage delete sovereign-stack
     fi
 
+    if dpkg -l | grep -q incus; then
+        sudo apt purge incus -y
+    fi
+
 fi

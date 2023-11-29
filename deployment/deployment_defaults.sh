@@ -9,7 +9,7 @@ export SS_ROOT_PATH="$HOME/ss"
 export REMOTES_PATH="$SS_ROOT_PATH/remotes"
 export PROJECTS_PATH="$SS_ROOT_PATH/projects"
 export SITES_PATH="$SS_ROOT_PATH/sites"
-export LXD_CONFIG_PATH="$SS_ROOT_PATH/lxd"
+export INCUS_CONFIG_PATH="$SS_ROOT_PATH/incus"
 export SS_CACHE_PATH="$SS_ROOT_PATH/cache"
 
 

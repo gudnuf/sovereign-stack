@@ -21,7 +21,7 @@ EOF
 fi
 
 # if the machine doesn't exist, we create it.
-if ! incus list --format csv | grep -q "$LXD_VM_NAME"; then
+if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
 
     # create a base image if needed and instantiate a VM.
     if [ -z "$MAC_ADDRESS_TO_PROVISION" ]; then
@@ -93,33 +93,33 @@ if ! incus list --format csv | grep -q "$LXD_VM_NAME"; then
     incus storage volume set ss-base "$BACKUP_VOLUME_NAME" size="${BACKUP_DISK_SIZE_GB}GB"
 
 
-    bash -c "./stub_profile.sh --vm=$VIRTUAL_MACHINE --lxd-hostname=$LXD_VM_NAME --ss-volume-name=$SSDATA_VOLUME_NAME --backup-volume-name=$BACKUP_VOLUME_NAME"
+    bash -c "./stub_profile.sh --vm=$VIRTUAL_MACHINE --lxd-hostname=$INCUS_VM_NAME --ss-volume-name=$SSDATA_VOLUME_NAME --backup-volume-name=$BACKUP_VOLUME_NAME"
 
     # now let's create a new VM to work with.
-    #incus init -q --profile="$LXD_VM_NAME" "$BASE_IMAGE_VM_NAME" "$LXD_VM_NAME" --vm
-    incus init "$DOCKER_BASE_IMAGE_NAME" "$LXD_VM_NAME" --vm --profile="$LXD_VM_NAME"
+    #incus init -q --profile="$INCUS_VM_NAME" "$BASE_IMAGE_VM_NAME" "$INCUS_VM_NAME" --vm
+    incus init "$DOCKER_BASE_IMAGE_NAME" "$INCUS_VM_NAME" --vm --profile="$INCUS_VM_NAME"
 
     # let's PIN the HW address for now so we don't exhaust IP
     # and so we can set DNS internally.
-    incus config set "$LXD_VM_NAME" "volatile.enp5s0.hwaddr=$MAC_ADDRESS_TO_PROVISION"
+    incus config set "$INCUS_VM_NAME" "volatile.enp5s0.hwaddr=$MAC_ADDRESS_TO_PROVISION"
 
     # attack the docker block device.
-    incus storage volume attach ss-base "$DOCKER_VOLUME_NAME" "$LXD_VM_NAME"
+    incus storage volume attach ss-base "$DOCKER_VOLUME_NAME" "$INCUS_VM_NAME"
 
     # if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
     #     # attach any volumes
     #     for CHAIN in testnet mainnet; do
     #         for DATA in blocks chainstate; do
     #             MOUNT_PATH="/$CHAIN-$DATA"
-    #             incus config device add "$LXD_VM_NAME" "$CHAIN-$DATA" disk pool=ss-base source="$CHAIN-$DATA" path="$MOUNT_PATH"
+    #             incus config device add "$INCUS_VM_NAME" "$CHAIN-$DATA" disk pool=ss-base source="$CHAIN-$DATA" path="$MOUNT_PATH"
     #         done
     #     done
     # fi
 
-    incus start "$LXD_VM_NAME"
+    incus start "$INCUS_VM_NAME"
     sleep 10
 
-    bash -c "./wait_for_ip.sh --lxd-name=$LXD_VM_NAME"
+    bash -c "./wait_for_ip.sh --lxd-name=$INCUS_VM_NAME"
 
     # scan the remote machine and install it's identity in our SSH known_hosts file.
     ssh-keyscan -H "$FQDN" >> "$SSH_HOME/known_hosts"

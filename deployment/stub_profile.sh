@@ -4,7 +4,7 @@ set -exu
 cd "$(dirname "$0")"
 
 VIRTUAL_MACHINE=base
-LXD_HOSTNAME=
+INCUS_HOSTNAME=
 SSDATA_VOLUME_NAME=
 BACKUP_VOLUME_NAME=
 
@@ -12,7 +12,7 @@ BACKUP_VOLUME_NAME=
 for i in "$@"; do
     case $i in
         --lxd-hostname=*)
-            LXD_HOSTNAME="${i#*=}"
+            INCUS_HOSTNAME="${i#*=}"
             shift
         ;;
         --vm=*)
@@ -40,7 +40,7 @@ eval "$(ssh-agent -s)" > /dev/null
 ssh-add "$SSH_HOME/id_rsa" > /dev/null
 export SSH_AUTHORIZED_KEY="$SSH_AUTHORIZED_KEY"
 
-export FILENAME="$LXD_HOSTNAME.yml"
+export FILENAME="$INCUS_HOSTNAME.yml"
 mkdir -p "$PROJECT_PATH/cloud-init"
 YAML_PATH="$PROJECT_PATH/cloud-init/$FILENAME"
 
@@ -241,7 +241,7 @@ fi
 
 # All profiles get a root disk and cloud-init config.
 cat >> "$YAML_PATH" <<EOF
-description: Default LXD profile for ${FILENAME}
+description: Default incus profile for ${FILENAME}
 devices:
   root:
     path: /
@@ -302,18 +302,18 @@ EOF
 fi
 
 if [ "$VIRTUAL_MACHINE" = base ]; then
-    if ! incus profile list --format csv --project default | grep -q "$LXD_HOSTNAME"; then
-        incus profile create "$LXD_HOSTNAME" --project default
+    if ! incus profile list --format csv --project default | grep -q "$INCUS_HOSTNAME"; then
+        incus profile create "$INCUS_HOSTNAME" --project default
     fi
 
     # configure the profile with our generated cloud-init.yml file.
-    incus profile edit "$LXD_HOSTNAME" --project default < "$YAML_PATH"
+    incus profile edit "$INCUS_HOSTNAME" --project default < "$YAML_PATH"
 else
-    if ! incus profile list --format csv | grep -q "$LXD_HOSTNAME"; then
-        incus profile create "$LXD_HOSTNAME"
+    if ! incus profile list --format csv | grep -q "$INCUS_HOSTNAME"; then
+        incus profile create "$INCUS_HOSTNAME"
     fi
 
     # configure the profile with our generated cloud-init.yml file.
-    incus profile edit "$LXD_HOSTNAME" < "$YAML_PATH"
+    incus profile edit "$INCUS_HOSTNAME" < "$YAML_PATH"
 fi
 

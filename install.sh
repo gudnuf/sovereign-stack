@@ -12,12 +12,11 @@ if [ "$(hostname)" = ss-mgmt ]; then
 fi
 
 DISK_OR_PARTITION=
-DISK=loop
 
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
-        --disk-or-partition=*)
+        --disk=*)
             DISK_OR_PARTITION="${i#*=}"
             shift
         ;;
@@ -31,7 +30,7 @@ done
 
 # ensure the iptables forward policy is set to ACCEPT so your host can act as a router
 # Note this is necessary if docker is running (or has been previuosly installed) on the
-# same host running LXD.
+# same host running incus.
 sudo iptables -F FORWARD
 sudo iptables -P FORWARD ACCEPT
 
@@ -39,18 +38,15 @@ sudo iptables -P FORWARD ACCEPT
 # the user's home directory. If the user does specify a disk or partition, we will
 # create the ZFS pool there.
 if [ -z "$DISK_OR_PARTITION" ]; then
-    DISK="$DISK_OR_PARTITION"
+    echo "ERROR: You MUST set DISK_OR_PARTITION"
+    exit 1
 fi
 
-export DISK="$DISK"
+# run the incus install script.
+sudo bash -c ./install_incus.sh
 
-# this script undoes install.sh
-if ! command -v incus >/dev/null 2>&1; then
-    bash -c ./install_incus.sh
-
-
-    # run lxd init
-    cat <<EOF | sudo incus admin init --preseed
+# run incus init
+cat <<EOF | sudo incus admin init --preseed
 config: {}
 networks:
 - config:
@@ -63,7 +59,7 @@ networks:
   project: default
 storage_pools:
 - config:
-    source: ${DISK}
+    source: ${DISK_OR_PARTITION}
   description: ""
   name: sovereign-stack
   driver: zfs
@@ -84,9 +80,6 @@ projects: []
 cluster: null
 
 EOF
-
-fi
-
 
 
 . ./deployment/deployment_defaults.sh

@@ -152,7 +152,6 @@ fi
 
 export REMOTE_DEFINITION="$REMOTE_DEFINITION"
 source "$REMOTE_DEFINITION"
-export LXD_REMOTE_PASSWORD="$LXD_REMOTE_PASSWORD"
 
 
 # this is our password generation mechanism. Relying on GPG for secure password generation
@@ -324,17 +323,17 @@ for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
     fi
 
     # Goal is to get the macvlan interface.
-    LXD_SS_CONFIG_LINE=
+    INCUS_SS_CONFIG_LINE=
     if incus network list --format csv --project default | grep incusbr0 | grep -q "ss-config"; then
-        LXD_SS_CONFIG_LINE="$(incus network list --format csv --project default | grep incusbr0 | grep ss-config)"
+        INCUS_SS_CONFIG_LINE="$(incus network list --format csv --project default | grep incusbr0 | grep ss-config)"
     fi
 
-    if [ -z "$LXD_SS_CONFIG_LINE" ]; then
+    if [ -z "$INCUS_SS_CONFIG_LINE" ]; then
         echo "ERROR: the MACVLAN interface has not been specified. You may need to run 'ss-remote' again."
         exit 1
     fi
 
-    CONFIG_ITEMS="$(echo "$LXD_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
+    CONFIG_ITEMS="$(echo "$INCUS_SS_CONFIG_LINE" | awk -F'"' '{print $2}')"
     DATA_PLANE_MACVLAN_INTERFACE="$(echo "$CONFIG_ITEMS" | cut -d ',' -f2)"
     export DATA_PLANE_MACVLAN_INTERFACE="$DATA_PLANE_MACVLAN_INTERFACE"
 
@@ -376,7 +375,7 @@ for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
     fi
 
     export FQDN="$FQDN"
-    export LXD_VM_NAME="${FQDN//./-}"
+    export INCUS_VM_NAME="${FQDN//./-}"
     export MAC_ADDRESS_TO_PROVISION="$MAC_ADDRESS_TO_PROVISION"
     export PROJECT_PATH="$PROJECT_PATH"
 

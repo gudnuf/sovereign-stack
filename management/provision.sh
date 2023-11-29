@@ -17,37 +17,26 @@ fi
 
 # TODO REVIEW mgmt software requirements
 sudo apt-get update
-sudo apt-get install -y wait-for-it dnsutils rsync sshfs apt-transport-https docker-ce-cli libcanberra-gtk-module snapd nano git
+sudo apt-get install -y wait-for-it dnsutils rsync sshfs apt-transport-https docker-ce-cli libcanberra-gtk-module nano git
 
+sudo bash -c "$HOME/sovereign-stack/install_incus.sh"
 
-sleep 10
-
-# #apt install python3-pip python3-dev libusb-1.0-0-dev libudev-dev pinentry-curses  for trezor stuff
-# # for trezor installation
-# #pip3 install setuptools wheel
-# #pip3 install trezor_agent
-
-# # ensure the trezor-t udev rules are in place.
-# # if [ ! -f /etc/udev/rules.d/51-trezor.rules ]; then
-# #     sudo cp ./51-trezor.rules /etc/udev/rules.d/51-trezor.rules
-# # fi
-
-# install snap
-if ! snap list | grep -q lxd; then
-    sudo snap install htop
-    sudo snap install lxd --channel=5.18/candidate
-    sleep 6
-
-    # We just do an auto initialization. All we are using is the LXD client inside the management environment.
-    sudo lxd init --auto
-fi
-
-# run a lxd command so we don't we a warning upon first invocation
-incus list > /dev/null 2>&1
+sudo incus admin init --minimal
 
 # add groups for docker and lxd
-if ! groups ubuntu | grep -q docker; then
-    sudo addgroup docker
+if ! grep -q "^docker:" /etc/group; then
+    sudo groupadd docker
+fi
+
+# add groups for docker and lxd
+if ! grep -q "^incus-admin:" /etc/group; then
+    sudo groupadd incus-admin
+fi
+
+if ! groups ubuntu | grep -q "\bdocker\b"; then
     sudo usermod -aG docker ubuntu
-    sudo usermod -aG lxd ubuntu
+fi
+
+if ! groups ubuntu | grep -q "\bincus-admin\b"; then
+    sudo usermod -aG incus-admin ubuntu
 fi

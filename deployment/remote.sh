@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 # This script is meant to be executed on the management machine.
 # it reaches out to an SSH endpoint and provisions that machine
-# to use LXD.
+# to use incus.
 
 DATA_PLANE_MACVLAN_INTERFACE=
 DISK_TO_USE=
@@ -32,8 +32,6 @@ if [ ! -f "$REMOTE_DEFINITION" ]; then
     cat >"$REMOTE_DEFINITION" <<EOL
 # https://www.sovereign-stack.org/ss-remote
 
-LXD_REMOTE_PASSWORD="$(gpg --gen-random --armor 1 14)"
-DEPLOYMENT_STRING="(dev|regtest),(staging|testnet)"
 # REGISTRY_URL=http://registry.domain.tld:5000
 
 EOL
@@ -119,13 +117,6 @@ if [ "$DISK_TO_USE" != loop ]; then
     fi
 fi
 
-
-# error out if the remote password is unset.
-if [ -z "$LXD_REMOTE_PASSWORD" ]; then
-    echo "ERROR: LXD_REMOTE_PASSWORD must be set in your remote.conf file."
-    exit 1
-fi
-
 if ! command -v incus >/dev/null 2>&1; then
     if incus profile list --format csv | grep -q "$BASE_IMAGE_VM_NAME"; then
         incus profile delete "$BASE_IMAGE_VM_NAME"
@@ -171,7 +162,6 @@ IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 cat <<EOF | ssh ubuntu@"$FQDN" lxd init --preseed
 config:
   core.https_address: ${MGMT_PLANE_IP}:8443
-  core.trust_password: ${LXD_REMOTE_PASSWORD}
   core.dns_address: ${MGMT_PLANE_IP}
   images.auto_update_interval: 15
   
@@ -219,12 +209,12 @@ EOF
 if wait-for-it -t 20 "$FQDN:8443"; then
     # now create a remote on your local incus client and switch to it.
     # the software will now target the new remote.
-    incus remote add "$REMOTE_NAME" "$FQDN" --password="$LXD_REMOTE_PASSWORD" --protocol=lxd --auth-type=tls --accept-certificate
+    incus remote add "$REMOTE_NAME" "$FQDN" --protocol=lxd --auth-type=tls --accept-certificate
     incus remote switch "$REMOTE_NAME"
 
     echo "INFO: A new remote named '$REMOTE_NAME' has been created. Your incus client has been switched to it."
 else
-    echo "ERROR: Could not detect the LXD endpoint. Something went wrong."
+    echo "ERROR: Could not detect the incus endpoint. Something went wrong."
     exit 1
 fi
 
@@ -232,12 +222,12 @@ fi
 if ! incus storage list --format csv | grep -q ss-base; then
 
     if [ "$DISK_TO_USE" != loop ]; then
-        # we omit putting a size here so, so LXD will consume the entire disk if '/dev/sdb' or partition if '/dev/sdb1'.
+        # we omit putting a size here so, so incus will consume the entire disk if '/dev/sdb' or partition if '/dev/sdb1'.
         # TODO do some sanity/resource checking on DISK_TO_USE. Impelment full-disk encryption?
         incus storage create ss-base zfs source="$DISK_TO_USE"
     else
         # if a disk is the default 'loop', then we create a zfs storage pool 
-        # on top of the existing filesystem using a loop device, per LXD docs
+        # on top of the existing filesystem using a loop device, per incus docs
         incus storage create ss-base zfs
     fi
 
