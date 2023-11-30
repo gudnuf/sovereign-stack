@@ -23,12 +23,12 @@ sudo bash -c "$HOME/sovereign-stack/install_incus.sh"
 
 sudo incus admin init --minimal
 
-# add groups for docker and lxd
+# add docker group
 if ! grep -q "^docker:" /etc/group; then
     sudo groupadd docker
 fi
 
-# add groups for docker and lxd
+# add incus-admin group
 if ! grep -q "^incus-admin:" /etc/group; then
     sudo groupadd incus-admin
 fi

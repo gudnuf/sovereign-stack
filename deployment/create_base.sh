@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 . ./base.sh
 
-bash -c "./stub_profile.sh --lxd-hostname=$BASE_IMAGE_VM_NAME"
+bash -c "./stub_profile.sh --incus-hostname=$BASE_IMAGE_VM_NAME"
 
 if incus list -q --project default | grep -q "$BASE_IMAGE_VM_NAME" ; then
     incus delete -f "$BASE_IMAGE_VM_NAME" --project default
