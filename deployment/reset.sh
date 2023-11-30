@@ -58,8 +58,8 @@ if [ "$PURGE_INCUS" = true ]; then
         incus network delete incusbr0 --project default
     fi
 
-    if incus network list --format csv -q --project default | grep -q lxdbr1; then
-        incus network delete lxdbr1 --project default
+    if incus network list --format csv -q --project default | grep -q incusbr1; then
+        incus network delete incusbr1 --project default
     fi
 
     # # create the testnet/mainnet blocks/chainstate subvolumes.

@@ -99,7 +99,7 @@ if ! incus remote list | grep -q "$REMOTE_NAME"; then
     fi
 
 else
-    echo "ERROR: the remote already exists! You need to go delete your lxd remote if you want to re-create your remote."
+    echo "ERROR: the remote already exists! You need to go delete your incus remote if you want to re-create your remote."
     echo "       It's may also be helpful to reset/rename your remote path."
     exit 1
 fi
@@ -129,8 +129,8 @@ if ! command -v incus >/dev/null 2>&1; then
     fi
 
 
-    if incus network list --format csv -q project default | grep -q lxdbr1; then
-        incus network delete lxdbr1 --project default
+    if incus network list --format csv -q project default | grep -q incusbr1; then
+        incus network delete incusbr1 --project default
         sleep 1
     fi
 
@@ -138,10 +138,10 @@ fi
 
 # install dependencies.
 ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano -y'
-if ! ssh "ubuntu@$FQDN" snap list | grep -q lxd; then
-    ssh -t "ubuntu@$FQDN" 'sudo snap install lxd --channel=5.18/candidate'
-    sleep 5
-fi
+
+scp ../install_incus.sh "ubuntu@$FQDN:$REMOTE_DATA_PATH/install_incus.sh"
+ssh -t "ubuntu@$FQDN" "sudo chmod +x $REMOTE_DATA_PATH/install_incus.sh"
+ssh -t "ubuntu@$FQDN" "sudo bash -c $REMOTE_DATA_PATH/install_incus.sh"
 
 # install OVN for the project-specific bridge networks
 ssh -t "ubuntu@$FQDN" "sudo apt-get install -y ovn-host ovn-central && sudo ovs-vsctl set open_vswitch . external_ids:ovn-remote=unix:/var/run/ovn/ovnsb_db.sock external_ids:ovn-encap-type=geneve external_ids:ovn-encap-ip=127.0.0.1"
@@ -158,8 +158,8 @@ IP_OF_MGMT_MACHINE="$(ssh ubuntu@"$FQDN" env | grep SSH_CLIENT | cut -d " " -f 1
 IP_OF_MGMT_MACHINE="${IP_OF_MGMT_MACHINE#*=}"
 IP_OF_MGMT_MACHINE="$(echo "$IP_OF_MGMT_MACHINE" | cut -d: -f1)"
 
-# run lxd init on the remote server.
-cat <<EOF | ssh ubuntu@"$FQDN" lxd init --preseed
+# run incus admin init on the remote server.
+cat <<EOF | ssh ubuntu@"$FQDN" incus admin init --preseed
 config:
   core.https_address: ${MGMT_PLANE_IP}:8443
   core.dns_address: ${MGMT_PLANE_IP}
@@ -175,7 +175,7 @@ networks:
     ipv4.nat: true
     ipv6.address: none
     dns.mode: managed
-- name: lxdbr1
+- name: incusbr1
   description: "Non-natting bridge needed for ovn networks."
   type: bridge
   config:
@@ -205,11 +205,11 @@ cluster:
   cluster_token: ""
 EOF
 
-# ensure the lxd service is available over the network, then add a incus remote, then switch the active remote to it.
+# ensure the incus service is available over the network, then add a incus remote, then switch the active remote to it.
 if wait-for-it -t 20 "$FQDN:8443"; then
     # now create a remote on your local incus client and switch to it.
     # the software will now target the new remote.
-    incus remote add "$REMOTE_NAME" "$FQDN" --protocol=lxd --auth-type=tls --accept-certificate
+    incus remote add "$REMOTE_NAME" "$FQDN" --auth-type=tls --accept-certificate
     incus remote switch "$REMOTE_NAME"
 
     echo "INFO: A new remote named '$REMOTE_NAME' has been created. Your incus client has been switched to it."

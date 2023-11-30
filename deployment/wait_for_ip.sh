@@ -7,7 +7,7 @@ INCUS_INSTANCE_NAME=
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
-        --lxd-name=*)
+        --incus-name=*)
             INCUS_INSTANCE_NAME="${i#*=}"
             shift
         ;;

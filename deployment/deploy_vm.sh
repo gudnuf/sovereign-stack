@@ -93,7 +93,7 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     incus storage volume set ss-base "$BACKUP_VOLUME_NAME" size="${BACKUP_DISK_SIZE_GB}GB"
 
 
-    bash -c "./stub_profile.sh --vm=$VIRTUAL_MACHINE --lxd-hostname=$INCUS_VM_NAME --ss-volume-name=$SSDATA_VOLUME_NAME --backup-volume-name=$BACKUP_VOLUME_NAME"
+    bash -c "./stub_profile.sh --vm=$VIRTUAL_MACHINE --incus-hostname=$INCUS_VM_NAME --ss-volume-name=$SSDATA_VOLUME_NAME --backup-volume-name=$BACKUP_VOLUME_NAME"
 
     # now let's create a new VM to work with.
     #incus init -q --profile="$INCUS_VM_NAME" "$BASE_IMAGE_VM_NAME" "$INCUS_VM_NAME" --vm
@@ -119,7 +119,7 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     incus start "$INCUS_VM_NAME"
     sleep 10
 
-    bash -c "./wait_for_ip.sh --lxd-name=$INCUS_VM_NAME"
+    bash -c "./wait_for_ip.sh --incus-name=$INCUS_VM_NAME"
 
     # scan the remote machine and install it's identity in our SSH known_hosts file.
     ssh-keyscan -H "$FQDN" >> "$SSH_HOME/known_hosts"

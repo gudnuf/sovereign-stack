@@ -8,7 +8,7 @@ You are in the Sovereign Stack Management Environment (SSME). From here, you can
     ss-down    - Reverses ss-up. Takes the active project down. Non-destructive of user data,
                  unless you provide the --purge flag.
     ss-update  - This is just ss-down then ss-up.
-    ss-show    - show the lxd resources associated with the current remote.
+    ss-show    - show the incus resources associated with the current remote.
 
 For more infomation about all these topics, consult the Sovereign Stack website starting with:
 

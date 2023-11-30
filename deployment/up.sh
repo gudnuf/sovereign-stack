@@ -287,7 +287,7 @@ VPS_HOSTNAME=
 
 . ./base.sh
 if ! incus image list --format csv | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
-    # create the lxd base image.
+    # create the incus base image.
     if [ "$SKIP_BASE_IMAGE_CREATION" = false ]; then
         ./create_base.sh
     fi
@@ -345,7 +345,7 @@ for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
 
     # check if the OVN network exists in this project.
     if ! incus network list | grep -q "ss-ovn"; then
-        incus network create ss-ovn --type=ovn network=lxdbr1 ipv6.address=none
+        incus network create ss-ovn --type=ovn network=incusbr1 ipv6.address=none
     fi
 
     export MAC_ADDRESS_TO_PROVISION=

@@ -11,7 +11,7 @@ BACKUP_VOLUME_NAME=
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
-        --lxd-hostname=*)
+        --incus-hostname=*)
             INCUS_HOSTNAME="${i#*=}"
             shift
         ;;
