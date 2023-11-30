@@ -20,7 +20,7 @@ for i in "$@"; do
     esac
 done
 
-source ../defaults.sh
+source ../defaults.env
 
 ./down.sh
 

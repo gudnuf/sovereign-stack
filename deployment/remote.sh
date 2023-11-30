@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -exu
 cd "$(dirname "$0")"
 
 # This script is meant to be executed on the management machine.
@@ -139,9 +139,10 @@ fi
 # install dependencies.
 ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano -y'
 
-scp ../install_incus.sh "ubuntu@$FQDN:$REMOTE_DATA_PATH/install_incus.sh"
-ssh -t "ubuntu@$FQDN" "sudo chmod +x $REMOTE_DATA_PATH/install_incus.sh"
-ssh -t "ubuntu@$FQDN" "sudo bash -c $REMOTE_DATA_PATH/install_incus.sh"
+REMOTE_SCRIPT_PATH="$REMOTE_HOME/install_incus.sh"
+scp ../install_incus.sh "ubuntu@$FQDN:$REMOTE_SCRIPT_PATH"
+ssh -t "ubuntu@$FQDN" "chmod +x $REMOTE_SCRIPT_PATH"
+ssh -t "ubuntu@$FQDN" "sudo bash -c $REMOTE_SCRIPT_PATH"
 
 # install OVN for the project-specific bridge networks
 ssh -t "ubuntu@$FQDN" "sudo apt-get install -y ovn-host ovn-central && sudo ovs-vsctl set open_vswitch . external_ids:ovn-remote=unix:/var/run/ovn/ovnsb_db.sock external_ids:ovn-encap-type=geneve external_ids:ovn-encap-ip=127.0.0.1"
@@ -193,23 +194,16 @@ profiles:
       pool: ss-base
       type: disk
   name: default
-cluster:
-  server_name: ${REMOTE_NAME}
-  enabled: true
-  member_config: []
-  cluster_address: ""
-  cluster_certificate: ""
-  server_address: ""
-  cluster_password: ""
-  cluster_certificate_path: ""
-  cluster_token: ""
 EOF
 
 # ensure the incus service is available over the network, then add a incus remote, then switch the active remote to it.
 if wait-for-it -t 20 "$FQDN:8443"; then
+    # before we add the remote, we need a trust token from the incus server
+    INCUS_CERT_TRUST_TOKEN=$(ssh ubuntu@"$FQDN" incus config trust add ss-mgmt | tail -n 1)
+
     # now create a remote on your local incus client and switch to it.
     # the software will now target the new remote.
-    incus remote add "$REMOTE_NAME" "$FQDN" --auth-type=tls --accept-certificate
+    incus remote add "$REMOTE_NAME" "$FQDN" --auth-type=tls --accept-certificate --token="$INCUS_CERT_TRUST_TOKEN"
     incus remote switch "$REMOTE_NAME"
 
     echo "INFO: A new remote named '$REMOTE_NAME' has been created. Your incus client has been switched to it."

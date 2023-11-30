@@ -10,10 +10,7 @@ if [ "$PROJECT_NAME" = default ]; then
     exit 1
 fi
 
-BITCOIN_CHAIN=$(echo "$PROJECT_NAME" | cut -d'-' -f2)
-
 export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
-export BITCOIN_CHAIN="$BITCOIN_CHAIN"
 
 PROJECT_DEFINITION_PATH="$PROJECT_PATH/project.conf"
 

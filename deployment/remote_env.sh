@@ -3,6 +3,17 @@
 set -eu
 
 CURRENT_REMOTE="$(incus remote get-default)"
+DEPLOYMENT_STRING=
+
+
+SS_ROOT_PATH="$HOME/ss"
+REMOTES_PATH="$SS_ROOT_PATH/remotes"
+PROJECTS_PATH="$SS_ROOT_PATH/projects"
+SITES_PATH="$SS_ROOT_PATH/sites"
+INCUS_CONFIG_PATH="$SS_ROOT_PATH/incus"
+SS_CACHE_PATH="$SS_ROOT_PATH/cache"
+
+
 
 if echo "$CURRENT_REMOTE" | grep -q "production"; then
     echo "WARNING: You are running a migration procedure on a production system."
@@ -40,24 +51,6 @@ fi
 
 source "$REMOTE_DEFINITION"
 
-# let's provision the projects if specified in the remote.conf file.
-# we assume projects are created EXTERNALLY to sovereign-stack when DEPLOYMENT_STRING is null.
-if [ -n "$DEPLOYMENT_STRING" ]; then
-    # ensure our projects are provisioned according to DEPLOYMENT_STRING
-    for PROJECT_CHAIN in ${DEPLOYMENT_STRING//,/ }; do
-        NO_PARENS="${PROJECT_CHAIN:1:${#PROJECT_CHAIN}-2}"
-        PROJECT_PREFIX=$(echo "$NO_PARENS" | cut -d'|' -f1)
-        BITCOIN_CHAIN=$(echo "$NO_PARENS" | cut -d'|' -f2)
-        PROJECT_NAME="$PROJECT_PREFIX-$BITCOIN_CHAIN"
-
-        # create the incus project as specified by PROJECT_NAME
-        if ! incus project list | grep -q "$PROJECT_NAME"; then
-            incus project create "$PROJECT_NAME"
-            incus project set "$PROJECT_NAME" features.networks=true features.images=false features.storage.volumes=true
-            incus project switch "$PROJECT_NAME"
-        fi
-    done
-fi
 
 # default values are already at regtest mode.
 if [ "$BITCOIN_CHAIN" = testnet ]; then
