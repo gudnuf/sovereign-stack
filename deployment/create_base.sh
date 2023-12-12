@@ -80,7 +80,7 @@ else
         incus stop "$BASE_IMAGE_VM_NAME" --project default
     fi
     
-    incus snapshot "$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" --project default
+    incus snapshot create "$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" --project default
 
 fi
 
