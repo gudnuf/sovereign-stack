@@ -99,17 +99,10 @@ for VIRTUAL_MACHINE in $SERVERS; do
     fi
 
     if [ "$KEEP_DOCKER_VOLUME" = false ]; then
-        # destroy the docker volume
-        VM_ID=w
-        if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
-            VM_ID="b"
-        elif [ "$VIRTUAL_MACHINE" = lnplayserver ]; then
-            VM_ID="c"
-        fi
 
         # d for docker; b for backup; s for ss-data
-        for DATA in d b s; do
-            VOLUME_NAME="$PRIMARY_DOMAIN_IDENTIFIER-$VM_ID""$DATA"
+        for DATA in docker backup ss-data; do
+            VOLUME_NAME="$VIRTUAL_MACHINE-$DATA"
             if incus storage volume list ss-base -q | grep -q "$VOLUME_NAME"; then
                 RESPONSE=
                 read -r -p "Are you sure you want to delete the '$VOLUME_NAME' volume intended for '$INCUS_VM_NAME'?": RESPONSE

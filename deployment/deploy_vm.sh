@@ -68,7 +68,7 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
         DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
     fi
     
-    DOCKER_VOLUME_NAME="$PRIMARY_DOMAIN_IDENTIFIER-$VM_ID""d"
+    DOCKER_VOLUME_NAME="$VIRTUAL_MACHINE-docker"
     if ! incus storage volume list ss-base | grep -q "$DOCKER_VOLUME_NAME"; then
         incus storage volume create ss-base "$DOCKER_VOLUME_NAME" --type=block
     fi
@@ -76,7 +76,7 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     # TODO ensure we are only GROWING the volume--never shrinking
     incus storage volume set ss-base "$DOCKER_VOLUME_NAME" size="${DOCKER_DISK_SIZE_GB}GB"
 
-    SSDATA_VOLUME_NAME="$PRIMARY_DOMAIN_IDENTIFIER-$VM_ID""s"
+    SSDATA_VOLUME_NAME="$VIRTUAL_MACHINE-ss-data"
     if ! incus storage volume list ss-base | grep -q "$SSDATA_VOLUME_NAME"; then
         incus storage volume create ss-base "$SSDATA_VOLUME_NAME" --type=filesystem
     fi
@@ -85,7 +85,7 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     incus storage volume set ss-base "$SSDATA_VOLUME_NAME" size="${SSDATA_DISK_SIZE_GB}GB"
 
 
-    BACKUP_VOLUME_NAME="$PRIMARY_DOMAIN_IDENTIFIER-$VM_ID""b"
+    BACKUP_VOLUME_NAME="$VIRTUAL_MACHINE-backup"
     if ! incus storage volume list ss-base | grep -q "$BACKUP_VOLUME_NAME"; then
         incus storage volume create ss-base "$BACKUP_VOLUME_NAME" --type=filesystem
     fi
