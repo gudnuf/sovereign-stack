@@ -42,8 +42,8 @@ RESTORE_WWW=false
 RESTORE_CERTS=false
 BACKUP_CERTS=true
 BACKUP_BTCPAY=true
-SKIP_BTCPAYSERVER=false
-SKIP_WWW=false
+SKIP_BTCPAY_SERVER=false
+SKIP_WWW_SERVER=false
 SKIP_LNPLAY_SERVER=false
 BACKUP_BTCPAY_ARCHIVE_PATH= 
 RESTORE_BTCPAY=false
@@ -71,11 +71,11 @@ for i in "$@"; do
             shift
         ;;
         --skip-btcpayserver)
-            SKIP_BTCPAYSERVER=true
+            SKIP_BTCPAY_SERVER=true
             shift
         ;;
         --skip-wwwserver)
-            SKIP_WWW=true
+            SKIP_WWW_SERVER=true
             shift
         ;;
         --skip-lnplayserver)
@@ -293,20 +293,23 @@ if ! incus image list --format csv | grep -q "$DOCKER_BASE_IMAGE_NAME"; then
     fi
 fi
 
-for VIRTUAL_MACHINE in www btcpayserver lnplayserver; do
 
-    if [ "$VIRTUAL_MACHINE" = btcpayserver ] && [ -z "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
-        continue
-    fi
+VMS_TO_PROVISION=""
+if [ -n "$WWW_SERVER_MAC_ADDRESS" ] && [ "$SKIP_WWW_SERVER" = false ]; then
+    VMS_TO_PROVISION="www"
+fi
 
-    if [ "$VIRTUAL_MACHINE" = lnplayserver ] && [ -z "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
-        continue
-    fi
+if [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ] && [ "$SKIP_BTCPAY_SERVER" = false ]; then
+    VMS_TO_PROVISION="$VMS_TO_PROVISION btcpayserver"
+fi
 
-    if [ "$VIRTUAL_MACHINE" = www ] && [ -z "$WWW_SERVER_MAC_ADDRESS" ]; then
-        continue
-    fi
+if [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ] || [ "$SKIP_LNPLAY_SERVER" = false ]; then
+    VMS_TO_PROVISION="$VMS_TO_PROVISION lnplayserver"
+fi
 
+
+
+for VIRTUAL_MACHINE in $VMS_TO_PROVISION; do
 
     export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
     FQDN=
@@ -392,14 +395,14 @@ for DOMAIN_NAME in ${OTHER_SITES_LIST//,/ }; do
     stub_site_definition
 done
 
-if [ "$SKIP_BTCPAYSERVER" = false ]; then
+if [ "$SKIP_BTCPAY_SERVER" = false ]; then
     if [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
         export DOCKER_HOST="ssh://ubuntu@$BTCPAY_SERVER_FQDN"
         ./project/btcpayserver/go.sh
     fi
 fi
 
-if [ "$SKIP_WWW" = false ]; then
+if [ "$SKIP_WWW_SERVER" = false ]; then
     # now let's run the www and btcpay-specific provisioning scripts.
     if [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
         export DOCKER_HOST="ssh://ubuntu@$WWW_FQDN"

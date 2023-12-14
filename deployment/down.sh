@@ -12,8 +12,8 @@ fi
 
 KEEP_DOCKER_VOLUME=true
 OTHER_SITES_LIST=
-SKIP_BTCPAYSERVER=false
-SKIP_WWW=false
+SKIP_BTCPAY_SERVER=false
+SKIP_WWW_SERVER=false
 SKIP_LNPLAY_SERVER=false
 BACKUP_WWW_APPS=true
 
@@ -25,11 +25,11 @@ for i in "$@"; do
             shift
         ;;
         --skip-btcpayserver)
-            SKIP_BTCPAYSERVER=true
+            SKIP_BTCPAY_SERVER=true
             shift
         ;;
         --skip-wwwserver)
-            SKIP_WWW=true
+            SKIP_WWW_SERVER=true
             shift
         ;;
         --skip-lnplayserver)
@@ -44,11 +44,11 @@ for i in "$@"; do
 done
 
 SERVERS=
-if [ "$SKIP_BTCPAYSERVER" = false ]; then
+if [ "$SKIP_BTCPAY_SERVER" = false ]; then
     SERVERS="btcpayserver"
 fi
 
-if [ "$SKIP_WWW" = false ]; then
+if [ "$SKIP_WWW_SERVER" = false ]; then
     SERVERS="www $SERVERS"
 fi
 

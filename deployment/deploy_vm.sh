@@ -31,38 +31,24 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     fi
 
     # TODO ensure we are only GROWING the volume--never shrinking per zfs volume docs.
-    VM_ID=
     BACKUP_DISK_SIZE_GB=
     SSDATA_DISK_SIZE_GB=
     DOCKER_DISK_SIZE_GB=
     if [ "$VIRTUAL_MACHINE" = www ]; then
-        if [ "$SKIP_WWW" = true ]; then
+        if [ "$SKIP_WWW_SERVER" = true ]; then
             exit 0
         fi
 
-        VM_ID="w"
         BACKUP_DISK_SIZE_GB="$WWW_BACKUP_DISK_SIZE_GB"
         SSDATA_DISK_SIZE_GB="$WWW_SSDATA_DISK_SIZE_GB"
         DOCKER_DISK_SIZE_GB="$WWW_DOCKER_DISK_SIZE_GB"
     fi
 
     if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
-        if [ "$SKIP_BTCPAYSERVER" = true ]; then
+        if [ "$SKIP_BTCPAY_SERVER" = true ]; then
             exit 0
         fi
 
-        VM_ID="b"
-        BACKUP_DISK_SIZE_GB="$BTCPAYSERVER_BACKUP_DISK_SIZE_GB"
-        SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
-        DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
-    fi
-
-    if [ "$VIRTUAL_MACHINE" = lnplayserver ]; then
-        if [ "$SKIP_LNPLAY_SERVER" = true ]; then
-            exit 0
-        fi
-
-        VM_ID="c"
         BACKUP_DISK_SIZE_GB="$BTCPAYSERVER_BACKUP_DISK_SIZE_GB"
         SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
         DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
