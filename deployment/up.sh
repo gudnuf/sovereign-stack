@@ -251,6 +251,7 @@ LNPLAY_SERVER_MAC_ADDRESS=
 # LNPLAY_SERVER_CPU_COUNT="4"
 # LNPLAY_SERVER_MEMORY_MB="4096"
 
+# BITCOIN_CHAIN=mainnet
 
 EOL
 
@@ -273,6 +274,7 @@ source ./domain_list.sh
 # let's provision our primary domain first.
 export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export PRIMARY_DOMAIN="$PRIMARY_DOMAIN"
+export BITCOIN_CHAIN="$BITCOIN_CHAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
 
 stub_site_definition
