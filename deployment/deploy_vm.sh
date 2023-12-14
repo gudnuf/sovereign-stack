@@ -53,30 +53,34 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
         SSDATA_DISK_SIZE_GB="$BTCPAYSERVER_SSDATA_DISK_SIZE_GB"
         DOCKER_DISK_SIZE_GB="$BTCPAYSERVER_DOCKER_DISK_SIZE_GB"
     fi
-    
-    DOCKER_VOLUME_NAME="$VIRTUAL_MACHINE-docker"
-    if ! incus storage volume list ss-base | grep -q "$DOCKER_VOLUME_NAME"; then
-        incus storage volume create ss-base "$DOCKER_VOLUME_NAME" --type=block
+
+    SSDATA_VOLUME_NAME=
+    BACKUP_VOLUME_NAME=
+    if [ "$VIRTUAL_MACHINE" != lnplayserver ]; then
+        DOCKER_VOLUME_NAME="$VIRTUAL_MACHINE-docker"
+        if ! incus storage volume list ss-base | grep -q "$DOCKER_VOLUME_NAME"; then
+            incus storage volume create ss-base "$DOCKER_VOLUME_NAME" --type=block
+        fi
+
+        # TODO ensure we are only GROWING the volume--never shrinking
+        incus storage volume set ss-base "$DOCKER_VOLUME_NAME" size="${DOCKER_DISK_SIZE_GB}GB"
+
+        SSDATA_VOLUME_NAME="$VIRTUAL_MACHINE-ss-data"
+        if ! incus storage volume list ss-base | grep -q "$SSDATA_VOLUME_NAME"; then
+            incus storage volume create ss-base "$SSDATA_VOLUME_NAME" --type=filesystem
+        fi
+
+        # TODO ensure we are only GROWING the volume--never shrinking per zfs volume docs.
+        incus storage volume set ss-base "$SSDATA_VOLUME_NAME" size="${SSDATA_DISK_SIZE_GB}GB"
+
+        BACKUP_VOLUME_NAME="$VIRTUAL_MACHINE-backup"
+        if ! incus storage volume list ss-base | grep -q "$BACKUP_VOLUME_NAME"; then
+            incus storage volume create ss-base "$BACKUP_VOLUME_NAME" --type=filesystem
+        fi
+
+        incus storage volume set ss-base "$BACKUP_VOLUME_NAME" size="${BACKUP_DISK_SIZE_GB}GB"
+
     fi
-
-    # TODO ensure we are only GROWING the volume--never shrinking
-    incus storage volume set ss-base "$DOCKER_VOLUME_NAME" size="${DOCKER_DISK_SIZE_GB}GB"
-
-    SSDATA_VOLUME_NAME="$VIRTUAL_MACHINE-ss-data"
-    if ! incus storage volume list ss-base | grep -q "$SSDATA_VOLUME_NAME"; then
-        incus storage volume create ss-base "$SSDATA_VOLUME_NAME" --type=filesystem
-    fi
-
-    # TODO ensure we are only GROWING the volume--never shrinking per zfs volume docs.
-    incus storage volume set ss-base "$SSDATA_VOLUME_NAME" size="${SSDATA_DISK_SIZE_GB}GB"
-
-
-    BACKUP_VOLUME_NAME="$VIRTUAL_MACHINE-backup"
-    if ! incus storage volume list ss-base | grep -q "$BACKUP_VOLUME_NAME"; then
-        incus storage volume create ss-base "$BACKUP_VOLUME_NAME" --type=filesystem
-    fi
-
-    incus storage volume set ss-base "$BACKUP_VOLUME_NAME" size="${BACKUP_DISK_SIZE_GB}GB"
 
 
     bash -c "./stub_profile.sh --vm=$VIRTUAL_MACHINE --incus-hostname=$INCUS_VM_NAME --ss-volume-name=$SSDATA_VOLUME_NAME --backup-volume-name=$BACKUP_VOLUME_NAME"
@@ -89,8 +93,10 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     # and so we can set DNS internally.
     incus config set "$INCUS_VM_NAME" "volatile.enp5s0.hwaddr=$MAC_ADDRESS_TO_PROVISION"
 
-    # attack the docker block device.
-    incus storage volume attach ss-base "$DOCKER_VOLUME_NAME" "$INCUS_VM_NAME"
+    if [ "$VIRTUAL_MACHINE" != lnplayserver ]; then
+        # attack the docker block device.
+        incus storage volume attach ss-base "$DOCKER_VOLUME_NAME" "$INCUS_VM_NAME"
+    fi
 
     # if [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
     #     # attach any volumes
@@ -110,7 +116,9 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     # scan the remote machine and install it's identity in our SSH known_hosts file.
     ssh-keyscan -H "$FQDN" >> "$SSH_HOME/known_hosts"
 
-    ssh "$FQDN" "sudo chown ubuntu:ubuntu $REMOTE_DATA_PATH"
-    ssh "$FQDN" "sudo chown -R ubuntu:ubuntu $REMOTE_BACKUP_PATH"
+    if [ "$VIRTUAL_MACHINE" != lnplayserver ]; then
+        ssh "$FQDN" "sudo chown ubuntu:ubuntu $REMOTE_DATA_PATH"
+        ssh "$FQDN" "sudo chown -R ubuntu:ubuntu $REMOTE_BACKUP_PATH"
+    fi
 
 fi

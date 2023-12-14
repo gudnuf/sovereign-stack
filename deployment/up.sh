@@ -214,8 +214,8 @@ EOL
 PROJECT_NAME="$(incus info | grep "project:" | awk '{print $2}')"
 export PROJECT_NAME="$PROJECT_NAME"
 export PROJECT_PATH="$PROJECTS_PATH/$PROJECT_NAME"
-export SKIP_BTCPAYSERVER="$SKIP_BTCPAYSERVER"
-export SKIP_WWW="$SKIP_WWW"
+export SKIP_BTCPAY_SERVER="$SKIP_BTCPAY_SERVER"
+export SKIP_WWW_SERVER="$SKIP_WWW_SERVER"
 export SKIP_LNPLAY_SERVER="$SKIP_LNPLAY_SERVER"
 
 
@@ -439,6 +439,19 @@ CHANNEL_SETUP=none
 LNPLAY_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/lnplayserver
 EOL
 
+        INCUS_VM_NAME="${LNPLAY_SERVER_FQDN//./-}"
+        if ! incus image list -q --format csv | grep -q "$INCUS_VM_NAME"; then
+            # do all the docker image creation steps, but don't run services.
+            bash -c "./project/lnplay/up.sh -y --no-services"
+
+            # stop the instance so we can get an image yo
+            incus stop "$INCUS_VM_NAME"
+
+            # create the incus image.
+            incus publish -q --public "$INCUS_VM_NAME" --alias="$INCUS_VM_NAME" --compression none
+        fi
+        
+        # bring up lnplay services.
         bash -c "./project/lnplay/up.sh -y"
     fi
 fi

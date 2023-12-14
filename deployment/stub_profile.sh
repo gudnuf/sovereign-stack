@@ -182,8 +182,13 @@ if [ "$VIRTUAL_MACHINE" != base ]; then
     preserve_hostname: true
     fqdn: ${FQDN}
 
-    resize_rootfs: false
+EOF
+fi
 
+if [ "$VIRTUAL_MACHINE" = www ] || [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
+    # all other machines that are not the base image
+    cat >> "$YAML_PATH" <<EOF
+    resize_rootfs: false
     disk_setup:
       /dev/sdb:
         table_type: 'gpt'
@@ -238,21 +243,40 @@ if [ "$VIRTUAL_MACHINE" = www ]; then
 EOF
 fi
 
-
 # All profiles get a root disk and cloud-init config.
 cat >> "$YAML_PATH" <<EOF
 description: Default incus profile for ${FILENAME}
 devices:
+
+EOF
+
+if [ "$VIRTUAL_MACHINE" = lnplayserver ]; then
+    # All profiles get a root disk and cloud-init config.
+    cat >> "$YAML_PATH" <<EOF
   root:
     path: /
     pool: ss-base
     type: disk
+    size: 20GiB
+EOF
+else
+    # All profiles get a root disk and cloud-init config.
+    cat >> "$YAML_PATH" <<EOF
+  root:
+    path: /
+    pool: ss-base
+    type: disk
+EOF
+
+fi
+
+cat >> "$YAML_PATH" <<EOF
   config:
     source: cloud-init:config
     type: disk
 EOF
 
-if [ "$VIRTUAL_MACHINE" != base ]; then
+if [ "$VIRTUAL_MACHINE" = www ] || [ "$VIRTUAL_MACHINE" = btcpayserver ]; then
     cat >> "$YAML_PATH" <<EOF
   ss-data:
     path: ${REMOTE_DATA_PATH}
@@ -278,7 +302,8 @@ name: ${FILENAME}
 EOF
 
 else
-# If we are deploying a VM that attaches to the network underlay.
+
+    # all other vms attach to the network underlay
     cat >> "$YAML_PATH" <<EOF
   enp5s0:
     nictype: macvlan
@@ -316,4 +341,3 @@ else
     # configure the profile with our generated cloud-init.yml file.
     incus profile edit "$INCUS_HOSTNAME" < "$YAML_PATH"
 fi
-
