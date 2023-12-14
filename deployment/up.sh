@@ -373,7 +373,7 @@ for VIRTUAL_MACHINE in $VMS_TO_PROVISION; do
         MAC_ADDRESS_TO_PROVISION="$LNPLAY_SERVER_MAC_ADDRESS"
 
     elif [ "$VIRTUAL_MACHINE" = "$BASE_IMAGE_VM_NAME" ]; then
-        export FQDN="$BASE_IMAGE_VM_NAME"
+        FQDN="$BASE_IMAGE_VM_NAME"
     else
         echo "ERROR: VIRTUAL_MACHINE not within allowable bounds."
         exit
