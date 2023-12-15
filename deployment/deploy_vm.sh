@@ -60,25 +60,22 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
         DOCKER_VOLUME_NAME="$VIRTUAL_MACHINE-docker"
         if ! incus storage volume list ss-base | grep -q "$DOCKER_VOLUME_NAME"; then
             incus storage volume create ss-base "$DOCKER_VOLUME_NAME" --type=block
+            incus storage volume set ss-base "$DOCKER_VOLUME_NAME" size="${DOCKER_DISK_SIZE_GB}GB"
         fi
 
-        # TODO ensure we are only GROWING the volume--never shrinking
-        incus storage volume set ss-base "$DOCKER_VOLUME_NAME" size="${DOCKER_DISK_SIZE_GB}GB"
+
 
         SSDATA_VOLUME_NAME="$VIRTUAL_MACHINE-ss-data"
         if ! incus storage volume list ss-base | grep -q "$SSDATA_VOLUME_NAME"; then
             incus storage volume create ss-base "$SSDATA_VOLUME_NAME" --type=filesystem
+            incus storage volume set ss-base "$SSDATA_VOLUME_NAME" size="${SSDATA_DISK_SIZE_GB}GB"
         fi
-
-        # TODO ensure we are only GROWING the volume--never shrinking per zfs volume docs.
-        incus storage volume set ss-base "$SSDATA_VOLUME_NAME" size="${SSDATA_DISK_SIZE_GB}GB"
 
         BACKUP_VOLUME_NAME="$VIRTUAL_MACHINE-backup"
         if ! incus storage volume list ss-base | grep -q "$BACKUP_VOLUME_NAME"; then
             incus storage volume create ss-base "$BACKUP_VOLUME_NAME" --type=filesystem
+            incus storage volume set ss-base "$BACKUP_VOLUME_NAME" size="${BACKUP_DISK_SIZE_GB}GB"
         fi
-
-        incus storage volume set ss-base "$BACKUP_VOLUME_NAME" size="${BACKUP_DISK_SIZE_GB}GB"
 
     fi
 
