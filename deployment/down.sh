@@ -78,13 +78,13 @@ for VIRTUAL_MACHINE in $SERVERS; do
     if incus list | grep -q "$INCUS_VM_NAME"; then
         bash -c "./stop.sh --server=$VIRTUAL_MACHINE"
 
-        if [ "$VIRTUAL_MACHINE" = www ] && [ "$BACKUP_WWW_APPS" = true ]; then
-            APP_LIST="letsencrypt ghost nextcloud gitea nostr"
-            echo "INFO: Backing up WWW apps."
-            for APP in $APP_LIST; do
-                bash -c "$(pwd)/project/www/backup_www.sh --app=$APP"
-            done
-        fi
+        # if [ "$VIRTUAL_MACHINE" = www ] && [ "$BACKUP_WWW_APPS" = true ]; then
+        #     APP_LIST="letsencrypt ghost nextcloud gitea nostr"
+        #     echo "INFO: Backing up WWW apps."
+        #     for APP in $APP_LIST; do
+        #         bash -c "$(pwd)/project/www/backup_www.sh --app=$APP"
+        #     done
+        # fi
 
         incus stop "$INCUS_VM_NAME"
 
