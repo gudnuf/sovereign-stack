@@ -374,9 +374,6 @@ for VIRTUAL_MACHINE in $VMS_TO_PROVISION; do
 
     elif [ "$VIRTUAL_MACHINE" = "$BASE_IMAGE_VM_NAME" ]; then
         FQDN="$BASE_IMAGE_VM_NAME"
-    else
-        echo "ERROR: VIRTUAL_MACHINE not within allowable bounds."
-        exit
     fi
 
     export FQDN="$FQDN"
