@@ -63,8 +63,6 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
             incus storage volume set ss-base "$DOCKER_VOLUME_NAME" size="${DOCKER_DISK_SIZE_GB}GB"
         fi
 
-
-
         SSDATA_VOLUME_NAME="$VIRTUAL_MACHINE-ss-data"
         if ! incus storage volume list ss-base | grep -q "$SSDATA_VOLUME_NAME"; then
             incus storage volume create ss-base "$SSDATA_VOLUME_NAME" --type=filesystem
@@ -106,7 +104,7 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     # fi
 
     incus start "$INCUS_VM_NAME"
-    sleep 10
+    sleep 15
 
     bash -c "./wait_for_ip.sh --incus-name=$INCUS_VM_NAME"
 

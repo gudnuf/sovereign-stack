@@ -309,8 +309,6 @@ if [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ] || [ "$SKIP_LNPLAY_SERVER" = false ]; the
     VMS_TO_PROVISION="$VMS_TO_PROVISION lnplayserver"
 fi
 
-
-
 for VIRTUAL_MACHINE in $VMS_TO_PROVISION; do
 
     export VIRTUAL_MACHINE="$VIRTUAL_MACHINE"
