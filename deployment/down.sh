@@ -17,6 +17,10 @@ SKIP_WWW_SERVER=false
 SKIP_LNPLAY_SERVER=false
 BACKUP_WWW_APPS=true
 
+WWW_SERVER_MAC_ADDRESS=
+BTCPAY_SERVER_MAC_ADDRESS=
+LNPLAY_SERVER_MAC_ADDRESS=
+
 # grab any modifications from the command line.
 for i in "$@"; do
     case $i in
@@ -43,19 +47,6 @@ for i in "$@"; do
     esac
 done
 
-SERVERS=
-if [ "$SKIP_BTCPAY_SERVER" = false ]; then
-    SERVERS="btcpayserver"
-fi
-
-if [ "$SKIP_WWW_SERVER" = false ]; then
-    SERVERS="www $SERVERS"
-fi
-
-if [ "$SKIP_LNPLAY_SERVER" = false ]; then
-    SERVERS="lnplayserver $SERVERS"
-fi
-
 . ./deployment_defaults.sh
 
 . ./remote_env.sh
@@ -70,6 +61,20 @@ source "$SITE_PATH/site.conf"
 source ./project/domain_env.sh
 
 source ./domain_list.sh
+
+SERVERS=
+if [ "$SKIP_BTCPAY_SERVER" = false ] && [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
+    SERVERS="btcpayserver"
+fi
+
+if [ "$SKIP_WWW_SERVER" = false ] && [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
+    SERVERS="www $SERVERS"
+fi
+
+if [ "$SKIP_LNPLAY_SERVER" = false ] && [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
+    SERVERS="lnplayserver $SERVERS"
+fi
+
 
 for VIRTUAL_MACHINE in $SERVERS; do
 
