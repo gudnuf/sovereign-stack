@@ -434,6 +434,7 @@ ENABLE_TLS=true
 BTC_CHAIN=${BITCOIN_CHAIN}
 CHANNEL_SETUP=none
 LNPLAY_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/lnplayserver
+DEPLOY_PRISM_PLUGIN=true
 EOL
 
         INCUS_VM_NAME="${LNPLAY_SERVER_FQDN//./-}"
@@ -446,6 +447,11 @@ EOL
 
             # create the incus image.
             incus publish -q --public "$INCUS_VM_NAME" --alias="$INCUS_VM_NAME" --compression none
+
+            incus start "$INCUS_VM_NAME"
+            sleep 10
+
+            bash -c "./wait_for_ip.sh --incus-name=$INCUS_VM_NAME"
         fi
         
         # bring up lnplay services.
