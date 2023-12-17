@@ -17,7 +17,7 @@ fi
 
 # TODO REVIEW mgmt software requirements
 sudo apt-get update
-sudo apt-get install -y wait-for-it dnsutils rsync sshfs apt-transport-https docker-ce-cli libcanberra-gtk-module nano git
+sudo apt-get install -y wait-for-it dnsutils rsync sshfs apt-transport-https docker-ce-cli libcanberra-gtk-module nano git gridsite-clients
 
 sudo bash -c "$HOME/sovereign-stack/install_incus.sh"
 
