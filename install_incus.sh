@@ -65,9 +65,10 @@ Architectures: $(dpkg --print-architecture)
 Signed-By: /etc/apt/keyrings/zabbly.asc
 
 EOF'
-apt update
+
+apt-get update
 
 # we || true this here because installing incus fails.
 # TODO see if this can be fixed by installing JUST the incus client.
 # none of the systemd/daemon stuff is needed necessarily.
-apt install incus -y --no-install-recommends || true
+apt-get install incus -y
