@@ -426,8 +426,9 @@ EOL
 
         LNPLAY_ENV_FILE=./project/lnplay/environments/"$LNPLAY_SERVER_FQDN"
 
-        # and we have to set our environment file as well.
-        cat > "$LNPLAY_ENV_FILE" <<EOL
+        if [ ! -f "$LNPLAY_ENV_FILE" ]; then
+            # and we have to set our environment file as well.
+            cat > "$LNPLAY_ENV_FILE" <<EOL
 DOCKER_HOST=ssh://ubuntu@${LNPLAY_SERVER_FQDN}
 DOMAIN_NAME=${PRIMARY_DOMAIN}
 ENABLE_TLS=true
@@ -435,7 +436,10 @@ BTC_CHAIN=${BITCOIN_CHAIN}
 CHANNEL_SETUP=none
 LNPLAY_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/lnplayserver
 DEPLOY_PRISM_PLUGIN=true
+NAMES_FILE_PATH
 EOL
+
+        fi
 
         INCUS_VM_NAME="${LNPLAY_SERVER_FQDN//./-}"
         if ! incus image list -q --format csv | grep -q "$INCUS_VM_NAME"; then
