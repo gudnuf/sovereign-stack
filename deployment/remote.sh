@@ -196,6 +196,8 @@ profiles:
   name: default
 EOF
 
+ssh ubuntu@"$FQDN" incus project list -q >> /dev/null
+
 # ensure the incus service is available over the network, then add a incus remote, then switch the active remote to it.
 if wait-for-it -t 20 "$FQDN:8443"; then
     # before we add the remote, we need a trust token from the incus server
@@ -234,8 +236,4 @@ if ! incus storage list --format csv | grep -q ss-base; then
     #     done
     # done
 
-else
-    echo "WARNING! The host '$FQDN' appears to have Sovereign Stack worksloads already provisioned."
-    echo "INFO: Here are your current Deployments."
-    incus project list -q
 fi

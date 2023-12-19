@@ -10,7 +10,7 @@ if incus remote get-default -q | grep -q "local"; then
     exit 1
 fi
 
-KEEP_DOCKER_VOLUME=true
+KEEP_ZFS_STORAGE_VOLUMES=true
 OTHER_SITES_LIST=
 SKIP_BTCPAY_SERVER=false
 SKIP_WWW_SERVER=false
@@ -25,7 +25,7 @@ LNPLAY_SERVER_MAC_ADDRESS=
 for i in "$@"; do
     case $i in
         --purge)
-            KEEP_DOCKER_VOLUME=false
+            KEEP_ZFS_STORAGE_VOLUMES=false
             shift
         ;;
         --skip-btcpayserver)
@@ -62,18 +62,22 @@ source ./project/domain_env.sh
 
 source ./domain_list.sh
 
+
+
+
 SERVERS=
-if [ "$SKIP_BTCPAY_SERVER" = false ] && [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
-    SERVERS="btcpayserver"
+if [ "$SKIP_WWW_SERVER" = false ] && [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
+    SERVERS="www $SERVERS"
 fi
 
-if [ "$SKIP_WWW_SERVER" = false ] && [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
-    SERVERS="www $SERVERS"
+if [ "$SKIP_BTCPAY_SERVER" = false ] && [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
+    SERVERS="btcpayserver"
 fi
 
 if [ "$SKIP_LNPLAY_SERVER" = false ] && [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
     SERVERS="lnplayserver $SERVERS"
 fi
+
 
 
 for VIRTUAL_MACHINE in $SERVERS; do
@@ -95,8 +99,7 @@ for VIRTUAL_MACHINE in $SERVERS; do
         incus profile delete "$INCUS_VM_NAME"
     fi
 
-    if [ "$KEEP_DOCKER_VOLUME" = false ]; then
-
+    if [ "$KEEP_ZFS_STORAGE_VOLUMES" = false ]; then
         # d for docker; b for backup; s for ss-data
         for DATA in docker backup ss-data; do
             VOLUME_NAME="$VIRTUAL_MACHINE-$DATA"
@@ -109,10 +112,6 @@ for VIRTUAL_MACHINE in $SERVERS; do
                 fi
             fi
         done
-    else
-        # we maintain the volumes
-        # TODO make a snapshot on all the zfs storage volumes.
-        echo "TODO: create snapshot of ZFS volumes and pull them to mgmt machine."
     fi
 done
 
