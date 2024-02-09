@@ -63,22 +63,18 @@ source ./project/domain_env.sh
 source ./domain_list.sh
 
 
-
-
 SERVERS=
 if [ "$SKIP_WWW_SERVER" = false ] && [ -n "$WWW_SERVER_MAC_ADDRESS" ]; then
     SERVERS="www $SERVERS"
 fi
 
 if [ "$SKIP_BTCPAY_SERVER" = false ] && [ -n "$BTCPAY_SERVER_MAC_ADDRESS" ]; then
-    SERVERS="btcpayserver"
+    SERVERS="$SERVERS btcpayserver"
 fi
 
 if [ "$SKIP_LNPLAY_SERVER" = false ] && [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
-    SERVERS="lnplayserver $SERVERS"
+    SERVERS="$SERVERS lnplayserver"
 fi
-
-
 
 for VIRTUAL_MACHINE in $SERVERS; do
 
