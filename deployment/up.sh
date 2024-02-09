@@ -3,8 +3,6 @@
 set -exu
 cd "$(dirname "$0")"
 
-. ./target.sh
-
 # check to ensure dependencies are met.
 for cmd in wait-for-it dig rsync sshfs incus; do
     if ! command -v "$cmd" >/dev/null 2>&1; then

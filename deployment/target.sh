@@ -1,3 +1,0 @@
-#!/bin/bash
-
-export TARGET_PROJECT_GIT_COMMIT=ca069c7decdc74d2719a7f34927bda49159da2ae

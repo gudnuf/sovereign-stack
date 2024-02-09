@@ -82,8 +82,6 @@ EOF
 
 fi
 
-. ./target.sh
-
 # if VIRTUAL_MACHINE=base, then we doing the base image.
 if [ "$VIRTUAL_MACHINE" = base ]; then
     # this is for the base image only...
@@ -142,9 +140,6 @@ EOF
             {
                 "registry-mirrors": [
                   "${REGISTRY_URL}"
-                ],
-                "labels": [
-                    "PROJECT_COMMIT=${TARGET_PROJECT_GIT_COMMIT}"
                 ]
             }
 
@@ -160,7 +155,7 @@ if [ "$VIRTUAL_MACHINE" = base ]; then
     runcmd:
       - sudo mkdir -m 0755 -p /etc/apt/keyrings
       - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-      - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+      - echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu jammy stable" | sudo tee /etc/apt/sources.list.d/docker.list
       - sudo apt-get update
       - sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
       - sudo DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server
