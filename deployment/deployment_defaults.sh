@@ -12,8 +12,6 @@ export SITES_PATH="$SS_ROOT_PATH/sites"
 export INCUS_CONFIG_PATH="$SS_ROOT_PATH/incus"
 export SS_CACHE_PATH="$SS_ROOT_PATH/cache"
 
-
-
 export REMOTE_HOME="/home/ubuntu"
 export REMOTE_DATA_PATH="$REMOTE_HOME/ss-data"
 export REMOTE_DATA_PATH_LETSENCRYPT="$REMOTE_DATA_PATH/letsencrypt"

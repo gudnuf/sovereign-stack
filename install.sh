@@ -221,7 +221,6 @@ ssh-keyscan -H "$IP_V4_ADDRESS" >> "$SSH_HOME/known_hosts"
 
 ssh "ubuntu@$IP_V4_ADDRESS" sudo chown -R ubuntu:ubuntu /home/ubuntu
 
-
 if [ "$FROM_BUILT_IMAGE" = false ]; then
     ssh "ubuntu@$IP_V4_ADDRESS" /home/ubuntu/sovereign-stack/management/provision.sh
 

@@ -2,6 +2,9 @@
 
 set -exu
 
+# this script uninstalls incus from the MANAGEMENT MACHINE
+# if you want to remove incus from remote cluster hosts, run ss-reset.
+
 PURGE_INCUS=false
 
 # grab any modifications from the command line.

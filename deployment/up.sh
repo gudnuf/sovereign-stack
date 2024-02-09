@@ -111,6 +111,7 @@ for i in "$@"; do
     esac
 done
 
+
 if [ "$RESTORE_BTCPAY" = true ] && [ -z "$BACKUP_BTCPAY_ARCHIVE_PATH" ]; then
     echo "ERROR: Use the '--backup-archive-path=/path/to/btcpay/archive.tar.gz' option when restoring btcpay server."
     exit 1
@@ -153,6 +154,7 @@ source "$REMOTE_DEFINITION"
 
 
 # this is our password generation mechanism. Relying on GPG for secure password generation
+# TODO see if this is a secure way to do it.
 function new_pass {
     gpg --gen-random --armor 1 25
 }
@@ -441,6 +443,7 @@ EOL
 
         INCUS_VM_NAME="${LNPLAY_SERVER_FQDN//./-}"
         if ! incus image list -q --format csv | grep -q "$INCUS_VM_NAME"; then
+
             # do all the docker image creation steps, but don't run services.
             bash -c "./project/lnplay/up.sh -y --no-services"
 
@@ -455,7 +458,9 @@ EOL
 
             bash -c "./wait_for_ip.sh --incus-name=$INCUS_VM_NAME"
         fi
-        
+
+
+
         # bring up lnplay services.
         bash -c "./project/lnplay/up.sh -y"
     fi

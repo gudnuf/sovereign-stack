@@ -237,3 +237,5 @@ if ! incus storage list --format csv | grep -q ss-base; then
     # done
 
 fi
+
+echo "INFO: completed remote.sh."

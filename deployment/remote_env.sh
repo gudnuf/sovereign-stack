@@ -5,7 +5,6 @@ set -eu
 CURRENT_REMOTE="$(incus remote get-default)"
 DEPLOYMENT_STRING=
 
-
 SS_ROOT_PATH="$HOME/ss"
 REMOTES_PATH="$SS_ROOT_PATH/remotes"
 PROJECTS_PATH="$SS_ROOT_PATH/projects"
