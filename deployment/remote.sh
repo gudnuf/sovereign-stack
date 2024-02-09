@@ -137,12 +137,13 @@ if ! command -v incus >/dev/null 2>&1; then
 fi
 
 # install dependencies.
-ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano -y'
+ssh -t "ubuntu@$FQDN" 'sudo apt update && sudo apt upgrade -y && sudo apt install htop dnsutils nano zfsutils-linux -y'
 
 REMOTE_SCRIPT_PATH="$REMOTE_HOME/install_incus.sh"
 scp ../install_incus.sh "ubuntu@$FQDN:$REMOTE_SCRIPT_PATH"
 ssh -t "ubuntu@$FQDN" "chmod +x $REMOTE_SCRIPT_PATH"
 ssh -t "ubuntu@$FQDN" "sudo bash -c $REMOTE_SCRIPT_PATH"
+ssh -t "ubuntu@$FQDN" "sudo adduser ubuntu incus-admin"
 
 # install OVN for the project-specific bridge networks
 ssh -t "ubuntu@$FQDN" "sudo apt-get install -y ovn-host ovn-central && sudo ovs-vsctl set open_vswitch . external_ids:ovn-remote=unix:/var/run/ovn/ovnsb_db.sock external_ids:ovn-encap-type=geneve external_ids:ovn-encap-ip=127.0.0.1"
