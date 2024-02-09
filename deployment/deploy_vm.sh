@@ -81,9 +81,9 @@ if ! incus list --format csv | grep -q "$INCUS_VM_NAME"; then
     bash -c "./stub_profile.sh --vm=$VIRTUAL_MACHINE --incus-hostname=$INCUS_VM_NAME --ss-volume-name=$SSDATA_VOLUME_NAME --backup-volume-name=$BACKUP_VOLUME_NAME"
 
     if ! incus image list -q --format csv | grep -q "$INCUS_VM_NAME"; then
-        incus init -q "$DOCKER_BASE_IMAGE_NAME" "$INCUS_VM_NAME" --vm --profile="$INCUS_VM_NAME"
+        script -q -c "incus init -q $DOCKER_BASE_IMAGE_NAME $INCUS_VM_NAME --vm --profile=$INCUS_VM_NAME" /dev/null
     elif [ "$VIRTUAL_MACHINE" = lnplayserver ]; then
-        incus init -q "$INCUS_VM_NAME" "$INCUS_VM_NAME" --vm --profile="$INCUS_VM_NAME"
+        script -q -c "incus init -q $INCUS_VM_NAME $INCUS_VM_NAME --vm --profile=$INCUS_VM_NAME" /dev/null
     fi
 
     # let's PIN the HW address for now so we don't exhaust IP
