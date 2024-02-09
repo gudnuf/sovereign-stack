@@ -1,8 +1,11 @@
 #!/bin/bash
 
 
-set -e
+set -exu
 cd "$(dirname "$0")"
+
+echo "WARNING: THIS SCRIPT NEEDS WORK"
+exit 1
 
 PURGE_INCUS=false
 
@@ -20,7 +23,6 @@ for i in "$@"; do
     esac
 done
 
-source ../defaults.env
 
 ./down.sh
 
