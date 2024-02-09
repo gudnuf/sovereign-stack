@@ -14,7 +14,7 @@ SS_CACHE_PATH="$SS_ROOT_PATH/cache"
 
 
 
-if echo "$CURRENT_REMOTE" | grep -q "production"; then
+if echo "$CURRENT_REMOTE" | grep -q "prod"; then
     echo "WARNING: You are running a migration procedure on a production system."
     echo ""
 
