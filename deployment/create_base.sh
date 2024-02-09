@@ -28,9 +28,8 @@ else
 
     if ! incus list --project default | grep -q "$BASE_IMAGE_VM_NAME"; then
         # the base image is ubuntu:22.04.
-        incus init -q --profile="$BASE_IMAGE_VM_NAME" "$UBUNTU_BASE_IMAGE_NAME" "$BASE_IMAGE_VM_NAME" --vm --project default
+        script -q -c "incus init -q --profile=$BASE_IMAGE_VM_NAME $UBUNTU_BASE_IMAGE_NAME $BASE_IMAGE_VM_NAME --vm --project default" /dev/null
     fi
-
 
     if incus info "$BASE_IMAGE_VM_NAME" --project default | grep -q "Status: STOPPED"; then
         # TODO move this sovereign-stack-base construction VM to separate dedicated IP
@@ -85,7 +84,9 @@ else
 fi
 
 echo "INFO: Publishing '$BASE_IMAGE_VM_NAME' as image '$DOCKER_BASE_IMAGE_NAME'. Please wait."
-incus publish --public "$BASE_IMAGE_VM_NAME/$UBUNTU_BASE_IMAGE_NAME" --project default --alias="$DOCKER_BASE_IMAGE_NAME" --compression none
+incus publish -q --public "$BASE_IMAGE_VM_NAME/$UBUNTU_BASE_IMAGE_NAME" \
+                 --project default --alias="$DOCKER_BASE_IMAGE_NAME" \
+                 --compression none
 
 echo "INFO: Success creating the base image. Deleting artifacts from the build process."
 incus delete -f "$BASE_IMAGE_VM_NAME" --project default

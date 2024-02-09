@@ -52,6 +52,9 @@ USER_SAYS_YES=false
 WWW_SERVER_MAC_ADDRESS=
 BTCPAY_SERVER_MAC_ADDRESS=
 LNPLAY_SERVER_MAC_ADDRESS=
+LNPLAY_ENV_PATH=
+LNPLAY_VM_EXPIRATION_DATE=
+LNPLAY_ORDER_ID=
 
 # grab any modifications from the command line.
 for i in "$@"; do
@@ -98,6 +101,18 @@ for i in "$@"; do
         ;;
         --no-cert-renew)
             RUN_CERT_RENEWAL=false
+            shift
+        ;;
+        --lnplay-env-path=*)
+            LNPLAY_ENV_PATH="${i#*=}"
+            shift
+        ;;
+        --vm-expiration-date=*)
+            LNPLAY_VM_EXPIRATION_DATE="${i#*=}"
+            shift
+        ;;
+        --order-id=*)
+            LNPLAY_ORDER_ID="${i#*=}"
             shift
         ;;
         -y)
@@ -276,6 +291,7 @@ export DOMAIN_NAME="$PRIMARY_DOMAIN"
 export PRIMARY_DOMAIN="$PRIMARY_DOMAIN"
 export BITCOIN_CHAIN="$BITCOIN_CHAIN"
 export SITE_PATH="$SITES_PATH/$DOMAIN_NAME"
+export PRIMARY_SITE_PATH="$SITES_PATH/$PRIMARY_DOMAIN"
 
 stub_site_definition
 
@@ -419,24 +435,18 @@ if [ "$SKIP_LNPLAY_SERVER" = false ]; then
     if [ -n "$LNPLAY_SERVER_MAC_ADDRESS" ]; then
         export DOCKER_HOST="ssh://ubuntu@$LNPLAY_SERVER_FQDN"
 
-        # set the active env to our LNPLAY_SERVER_FQDN
-        cat > ./project/lnplay/active_env.txt <<EOL
-${LNPLAY_SERVER_FQDN}
-EOL
-
-        LNPLAY_ENV_FILE=./project/lnplay/environments/"$LNPLAY_SERVER_FQDN"
-
+        LNPLAY_ENV_FILE="$PRIMARY_SITE_PATH/$LNPLAY_SERVER_FQDN/lnplay.conf"
         if [ ! -f "$LNPLAY_ENV_FILE" ]; then
             # and we have to set our environment file as well.
             cat > "$LNPLAY_ENV_FILE" <<EOL
 DOCKER_HOST=ssh://ubuntu@${LNPLAY_SERVER_FQDN}
-DOMAIN_NAME=${PRIMARY_DOMAIN}
+BACKEND_FQDN=lnplay.${PRIMARY_DOMAIN}
+FRONTEND_FQDN=remote.${PRIMARY_DOMAIN}
 ENABLE_TLS=true
 BTC_CHAIN=${BITCOIN_CHAIN}
 CHANNEL_SETUP=none
 LNPLAY_SERVER_PATH=${SITES_PATH}/${PRIMARY_DOMAIN}/lnplayserver
 DEPLOY_PRISM_PLUGIN=true
-NAMES_FILE_PATH
 EOL
 
         fi
@@ -445,7 +455,7 @@ EOL
         if ! incus image list -q --format csv | grep -q "$INCUS_VM_NAME"; then
 
             # do all the docker image creation steps, but don't run services.
-            bash -c "./project/lnplay/up.sh -y --no-services"
+            bash -c "./project/lnplay/up.sh -y --no-services  --lnplay-conf-path=$LNPLAY_ENV_FILE"
 
             # stop the instance so we can get an image yo
             incus stop "$INCUS_VM_NAME"
@@ -457,11 +467,12 @@ EOL
             sleep 10
 
             bash -c "./wait_for_ip.sh --incus-name=$INCUS_VM_NAME"
+            sleep 3
         fi
 
 
 
         # bring up lnplay services.
-        bash -c "./project/lnplay/up.sh -y"
+        bash -c "./project/lnplay/up.sh -y --lnplay-conf-path=$LNPLAY_ENV_FILE"
     fi
 fi
