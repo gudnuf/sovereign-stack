@@ -205,6 +205,10 @@ incus exec ss-mgmt -- apt-get install -y openssh-server
 incus file push ./management/sshd_config ss-mgmt/etc/ssh/sshd_config
 incus exec ss-mgmt -- sudo systemctl restart sshd
 
+incus exec ss-mgmt -- chmod 700 /home/ubuntu/.ssh
+incus exec ss-mgmt -- chmod 600 /home/ubuntu/.ssh/authorized_keys
+incus exec ss-mgmt -- chown -R ubuntu:ubuntu /home/ubuntu/.ssh
+
 # add 'ss-manage' to the bare metal ~/.bashrc
 ADDED_COMMAND=false
 if ! < "$HOME/.bashrc" grep -q "ss-manage"; then
